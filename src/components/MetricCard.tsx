@@ -10,21 +10,40 @@ interface Props {
 }
 
 export default function MetricCard({ label, value, icon, change, accent = '#F07830' }: Props) {
+  const r = parseInt(accent.slice(1, 3), 16)
+  const g = parseInt(accent.slice(3, 5), 16)
+  const b = parseInt(accent.slice(5, 7), 16)
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{label}</span>
+    <div
+      className="relative rounded-2xl p-5 flex flex-col gap-3 overflow-hidden transition-all duration-300 group"
+      style={{
+        background: `rgba(${r},${g},${b},0.05)`,
+        border: `1px solid rgba(${r},${g},${b},0.15)`,
+        boxShadow: `0 0 30px rgba(${r},${g},${b},0.05)`,
+      }}
+    >
+      {/* Glow bg */}
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10 transition-opacity group-hover:opacity-20"
+        style={{ background: accent, filter: 'blur(30px)', transform: 'translate(30%, -30%)' }} />
+
+      <div className="flex items-center justify-between relative z-10">
+        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>{label}</span>
         {icon && (
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: accent + '20', color: accent }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{ background: `rgba(${r},${g},${b},0.15)`, boxShadow: `0 0 12px rgba(${r},${g},${b},0.3)`, color: accent }}>
             {icon}
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-gray-900 tracking-tight">{value}</p>
+
+      <p className="text-2xl font-bold tracking-tight relative z-10" style={{ color: '#F0F0F5' }}>{value}</p>
+
       {change !== undefined && (
-        <div className={`flex items-center gap-1 text-xs font-medium ${change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+        <div className={`flex items-center gap-1 text-xs font-semibold relative z-10 ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
           {change >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-          {change >= 0 ? '+' : ''}{change.toFixed(1)}% vs periode sebelumnya
+          {change >= 0 ? '+' : ''}{change.toFixed(1)}%
+          <span className="font-normal text-[10px]" style={{ color: '#4B5563' }}>vs sebelumnya</span>
         </div>
       )}
     </div>
