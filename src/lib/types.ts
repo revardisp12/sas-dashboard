@@ -1,6 +1,6 @@
 export type Brand = 'reglow' | 'amura'
 export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'instagram' | 'tiktok-organic'
-export type ActiveView = Platform | 'overview' | 'funnel' | 'sales' | 'crm'
+export type ActiveView = Platform | 'overview' | 'funnel' | 'sales' | 'crm' | 'product-analysis'
 export type Timeframe = 7 | 14 | 30 | 90 | 0
 export type CRMTimeframe = 30 | 90 | 180 | 365 | 0
 
@@ -16,6 +16,18 @@ export interface CRMRow {
   product: string
   qty: number
   revenue: number
+}
+
+export interface FollowUpTask {
+  id: string
+  customerName: string
+  phone: string
+  segment: RFMSegment
+  note: string
+  dueDate: string
+  status: 'todo' | 'ongoing' | 'done'
+  brand: Brand
+  createdAt: string
 }
 
 export interface CustomerRFM {

@@ -5,7 +5,7 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, Trash2, Users,
+  ShoppingCart, Trash2, Users, Package,
 } from 'lucide-react'
 
 const BRAND_CONFIG = {
@@ -112,6 +112,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
 
         <NavItem icon={LayoutDashboard} label="Overview" color="#F07830" active={view === 'overview'} onClick={() => onViewChange('overview')} />
         <NavItem icon={TrendingUp} label="Funnel Analysis" color="#8B5CF6" active={view === 'funnel'} onClick={() => onViewChange('funnel')} />
+        <NavItem icon={Package} label="Product Analysis" color="#00D4FF" active={view === 'product-analysis'} onClick={() => onViewChange('product-analysis')} />
 
         <div className="py-1" />
 

@@ -1,4 +1,4 @@
-import { Brand, BrandData, emptyBrandData } from './types'
+import { Brand, BrandData, emptyBrandData, FollowUpTask } from './types'
 
 const KEY = 'sas-dashboard-data'
 
@@ -22,4 +22,19 @@ export function resetData(): Record<Brand, BrandData> {
   const empty = { reglow: emptyBrandData(), amura: emptyBrandData() }
   if (typeof window !== 'undefined') localStorage.removeItem(KEY)
   return empty
+}
+
+const TASKS_KEY = 'sas-tasks'
+
+export function loadTasks(): FollowUpTask[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(TASKS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveTasks(tasks: FollowUpTask[]) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks))
 }
