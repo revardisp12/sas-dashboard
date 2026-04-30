@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import {
-  GoogleAdsRow, MetaAdsRow, TikTokShopRow, InstagramRow, TikTokOrganicRow, Platform
+  GoogleAdsRow, MetaAdsRow, TikTokShopRow, InstagramRow, TikTokOrganicRow, SalesRow, Platform, ActiveView
 } from './types'
 
 function toNum(v: unknown): number {
@@ -12,8 +12,7 @@ function toNum(v: unknown): number {
 function parseCSV(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
+      header: true, skipEmptyLines: true,
       complete: (r) => resolve(r.data as Record<string, string>[]),
       error: (e) => reject(e),
     })
@@ -22,7 +21,7 @@ function parseCSV(file: File): Promise<Record<string, string>[]> {
 
 export async function parseGoogleAds(file: File): Promise<GoogleAdsRow[]> {
   const rows = await parseCSV(file)
-  return rows.map((r) => ({
+  return rows.map(r => ({
     date: r['Date'] || r['date'] || '',
     campaign: r['Campaign'] || r['campaign'] || '',
     impressions: toNum(r['Impressions'] || r['impressions']),
@@ -38,7 +37,7 @@ export async function parseGoogleAds(file: File): Promise<GoogleAdsRow[]> {
 
 export async function parseMetaAds(file: File): Promise<MetaAdsRow[]> {
   const rows = await parseCSV(file)
-  return rows.map((r) => ({
+  return rows.map(r => ({
     date: r['Date'] || r['Reporting starts'] || r['date'] || '',
     campaign: r['Campaign name'] || r['Campaign'] || r['campaign'] || '',
     reach: toNum(r['Reach'] || r['reach']),
@@ -54,7 +53,7 @@ export async function parseMetaAds(file: File): Promise<MetaAdsRow[]> {
 
 export async function parseTikTokShop(file: File): Promise<TikTokShopRow[]> {
   const rows = await parseCSV(file)
-  return rows.map((r) => ({
+  return rows.map(r => ({
     date: r['Date'] || r['date'] || '',
     gmv: toNum(r['GMV'] || r['gmv']),
     orders: toNum(r['Orders'] || r['orders'] || r['Total orders']),
@@ -67,7 +66,7 @@ export async function parseTikTokShop(file: File): Promise<TikTokShopRow[]> {
 
 export async function parseInstagram(file: File): Promise<InstagramRow[]> {
   const rows = await parseCSV(file)
-  return rows.map((r) => ({
+  return rows.map(r => ({
     date: r['Date'] || r['date'] || '',
     followers: toNum(r['Followers'] || r['followers'] || r['Total followers']),
     reach: toNum(r['Reach'] || r['reach']),
@@ -79,7 +78,7 @@ export async function parseInstagram(file: File): Promise<InstagramRow[]> {
 
 export async function parseTikTokOrganic(file: File): Promise<TikTokOrganicRow[]> {
   const rows = await parseCSV(file)
-  return rows.map((r) => ({
+  return rows.map(r => ({
     date: r['Date'] || r['date'] || '',
     followers: toNum(r['Followers'] || r['followers'] || r['Total followers']),
     views: toNum(r['Video views'] || r['Views'] || r['views']),
@@ -89,47 +88,71 @@ export async function parseTikTokOrganic(file: File): Promise<TikTokOrganicRow[]
   }))
 }
 
-export function parseFile(platform: Platform, file: File) {
-  switch (platform) {
+export async function parseSales(file: File): Promise<SalesRow[]> {
+  const rows = await parseCSV(file)
+  return rows.map(r => ({
+    date: r['Date'] || r['date'] || '',
+    product: r['Product'] || r['product'] || r['Produk'] || '',
+    qty: toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity']),
+    revenue: toNum(r['Revenue'] || r['revenue'] || r['Pendapatan']),
+    channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
+    cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
+    grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
+  }))
+}
+
+export function parseFile(view: ActiveView, file: File) {
+  switch (view) {
     case 'google-ads': return parseGoogleAds(file)
     case 'meta-ads': return parseMetaAds(file)
     case 'tiktok-shop': return parseTikTokShop(file)
     case 'instagram': return parseInstagram(file)
     case 'tiktok-organic': return parseTikTokOrganic(file)
+    case 'sales': return parseSales(file)
+    default: throw new Error('Unknown view')
   }
 }
 
-export const CSV_TEMPLATES: Record<Platform, { name: string; headers: string[] }> = {
+export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; example: string[] }> = {
   'google-ads': {
     name: 'google_ads_template.csv',
     headers: ['Date', 'Campaign', 'Impressions', 'Clicks', 'CTR', 'Avg. CPC', 'Cost', 'Conversions', 'Conv. rate', 'ROAS'],
+    example: ['2024-04-01', 'Brand Campaign', '10000', '350', '3.50', '2500', '875000', '42', '12.00', '3.5'],
   },
   'meta-ads': {
     name: 'meta_ads_template.csv',
     headers: ['Date', 'Campaign name', 'Reach', 'Impressions', 'Link clicks', 'CTR', 'Amount spent (IDR)', 'Purchases', 'Purchase ROAS (return on ad spend)', 'CPM (cost per 1,000 impressions)'],
+    example: ['2024-04-01', 'Retargeting', '8000', '12000', '240', '2.00', '500000', '18', '3.2', '41667'],
   },
   'tiktok-shop': {
     name: 'tiktok_shop_template.csv',
     headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Conversion rate', 'Avg order value'],
+    example: ['2024-04-01', '15000000', '75', '90', '14000000', '4.50', '200000'],
   },
   instagram: {
     name: 'instagram_template.csv',
     headers: ['Date', 'Followers', 'Reach', 'Impressions', 'Profile visits', 'Post engagements'],
+    example: ['2024-04-01', '25000', '8500', '12000', '420', '680'],
   },
   'tiktok-organic': {
     name: 'tiktok_organic_template.csv',
     headers: ['Date', 'Followers', 'Video views', 'Likes', 'Comments', 'Shares'],
+    example: ['2024-04-01', '18000', '45000', '3200', '180', '95'],
+  },
+  sales: {
+    name: 'sales_template.csv',
+    headers: ['Date', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit'],
+    example: ['2024-04-01', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000'],
   },
 }
 
-export function downloadTemplate(platform: Platform) {
-  const tpl = CSV_TEMPLATES[platform]
-  const csv = tpl.headers.join(',') + '\n2024-01-01,' + tpl.headers.slice(1).map(() => '0').join(',')
+export function downloadTemplate(view: string) {
+  const tpl = CSV_TEMPLATES[view]
+  if (!tpl) return
+  const csv = tpl.headers.join(',') + '\n' + tpl.example.join(',')
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url
-  a.download = tpl.name
-  a.click()
+  a.href = url; a.download = tpl.name; a.click()
   URL.revokeObjectURL(url)
 }

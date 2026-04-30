@@ -1,0 +1,153 @@
+'use client'
+import { SalesRow, Brand, Timeframe } from '@/lib/types'
+import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
+import CSVUploader from '@/components/CSVUploader'
+import { DollarSign, Package, TrendingUp, ShoppingCart } from 'lucide-react'
+import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+
+const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
+const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
+
+interface Props { data: SalesRow[]; brand: Brand; timeframe: Timeframe; onUpload: (file: File) => Promise<void> }
+
+export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
+  const accent = BRAND_COLOR[brand]
+  const filtered = filterByDays(data, timeframe)
+
+  const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0)
+  const totalQty = filtered.reduce((s, r) => s + r.qty, 0)
+  const totalProfit = filtered.reduce((s, r) => s + r.grossProfit, 0)
+  const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+
+  // Top products
+  const productMap: Record<string, { qty: number; revenue: number }> = {}
+  filtered.forEach(r => {
+    if (!productMap[r.product]) productMap[r.product] = { qty: 0, revenue: 0 }
+    productMap[r.product].qty += r.qty
+    productMap[r.product].revenue += r.revenue
+  })
+  const topProducts = Object.entries(productMap)
+    .map(([product, v]) => ({ product, ...v }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5)
+
+  // Channel breakdown
+  const channelMap: Record<string, number> = {}
+  filtered.forEach(r => { channelMap[r.channel] = (channelMap[r.channel] || 0) + r.revenue })
+  const channelData = Object.entries(channelMap).map(([name, value]) => ({ name, value }))
+
+  // Revenue trend
+  const dateMap: Record<string, { revenue: number; profit: number }> = {}
+  filtered.forEach(r => {
+    if (!dateMap[r.date]) dateMap[r.date] = { revenue: 0, profit: 0 }
+    dateMap[r.date].revenue += r.revenue
+    dateMap[r.date].profit += r.grossProfit
+  })
+  const trendData = Object.entries(dateMap).sort(([a], [b]) => a.localeCompare(b))
+    .slice(-30).map(([date, v]) => ({ date, Revenue: v.revenue, Profit: v.profit }))
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
+            <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#4B5563' }}>Sales Data</span>
+          </div>
+          <p className="text-sm" style={{ color: '#4B5563' }}>{filtered.length > 0 ? `${filtered.length} transaksi` : 'Upload CSV untuk mulai'}</p>
+        </div>
+        <div className="w-56 flex-shrink-0">
+          <CSVUploader platform="tiktok-organic" hasData={data.length > 0} onUpload={onUpload} accent={accent} />
+        </div>
+      </div>
+
+      {filtered.length > 0 ? (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            <MetricCard label="Total Revenue" value={fmtCurrency(totalRevenue)} icon={<DollarSign size={14} />} accent={accent} />
+            <MetricCard label="Gross Profit" value={fmtCurrency(totalProfit)} icon={<TrendingUp size={14} />} accent="#10B981" />
+            <MetricCard label="Units Sold" value={fmtNum(totalQty)} icon={<Package size={14} />} accent="#8B5CF6" />
+            <MetricCard label="Profit Margin" value={margin.toFixed(1) + '%'} icon={<ShoppingCart size={14} />} accent="#00D4FF" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div style={chartStyle}>
+              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Top 5 Produk (Revenue)</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={topProducts} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
+                  <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={90} />
+                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                  <Bar dataKey="revenue" fill={accent} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={chartStyle}>
+              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Revenue per Channel</p>
+              {channelData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={channelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                      labelLine={false}>
+                      {channelData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
+                      formatter={(v) => fmtCurrency(Number(v))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : <div className="flex items-center justify-center h-40" style={{ color: '#374151' }}>Tidak ada data channel</div>}
+            </div>
+          </div>
+
+          {trendData.length > 0 && (
+            <div style={chartStyle}>
+              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Revenue & Profit Trend</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
+                  <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
+                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
+                    formatter={(v) => fmtCurrency(Number(v))} />
+                  <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
+                  <Line type="monotone" dataKey="Revenue" stroke={accent} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Profit" stroke="#10B981" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
+          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: `${accent}15`, border: `1px solid ${accent}30`, boxShadow: `0 0 30px ${accent}15` }}>
+            <DollarSign size={28} style={{ color: accent }} />
+          </div>
+          <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data sales</p>
+          <p className="text-sm" style={{ color: '#374151' }}>Upload CSV penjualan di panel kanan atas</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MetricCard({ label, value, icon, accent }: { label: string; value: string; icon: React.ReactNode; accent: string }) {
+  const r = parseInt(accent.slice(1, 3), 16) || 240
+  const g = parseInt(accent.slice(3, 5), 16) || 120
+  const b = parseInt(accent.slice(5, 7), 16) || 48
+  return (
+    <div className="rounded-2xl p-4 relative overflow-hidden"
+      style={{ background: `rgba(${r},${g},${b},0.05)`, border: `1px solid rgba(${r},${g},${b},0.15)` }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>{label}</span>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: `rgba(${r},${g},${b},0.15)`, color: accent }}>{icon}</div>
+      </div>
+      <p className="text-xl font-bold" style={{ color: '#F0F0F5' }}>{value}</p>
+    </div>
+  )
+}

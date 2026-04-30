@@ -17,3 +17,9 @@ export function saveData(data: Record<Brand, BrandData>) {
   if (typeof window === 'undefined') return
   localStorage.setItem(KEY, JSON.stringify(data))
 }
+
+export function resetData(): Record<Brand, BrandData> {
+  const empty = { reglow: emptyBrandData(), amura: emptyBrandData() }
+  if (typeof window !== 'undefined') localStorage.removeItem(KEY)
+  return empty
+}
