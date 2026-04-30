@@ -14,9 +14,11 @@ import MetaAdsView from '@/components/platforms/MetaAdsView'
 import TikTokShopView from '@/components/platforms/TikTokShopView'
 import InstagramView from '@/components/platforms/InstagramView'
 import TikTokOrganicView from '@/components/platforms/TikTokOrganicView'
+import CRMView from '@/components/views/CRMView'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
-  overview: 'Overview', funnel: 'Funnel Analysis', sales: 'Sales Data',
+  overview: 'Overview', funnel: 'Funnel Analysis', sales: 'Sales Acquisition by CS',
+  crm: 'Sales Retention by CRM',
   'google-ads': 'Google Ads', 'meta-ads': 'Meta Ads', 'tiktok-shop': 'TikTok Shop',
   instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic',
 }
@@ -40,6 +42,7 @@ export default function Dashboard() {
         : uploadView === 'tiktok-shop' ? 'tiktokShop'
         : uploadView === 'instagram' ? 'instagram'
         : uploadView === 'tiktok-organic' ? 'tiktokOrganic'
+        : uploadView === 'crm' ? 'crm'
         : 'sales'
       const next = { ...prev, [brand]: { ...prev[brand], [key]: parsed } }
       saveData(next)
@@ -110,6 +113,7 @@ export default function Dashboard() {
           {view === 'tiktok-shop' && <TikTokShopView data={filtered.tiktokShop} brand={brand} onUpload={handleUpload} />}
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} />}
           {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} />}
+          {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} />}
         </main>
       </div>
     </div>

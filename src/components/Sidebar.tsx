@@ -5,12 +5,12 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, Trash2, DollarSign,
+  ShoppingCart, Trash2, Users,
 } from 'lucide-react'
 
 const BRAND_CONFIG = {
-  reglow: { label: 'Reglow', sub: 'Skincare', color: '#C9A96E', glow: 'rgba(201,169,110,0.3)' },
-  amura: { label: 'amura', sub: '', color: '#8FB050', glow: 'rgba(143,176,80,0.3)' },
+  reglow: { label: 'Reglow Skincare', color: '#C9A96E', glow: 'rgba(201,169,110,0.3)', rgb: '201,169,110' },
+  amura: { label: 'Amura', color: '#8FB050', glow: 'rgba(143,176,80,0.3)', rgb: '143,176,80' },
 }
 
 const PAID_PLATFORMS = [
@@ -34,8 +34,11 @@ interface Props {
 export default function Sidebar({ brand, view, onBrandChange, onViewChange, onReset }: Props) {
   const [paidOpen, setPaidOpen] = useState(true)
   const [organicOpen, setOrganicOpen] = useState(true)
-  const [salesOpen, setSalesOpen] = useState(false)
+  const [salesOpen, setSalesOpen] = useState(true)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [brandDropOpen, setBrandDropOpen] = useState(false)
+
+  const cfg = BRAND_CONFIG[brand]
 
   function handleReset() {
     if (!confirmReset) { setConfirmReset(true); setTimeout(() => setConfirmReset(false), 3000); return }
@@ -61,68 +64,72 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
         </div>
       </div>
 
-      {/* Brand switcher */}
+      {/* Brand dropdown */}
       <div className="px-4 py-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <p className="text-[9px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#374151' }}>Brand</p>
-        <div className="flex gap-2">
-          {(['reglow', 'amura'] as Brand[]).map(b => {
-            const cfg = BRAND_CONFIG[b]
-            const active = brand === b
-            return (
-              <button key={b} onClick={() => onBrandChange(b)}
-                className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all"
-                style={{
-                  background: active ? `rgba(${b === 'reglow' ? '201,169,110' : '143,176,80'},0.15)` : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${active ? cfg.color + '50' : 'rgba(255,255,255,0.06)'}`,
-                  color: active ? cfg.color : '#4B5563',
-                  boxShadow: active ? `0 0 12px ${cfg.glow}` : 'none',
-                }}>
-                {cfg.label}
-              </button>
-            )
-          })}
+        <div className="relative">
+          <button
+            onClick={() => setBrandDropOpen(p => !p)}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all"
+            style={{
+              background: `rgba(${cfg.rgb},0.1)`,
+              border: `1px solid rgba(${cfg.rgb},0.3)`,
+              boxShadow: `0 0 12px rgba(${cfg.rgb},0.15)`,
+            }}>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.color, boxShadow: `0 0 6px ${cfg.color}` }} />
+              <span className="text-sm font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+            </div>
+            <ChevronDown size={14} style={{ color: cfg.color, transform: brandDropOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+
+          {brandDropOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
+              style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+              {(['reglow', 'amura'] as Brand[]).map(b => {
+                const c = BRAND_CONFIG[b]
+                const active = brand === b
+                return (
+                  <button key={b}
+                    onClick={() => { onBrandChange(b); setBrandDropOpen(false) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-3 text-left transition-all"
+                    style={{ background: active ? `rgba(${c.rgb},0.1)` : 'transparent' }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.color }} />
+                    <span className="text-sm font-medium" style={{ color: active ? c.color : '#9CA3AF' }}>{c.label}</span>
+                    {active && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Nav */}
       <div className="flex-1 px-3 py-4 space-y-1">
 
-        {/* Top pages */}
         <NavItem icon={LayoutDashboard} label="Overview" color="#F07830" active={view === 'overview'} onClick={() => onViewChange('overview')} />
         <NavItem icon={TrendingUp} label="Funnel Analysis" color="#8B5CF6" active={view === 'funnel'} onClick={() => onViewChange('funnel')} />
 
         <div className="py-1" />
 
-        {/* Paid Traffic */}
         <DropSection label="Paid Traffic" open={paidOpen} onToggle={() => setPaidOpen(p => !p)}>
           {PAID_PLATFORMS.map(p => (
             <NavItem key={p.id} icon={p.icon} label={p.label} color={p.color} active={view === p.id} onClick={() => onViewChange(p.id)} indent />
           ))}
         </DropSection>
 
-        {/* Organic */}
         <DropSection label="Organic" open={organicOpen} onToggle={() => setOrganicOpen(p => !p)}>
           {ORGANIC_PLATFORMS.map(p => (
             <NavItem key={p.id} icon={p.icon} label={p.label} color={p.color} active={view === p.id} onClick={() => onViewChange(p.id)} indent />
           ))}
         </DropSection>
 
-        {/* Sales Data */}
         <DropSection label="Sales Data" open={salesOpen} onToggle={() => setSalesOpen(p => !p)} color="#10B981">
-          {(['reglow', 'amura'] as Brand[]).map(b => (
-            <button key={b}
-              onClick={() => { onBrandChange(b); onViewChange('sales') }}
-              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg transition-all text-left ml-2"
-              style={{
-                background: view === 'sales' && brand === b ? 'rgba(16,185,129,0.1)' : 'transparent',
-                borderLeft: view === 'sales' && brand === b ? '2px solid #10B981' : '2px solid transparent',
-              }}>
-              <DollarSign size={12} style={{ color: view === 'sales' && brand === b ? '#10B981' : '#4B5563' }} />
-              <span className="text-xs" style={{ color: view === 'sales' && brand === b ? '#F0F0F5' : '#6B7280' }}>
-                {BRAND_CONFIG[b].label} Sales
-              </span>
-            </button>
-          ))}
+          <NavItem icon={ShoppingCart} label="Acquisition by CS" color="#10B981" active={view === 'sales'} onClick={() => onViewChange('sales')} indent />
+          <NavItem icon={Users} label="Retention by CRM" color="#8B5CF6" active={view === 'crm'} onClick={() => onViewChange('crm')} indent />
         </DropSection>
       </div>
 

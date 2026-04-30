@@ -1,7 +1,36 @@
 export type Brand = 'reglow' | 'amura'
 export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'instagram' | 'tiktok-organic'
-export type ActiveView = Platform | 'overview' | 'funnel' | 'sales'
+export type ActiveView = Platform | 'overview' | 'funnel' | 'sales' | 'crm'
 export type Timeframe = 7 | 14 | 30 | 90 | 0
+export type CRMTimeframe = 30 | 90 | 180 | 365 | 0
+
+export type RFMSegment =
+  | 'Champions' | 'Loyal Customers' | 'Potential Loyalist' | 'New Customers'
+  | 'Promising' | 'Need Attention' | 'About to Sleep' | "Can't Lose Them"
+  | 'At Risk' | 'Hibernating'
+
+export interface CRMRow {
+  date: string
+  customerName: string
+  phone: string
+  product: string
+  qty: number
+  revenue: number
+}
+
+export interface CustomerRFM {
+  customerName: string
+  phone: string
+  lastOrderDate: string
+  recencyDays: number
+  frequency: number
+  monetary: number
+  rScore: number
+  fScore: number
+  mScore: number
+  segment: RFMSegment
+  transactions: CRMRow[]
+}
 
 export interface GoogleAdsRow {
   date: string; campaign: string; impressions: number; clicks: number
@@ -34,8 +63,9 @@ export interface BrandData {
   instagram: InstagramRow[]
   tiktokOrganic: TikTokOrganicRow[]
   sales: SalesRow[]
+  crm: CRMRow[]
 }
 
 export const emptyBrandData = (): BrandData => ({
-  googleAds: [], metaAds: [], tiktokShop: [], instagram: [], tiktokOrganic: [], sales: [],
+  googleAds: [], metaAds: [], tiktokShop: [], instagram: [], tiktokOrganic: [], sales: [], crm: [],
 })

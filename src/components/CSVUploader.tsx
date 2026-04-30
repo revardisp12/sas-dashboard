@@ -5,7 +5,7 @@ import { Platform } from '@/lib/types'
 import { downloadTemplate } from '@/lib/csvParser'
 
 interface Props {
-  platform: Platform
+  platform: Platform | 'sales' | 'crm'
   hasData: boolean
   onUpload: (file: File) => Promise<void>
   accent?: string

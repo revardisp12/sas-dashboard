@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import {
-  GoogleAdsRow, MetaAdsRow, TikTokShopRow, InstagramRow, TikTokOrganicRow, SalesRow, Platform, ActiveView
+  GoogleAdsRow, MetaAdsRow, TikTokShopRow, InstagramRow, TikTokOrganicRow, SalesRow, CRMRow, Platform, ActiveView
 } from './types'
 
 function toNum(v: unknown): number {
@@ -101,6 +101,18 @@ export async function parseSales(file: File): Promise<SalesRow[]> {
   }))
 }
 
+export async function parseCRM(file: File): Promise<CRMRow[]> {
+  const rows = await parseCSV(file)
+  return rows.map(r => ({
+    date: r['Date'] || r['date'] || r['Tanggal'] || '',
+    customerName: r['Customer Name'] || r['Nama'] || r['nama'] || r['customer_name'] || '',
+    phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
+    product: r['Product'] || r['Produk'] || r['product'] || '',
+    qty: toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity']),
+    revenue: toNum(r['Revenue'] || r['revenue'] || r['Harga'] || r['Total']),
+  }))
+}
+
 export function parseFile(view: ActiveView, file: File) {
   switch (view) {
     case 'google-ads': return parseGoogleAds(file)
@@ -109,6 +121,7 @@ export function parseFile(view: ActiveView, file: File) {
     case 'instagram': return parseInstagram(file)
     case 'tiktok-organic': return parseTikTokOrganic(file)
     case 'sales': return parseSales(file)
+    case 'crm': return parseCRM(file)
     default: throw new Error('Unknown view')
   }
 }
@@ -143,6 +156,11 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
     name: 'sales_template.csv',
     headers: ['Date', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit'],
     example: ['2024-04-01', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000'],
+  },
+  crm: {
+    name: 'crm_template.csv',
+    headers: ['Date', 'Customer Name', 'Phone', 'Product', 'Qty', 'Revenue'],
+    example: ['2024-04-01', 'Siti Rahma', '081234567890', 'Serum Vitamin C', '2', '300000'],
   },
 }
 
