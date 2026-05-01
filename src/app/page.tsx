@@ -18,6 +18,7 @@ import TikTokOrganicView from '@/components/platforms/TikTokOrganicView'
 import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
 import SettingsView from '@/components/views/SettingsView'
+import AIChatButton from '@/components/AIChatButton'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
   overview: 'Overview', funnel: 'Funnel Analysis', sales: 'Sales Acquisition by CS',
@@ -159,7 +160,7 @@ export default function Dashboard() {
         </div>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto px-8 py-6">
+        <main className="flex-1 overflow-y-auto px-8 py-6 pb-24">
           {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} products={products} />}
           {view === 'funnel' && <FunnelView data={bd} brand={brand} timeframe={timeframe} />}
           {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} products={products} bundles={bundles} onManualAdd={handleManualSales} />}
@@ -174,6 +175,24 @@ export default function Dashboard() {
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} bundles={bundles} onBundlesChange={handleBundlesChange} />}
         </main>
       </div>
+
+      <AIChatButton context={{
+        currentView: view,
+        brand,
+        timeframe: dateRange ? `${dateRange.from} – ${dateRange.to}` : `${timeframe === 0 ? 'All' : timeframe + 'H'}`,
+        hasData: {
+          sales: bd.sales.length > 0,
+          crm: bd.crm.length > 0,
+          googleAds: bd.googleAds.length > 0,
+          metaAds: bd.metaAds.length > 0,
+          tiktokShop: bd.tiktokShop.length > 0,
+          shopee: (bd.shopee ?? []).length > 0,
+          instagram: bd.instagram.length > 0,
+          tiktokOrganic: bd.tiktokOrganic.length > 0,
+        },
+        productCount: products.filter(p => p.brand === brand).length,
+        bundleCount: bundles.filter(b => b.brand === brand).length,
+      }} />
     </div>
   )
 }
