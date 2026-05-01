@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import {
-  GoogleAdsRow, MetaAdsRow, TikTokShopRow, InstagramRow, TikTokOrganicRow, SalesRow, CRMRow, Platform, ActiveView
+  GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, SalesRow, CRMRow, ActiveView
 } from './types'
 
 function toNum(v: unknown): number {
@@ -98,6 +98,26 @@ export async function parseSales(file: File): Promise<SalesRow[]> {
     channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
     cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
     grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
+    customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
+    phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
+    address: r['Address'] || r['Alamat'] || r['address'] || '',
+  }))
+}
+
+export async function parseShopee(file: File): Promise<ShopeeRow[]> {
+  const rows = await parseCSV(file)
+  return rows.map(r => ({
+    date: r['Date'] || r['date'] || '',
+    gmv: toNum(r['GMV'] || r['gmv']),
+    orders: toNum(r['Orders'] || r['orders'] || r['Total orders']),
+    unitsSold: toNum(r['Units sold'] || r['units_sold'] || r['Qty sold']),
+    revenue: toNum(r['Revenue'] || r['revenue'] || r['Net revenue']),
+    convRate: toNum(r['Conversion rate'] || r['conv_rate'] || r['CVR']),
+    avgOrderValue: toNum(r['Avg order value'] || r['AOV'] || r['Average order value']),
+    adSpend: toNum(r['Ad Spend'] || r['ad_spend'] || r['Ads Spend'] || r['Iklan']),
+    adRoas: toNum(r['Ad ROAS'] || r['ROAS'] || r['ad_roas']),
+    adClicks: toNum(r['Ad Clicks'] || r['ad_clicks'] || r['Clicks']),
+    adImpressions: toNum(r['Ad Impressions'] || r['ad_impressions'] || r['Impressions']),
   }))
 }
 
@@ -118,6 +138,7 @@ export function parseFile(view: ActiveView, file: File) {
     case 'google-ads': return parseGoogleAds(file)
     case 'meta-ads': return parseMetaAds(file)
     case 'tiktok-shop': return parseTikTokShop(file)
+    case 'shopee': return parseShopee(file)
     case 'instagram': return parseInstagram(file)
     case 'tiktok-organic': return parseTikTokOrganic(file)
     case 'sales': return parseSales(file)
@@ -154,13 +175,23 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
   },
   sales: {
     name: 'sales_template.csv',
-    headers: ['Date', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit'],
-    example: ['2024-04-01', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000'],
+    headers: ['Date', 'Customer Name', 'Phone', 'Address', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit'],
+    example: ['2024-04-01', 'Siti Rahma', '081234567890', 'Jl. Sudirman No. 1 Jakarta', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000'],
+  },
+  shopee: {
+    name: 'shopee_template.csv',
+    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Conversion rate', 'Avg order value', 'Ad Spend', 'Ad ROAS', 'Ad Clicks', 'Ad Impressions'],
+    example: ['2024-04-01', '18000000', '90', '110', '17000000', '3.80', '200000', '1500000', '11.3', '3200', '85000'],
   },
   crm: {
     name: 'crm_template.csv',
     headers: ['Date', 'Customer Name', 'Phone', 'Product', 'Qty', 'Revenue'],
     example: ['2024-04-01', 'Siti Rahma', '081234567890', 'Serum Vitamin C', '2', '300000'],
+  },
+  'product-master': {
+    name: 'product_master_template.csv',
+    headers: ['SKU', 'Product Name', 'Price', 'COGS'],
+    example: ['SVC-001', 'Serum Vitamin C', '150000', '60000'],
   },
 }
 

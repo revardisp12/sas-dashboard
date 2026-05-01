@@ -1,10 +1,10 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
-import { CRMRow, Brand, CRMTimeframe, CustomerRFM, RFMSegment, FollowUpTask } from '@/lib/types'
+import { CRMRow, Brand, CRMTimeframe, CustomerRFM, RFMSegment, FollowUpTask, ProductMaster } from '@/lib/types'
 import { fmtCurrency, fmtNum } from '@/lib/utils'
 import { loadTasks, saveTasks } from '@/lib/storage'
 import CSVUploader from '@/components/CSVUploader'
-import { Users, X, Phone, Calendar, ShoppingBag, TrendingUp, Plus, ChevronRight } from 'lucide-react'
+import { Users, X, Phone, Calendar, ShoppingBag, TrendingUp, Plus, ChevronRight, Trash2 } from 'lucide-react'
 
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 
@@ -88,9 +88,18 @@ const TIMEFRAME_OPTIONS: { label: string; value: CRMTimeframe }[] = [
 
 type Tab = 'rfm' | 'pipeline' | 'actions'
 
-interface Props { data: CRMRow[]; brand: Brand; onUpload: (file: File) => Promise<void> }
+interface CRMLineItem { product: string; sku: string; qty: string; revenue: string }
+const EMPTY_CRM_LINE: CRMLineItem = { product: '', sku: '', qty: '1', revenue: '' }
 
-export default function CRMView({ data, brand, onUpload }: Props) {
+interface Props {
+  data: CRMRow[]
+  brand: Brand
+  onUpload: (file: File) => Promise<void>
+  products?: ProductMaster[]
+  onManualAdd?: (rows: CRMRow[]) => void
+}
+
+export default function CRMView({ data, brand, onUpload, products = [], onManualAdd }: Props) {
   const accent = BRAND_COLOR[brand]
   const [timeframe, setTimeframe] = useState<CRMTimeframe>(90)
   const [tab, setTab] = useState<Tab>('rfm')
@@ -101,6 +110,41 @@ export default function CRMView({ data, brand, onUpload }: Props) {
   const [addTaskModal, setAddTaskModal] = useState<{ customer: CustomerRFM } | null>(null)
   const [taskForm, setTaskForm] = useState({ note: '', dueDate: '' })
   const PER_PAGE = 10
+
+  const [crmModal, setCrmModal] = useState(false)
+  const [crmDate, setCrmDate] = useState(new Date().toISOString().slice(0, 10))
+  const [crmCustomer, setCrmCustomer] = useState('')
+  const [crmPhone, setCrmPhone] = useState('')
+  const [crmLines, setCrmLines] = useState<CRMLineItem[]>([{ ...EMPTY_CRM_LINE }])
+  const brandProducts = products.filter(p => p.brand === brand)
+
+  function pickCrmProduct(idx: number, sku: string) {
+    const pm = brandProducts.find(p => p.sku === sku)
+    if (!pm) return
+    setCrmLines(prev => prev.map((l, i) => i === idx ? { ...l, sku: pm.sku, product: pm.name, revenue: String(pm.price) } : l))
+  }
+  function addCrmLine() { setCrmLines(prev => [...prev, { ...EMPTY_CRM_LINE }]) }
+  function removeCrmLine(idx: number) { setCrmLines(prev => prev.filter((_, i) => i !== idx)) }
+  function updateCrmLine(idx: number, key: keyof CRMLineItem, val: string) {
+    setCrmLines(prev => prev.map((l, i) => i === idx ? { ...l, [key]: val } : l))
+  }
+  function saveCrmManual() {
+    const rows: CRMRow[] = crmLines
+      .filter(l => l.product && Number(l.qty) > 0)
+      .map(l => ({
+        date: crmDate,
+        customerName: crmCustomer,
+        phone: crmPhone,
+        product: l.product,
+        qty: Number(l.qty) || 1,
+        revenue: Number(l.revenue) || 0,
+      }))
+    if (rows.length === 0) return
+    onManualAdd?.(rows)
+    setCrmModal(false)
+    setCrmLines([{ ...EMPTY_CRM_LINE }])
+    setCrmCustomer(''); setCrmPhone('')
+  }
 
   useEffect(() => { setTasks(loadTasks().filter(t => t.brand === brand)) }, [brand])
 
@@ -202,6 +246,11 @@ export default function CRMView({ data, brand, onUpload }: Props) {
               </button>
             ))}
           </div>
+          <button onClick={() => setCrmModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex-shrink-0"
+            style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.15)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.3)`, color: accent }}>
+            <Plus size={14} /> Input Manual
+          </button>
           <div className="w-44 flex-shrink-0">
             <CSVUploader platform="crm" hasData={data.length > 0} onUpload={onUpload} accent={accent} />
           </div>
@@ -530,6 +579,104 @@ export default function CRMView({ data, brand, onUpload }: Props) {
                 style={{ background: accent, color: '#08080F', boxShadow: `0 0 20px ${accent}60` }}>
                 Tambah Task
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CRM Manual Input Modal */}
+      {crmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div>
+                <p className="font-semibold" style={{ color: '#F0F0F5' }}>Input Manual — CRM</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Tambah transaksi customer</p>
+              </div>
+              <button onClick={() => setCrmModal(false)} style={{ color: '#6B7280' }}><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>Tanggal</label>
+                  <input type="date" value={crmDate} onChange={e => setCrmDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>Nama Customer</label>
+                  <input value={crmCustomer} onChange={e => setCrmCustomer(e.target.value)} placeholder="Siti Rahma"
+                    className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>No. HP</label>
+                <input value={crmPhone} onChange={e => setCrmPhone(e.target.value)} placeholder="081234567890"
+                  className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+              </div>
+
+              {/* Product lines */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>Produk</p>
+                  <button onClick={addCrmLine} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                    style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.1)`, color: accent }}>
+                    <Plus size={11} /> Tambah Baris
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {crmLines.map((line, idx) => (
+                    <div key={idx} className="grid gap-2 items-end" style={{ gridTemplateColumns: '2fr 70px 120px 32px' }}>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Produk</label>}
+                        {brandProducts.length > 0 ? (
+                          <select value={line.sku} onChange={e => pickCrmProduct(idx, e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }}>
+                            <option value="">— Pilih produk —</option>
+                            {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
+                          </select>
+                        ) : (
+                          <input value={line.product} onChange={e => updateCrmLine(idx, 'product', e.target.value)} placeholder="Nama produk"
+                            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                        )}
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Qty</label>}
+                        <input type="number" min="1" value={line.qty} onChange={e => updateCrmLine(idx, 'qty', e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Revenue (Rp)</label>}
+                        <input type="number" value={line.revenue} onChange={e => updateCrmLine(idx, 'revenue', e.target.value)}
+                          placeholder={line.sku ? 'Auto' : '150000'}
+                          readOnly={!!line.sku}
+                          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5', opacity: line.sku ? 0.6 : 1 }} />
+                      </div>
+                      <button onClick={() => removeCrmLine(idx)} disabled={crmLines.length === 1}
+                        className="pb-0.5" style={{ color: crmLines.length === 1 ? '#374151' : '#6B7280' }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button onClick={() => setCrmModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+                  Batal
+                </button>
+                <button onClick={saveCrmManual} className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.2)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.4)`, color: accent }}>
+                  Simpan
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, Trash2, Users, Package,
+  ShoppingCart, Trash2, Users, Package, Settings,
 } from 'lucide-react'
 
 const BRAND_CONFIG = {
@@ -17,6 +17,7 @@ const PAID_PLATFORMS = [
   { id: 'google-ads' as ActiveView, label: 'Google Ads', icon: BarChart2, color: '#4285F4' },
   { id: 'meta-ads' as ActiveView, label: 'Meta Ads', icon: Target, color: '#1877F2' },
   { id: 'tiktok-shop' as ActiveView, label: 'TikTok Shop', icon: ShoppingBag, color: '#FF0050' },
+  { id: 'shopee' as ActiveView, label: 'Shopee', icon: ShoppingBag, color: '#F05536' },
 ]
 const ORGANIC_PLATFORMS = [
   { id: 'instagram' as ActiveView, label: 'Instagram', icon: Camera, color: '#E1306C' },
@@ -134,8 +135,9 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
         </DropSection>
       </div>
 
-      {/* Reset */}
-      <div className="px-3 pb-4 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+      {/* Settings + Reset */}
+      <div className="px-3 pb-4 flex-shrink-0 space-y-1.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+        <NavItem icon={Settings} label="Settings" color="#6B7280" active={view === 'settings'} onClick={() => onViewChange('settings')} />
         <button onClick={handleReset}
           className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
           style={{

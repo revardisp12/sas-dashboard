@@ -1,8 +1,18 @@
 export type Brand = 'reglow' | 'amura'
-export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'instagram' | 'tiktok-organic'
-export type ActiveView = Platform | 'overview' | 'funnel' | 'sales' | 'crm' | 'product-analysis'
+export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'shopee' | 'instagram' | 'tiktok-organic'
+export type ActiveView = Platform | 'overview' | 'funnel' | 'sales' | 'crm' | 'product-analysis' | 'settings'
 export type Timeframe = 7 | 14 | 30 | 90 | 0
 export type CRMTimeframe = 30 | 90 | 180 | 365 | 0
+
+export interface ProductMaster {
+  id: string
+  sku: string
+  name: string
+  price: number
+  cogs: number
+  margin: number
+  brand: Brand
+}
 
 export type RFMSegment =
   | 'Champions' | 'Loyal Customers' | 'Potential Loyalist' | 'New Customers'
@@ -66,12 +76,28 @@ export interface TikTokOrganicRow {
 export interface SalesRow {
   date: string; product: string; qty: number; revenue: number
   channel: string; cogs: number; grossProfit: number
+  customerName?: string; phone?: string; address?: string
+}
+
+export interface ShopeeRow {
+  date: string
+  gmv: number
+  orders: number
+  unitsSold: number
+  revenue: number
+  convRate: number
+  avgOrderValue: number
+  adSpend: number
+  adRoas: number
+  adClicks: number
+  adImpressions: number
 }
 
 export interface BrandData {
   googleAds: GoogleAdsRow[]
   metaAds: MetaAdsRow[]
   tiktokShop: TikTokShopRow[]
+  shopee: ShopeeRow[]
   instagram: InstagramRow[]
   tiktokOrganic: TikTokOrganicRow[]
   sales: SalesRow[]
@@ -79,5 +105,5 @@ export interface BrandData {
 }
 
 export const emptyBrandData = (): BrandData => ({
-  googleAds: [], metaAds: [], tiktokShop: [], instagram: [], tiktokOrganic: [], sales: [], crm: [],
+  googleAds: [], metaAds: [], tiktokShop: [], shopee: [], instagram: [], tiktokOrganic: [], sales: [], crm: [],
 })

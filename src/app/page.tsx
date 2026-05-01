@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Brand, ActiveView, Timeframe, BrandData, emptyBrandData } from '@/lib/types'
-import { loadData, saveData, resetData } from '@/lib/storage'
+import { Brand, ActiveView, Timeframe, BrandData, emptyBrandData, ProductMaster } from '@/lib/types'
+import { loadData, saveData, resetData, loadProducts, saveProducts } from '@/lib/storage'
 import { parseFile } from '@/lib/csvParser'
 import { filterByDays } from '@/lib/utils'
 import Sidebar from '@/components/Sidebar'
@@ -12,16 +12,19 @@ import SalesView from '@/components/views/SalesView'
 import GoogleAdsView from '@/components/platforms/GoogleAdsView'
 import MetaAdsView from '@/components/platforms/MetaAdsView'
 import TikTokShopView from '@/components/platforms/TikTokShopView'
+import ShopeeView from '@/components/platforms/ShopeeView'
 import InstagramView from '@/components/platforms/InstagramView'
 import TikTokOrganicView from '@/components/platforms/TikTokOrganicView'
 import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
+import SettingsView from '@/components/views/SettingsView'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
   overview: 'Overview', funnel: 'Funnel Analysis', sales: 'Sales Acquisition by CS',
   crm: 'Sales Retention by CRM', 'product-analysis': 'Product Analysis',
   'google-ads': 'Google Ads', 'meta-ads': 'Meta Ads', 'tiktok-shop': 'TikTok Shop',
-  instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic',
+  shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic',
+  settings: 'Settings',
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura' }
 
@@ -30,8 +33,12 @@ export default function Dashboard() {
   const [view, setView] = useState<ActiveView>('overview')
   const [timeframe, setTimeframe] = useState<Timeframe>(30)
   const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData() })
+  const [products, setProducts] = useState<ProductMaster[]>([])
 
-  useEffect(() => { setData(loadData()) }, [])
+  useEffect(() => {
+    setData(loadData())
+    setProducts(loadProducts())
+  }, [])
 
   async function handleUpload(file: File) {
     const uploadView = view === 'sales' ? 'sales' : view
@@ -41,11 +48,33 @@ export default function Dashboard() {
         uploadView === 'google-ads' ? 'googleAds'
         : uploadView === 'meta-ads' ? 'metaAds'
         : uploadView === 'tiktok-shop' ? 'tiktokShop'
+        : uploadView === 'shopee' ? 'shopee'
         : uploadView === 'instagram' ? 'instagram'
         : uploadView === 'tiktok-organic' ? 'tiktokOrganic'
         : uploadView === 'crm' ? 'crm'
         : 'sales'
       const next = { ...prev, [brand]: { ...prev[brand], [key]: parsed } }
+      saveData(next)
+      return next
+    })
+  }
+
+  function handleProductsChange(updated: ProductMaster[]) {
+    setProducts(updated)
+    saveProducts(updated)
+  }
+
+  function handleManualSales(rows: import('@/lib/types').SalesRow[]) {
+    setData(prev => {
+      const next = { ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }
+      saveData(next)
+      return next
+    })
+  }
+
+  function handleManualCRM(rows: import('@/lib/types').CRMRow[]) {
+    setData(prev => {
+      const next = { ...prev, [brand]: { ...prev[brand], crm: [...prev[brand].crm, ...rows] } }
       saveData(next)
       return next
     })
@@ -63,6 +92,7 @@ export default function Dashboard() {
     googleAds: filterByDays(bd.googleAds, timeframe),
     metaAds: filterByDays(bd.metaAds, timeframe),
     tiktokShop: filterByDays(bd.tiktokShop, timeframe),
+    shopee: filterByDays(bd.shopee ?? [], timeframe),
     instagram: filterByDays(bd.instagram, timeframe),
     tiktokOrganic: filterByDays(bd.tiktokOrganic, timeframe),
     sales: filterByDays(bd.sales, timeframe),
@@ -106,16 +136,18 @@ export default function Dashboard() {
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto px-8 py-6">
-          {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} />}
+          {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} products={products} />}
           {view === 'funnel' && <FunnelView data={bd} brand={brand} timeframe={timeframe} />}
-          {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} />}
+          {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} products={products} onManualAdd={handleManualSales} />}
           {view === 'google-ads' && <GoogleAdsView data={filtered.googleAds} brand={brand} onUpload={handleUpload} />}
           {view === 'meta-ads' && <MetaAdsView data={filtered.metaAds} brand={brand} onUpload={handleUpload} />}
           {view === 'tiktok-shop' && <TikTokShopView data={filtered.tiktokShop} brand={brand} onUpload={handleUpload} />}
+          {view === 'shopee' && <ShopeeView data={filtered.shopee} brand={brand} onUpload={handleUpload} />}
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} />}
           {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} />}
-          {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} />}
+          {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} products={products} onManualAdd={handleManualCRM} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} />}
+          {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} />}
         </main>
       </div>
     </div>

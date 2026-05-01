@@ -1,4 +1,4 @@
-import { Brand, BrandData, emptyBrandData, FollowUpTask } from './types'
+import { Brand, BrandData, emptyBrandData, FollowUpTask, ProductMaster } from './types'
 
 const KEY = 'sas-dashboard-data'
 
@@ -37,4 +37,19 @@ export function loadTasks(): FollowUpTask[] {
 export function saveTasks(tasks: FollowUpTask[]) {
   if (typeof window === 'undefined') return
   localStorage.setItem(TASKS_KEY, JSON.stringify(tasks))
+}
+
+const PRODUCTS_KEY = 'sas-products'
+
+export function loadProducts(): ProductMaster[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(PRODUCTS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function saveProducts(products: ProductMaster[]) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products))
 }

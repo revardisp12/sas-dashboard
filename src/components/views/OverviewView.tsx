@@ -1,26 +1,63 @@
 'use client'
-import { BrandData, Brand, Timeframe } from '@/lib/types'
+import { BrandData, Brand, Timeframe, ProductMaster, CRMRow } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
-import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users } from 'lucide-react'
+import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users, Package, Trophy, AlertTriangle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
 
-interface Props { data: BrandData; brand: Brand; timeframe: Timeframe }
+function calcCrmSnapshot(crm: CRMRow[]) {
+  if (crm.length === 0) return { total: 0, champions: 0, atRisk: 0 }
+  const timestamps = crm.map(r => new Date(r.date).getTime()).filter(t => !isNaN(t))
+  if (timestamps.length === 0) return { total: 0, champions: 0, atRisk: 0 }
+  const maxDate = new Date(Math.max(...timestamps))
+  const customerMap: Record<string, CRMRow[]> = {}
+  crm.forEach(r => {
+    const key = r.phone || r.customerName
+    if (!customerMap[key]) customerMap[key] = []
+    customerMap[key].push(r)
+  })
+  const raw = Object.values(customerMap).map(txns => {
+    const sorted = [...txns].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const recencyDays = Math.max(0, Math.floor((maxDate.getTime() - new Date(sorted[0].date).getTime()) / 86400000))
+    return { recencyDays, frequency: txns.length }
+  })
+  const champions = raw.filter(r => r.recencyDays <= 30 && r.frequency >= 3).length
+  const atRisk = raw.filter(r => r.recencyDays > 60 && r.frequency >= 2).length
+  return { total: raw.length, champions, atRisk }
+}
 
-export default function OverviewView({ data, brand, timeframe }: Props) {
+interface Props { data: BrandData; brand: Brand; timeframe: Timeframe; products?: ProductMaster[] }
+
+export default function OverviewView({ data, brand, timeframe, products = [] }: Props) {
   const ga = filterByDays(data.googleAds, timeframe)
   const meta = filterByDays(data.metaAds, timeframe)
   const tts = filterByDays(data.tiktokShop, timeframe)
+  const shopee = filterByDays(data.shopee ?? [], timeframe)
   const ig = filterByDays(data.instagram, timeframe)
   const tt = filterByDays(data.tiktokOrganic, timeframe)
   const sales = filterByDays(data.sales, timeframe)
 
   const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0)
-  const totalRevenue = sales.reduce((s, r) => s + r.revenue, 0) + tts.reduce((s, r) => s + r.gmv, 0)
-  const totalOrders = tts.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0)
+  const totalRevenue = sales.reduce((s, r) => s + r.revenue, 0) + tts.reduce((s, r) => s + r.gmv, 0) + shopee.reduce((s, r) => s + r.gmv, 0)
+  const totalOrders = tts.reduce((s, r) => s + r.orders, 0) + shopee.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0)
   const blendedRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0
   const totalImpressions = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
+
+  // CRM Snapshot
+  const crmSnap = calcCrmSnapshot(data.crm)
+
+  // Product Snapshot — top 3 by revenue from sales data
+  const prodMap: Record<string, { revenue: number; qty: number }> = {}
+  sales.forEach(r => {
+    if (!prodMap[r.product]) prodMap[r.product] = { revenue: 0, qty: 0 }
+    prodMap[r.product].revenue += r.revenue
+    prodMap[r.product].qty += r.qty
+  })
+  const prodList = Object.entries(prodMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.revenue - a.revenue)
+  const topProds = prodList.slice(0, 3)
+  const slowProds = [...prodList].sort((a, b) => a.revenue - b.revenue).slice(0, 2)
+  const brandProducts = products.filter(p => p.brand === brand)
 
   const igFollowers = ig.length > 0 ? ig[ig.length - 1].followers : 0
   const ttFollowers = tt.length > 0 ? tt[tt.length - 1].followers : 0
@@ -71,6 +108,13 @@ export default function OverviewView({ data, brand, timeframe }: Props) {
               { label: 'Units Sold', value: fmtNum(tts.reduce((s, r) => s + r.unitsSold, 0)) },
               { label: 'Avg CVR', value: tts.length > 0 ? (tts.reduce((s, r) => s + r.convRate, 0) / tts.length).toFixed(2) + '%' : '-' },
             ]} empty={tts.length === 0} />
+          <PlatformCard icon={<ShoppingBag size={14} />} color="#F05536" title="Shopee"
+            items={[
+              { label: 'GMV', value: fmtCurrency(shopee.reduce((s, r) => s + r.gmv, 0)) },
+              { label: 'Orders', value: fmtNum(shopee.reduce((s, r) => s + r.orders, 0)) },
+              { label: 'Ad Spend', value: fmtCurrency(shopee.reduce((s, r) => s + r.adSpend, 0)) },
+              { label: 'Avg ROAS', value: shopee.length > 0 ? (shopee.reduce((s, r) => s + r.adRoas, 0) / shopee.length).toFixed(2) + 'x' : '-' },
+            ]} empty={shopee.length === 0} />
         </div>
       </Section>
 
@@ -103,6 +147,78 @@ export default function OverviewView({ data, brand, timeframe }: Props) {
           <MiniStat label="Total Impressions" value={fmtNum(totalImpressions)} color="#00D4FF" />
         </div>
       </Section>
+
+      {/* CRM + Product Snapshot */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* CRM Snapshot */}
+        <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Users size={14} style={{ color: '#8B5CF6' }} />
+            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>CRM Snapshot</p>
+          </div>
+          {data.crm.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{fmtNum(crmSnap.total)}</p>
+                <p className="text-[10px] mt-1 font-medium uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Total Customers</p>
+              </div>
+              <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <Trophy size={12} style={{ color: '#10B981' }} />
+                  <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{crmSnap.champions}</p>
+                </div>
+                <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: '#10B981' }}>Champions</p>
+              </div>
+              <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <AlertTriangle size={12} style={{ color: '#F87171' }} />
+                  <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{crmSnap.atRisk}</p>
+                </div>
+                <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: '#F87171' }}>At Risk</p>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <Users size={24} className="mx-auto mb-2 opacity-20" style={{ color: '#6B7280' }} />
+              <p className="text-xs" style={{ color: '#374151' }}>Upload data CRM untuk lihat snapshot</p>
+            </div>
+          )}
+        </div>
+
+        {/* Product Snapshot */}
+        <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Package size={14} style={{ color: '#00D4FF' }} />
+            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>Product Snapshot</p>
+          </div>
+          {topProds.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4B5563' }}>Top Produk</p>
+              {topProds.map((p, i) => (
+                <div key={p.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold w-4 text-center" style={{ color: i === 0 ? '#F59E0B' : '#4B5563' }}>{i + 1}</span>
+                    <span className="text-xs truncate max-w-[160px]" style={{ color: '#9CA3AF' }}>{p.name}</span>
+                  </div>
+                  <span className="text-xs font-semibold" style={{ color: '#F0F0F5' }}>{fmtCurrency(p.revenue)}</span>
+                </div>
+              ))}
+              {brandProducts.length > 0 && (
+                <>
+                  <div className="border-t my-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4B5563' }}>Produk Terdaftar</p>
+                  <p className="text-lg font-bold" style={{ color: '#F0F0F5' }}>{brandProducts.length} <span className="text-xs font-normal" style={{ color: '#6B7280' }}>SKU</span></p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <Package size={24} className="mx-auto mb-2 opacity-20" style={{ color: '#6B7280' }} />
+              <p className="text-xs" style={{ color: '#374151' }}>Upload data sales atau tambah produk di Settings</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Spend Trend */}
       {spendTrend.length > 0 && (

@@ -1,51 +1,102 @@
 'use client'
-import { SalesRow, Brand, Timeframe } from '@/lib/types'
+import { useState } from 'react'
+import { SalesRow, Brand, Timeframe, ProductMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import CSVUploader from '@/components/CSVUploader'
-import { DollarSign, Package, TrendingUp, ShoppingCart } from 'lucide-react'
+import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
 const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
+const CHANNELS = ['TikTok Shop', 'Shopee', 'Tokopedia', 'Instagram DM', 'WhatsApp', 'Website', 'Offline', 'Lainnya']
 
-interface Props { data: SalesRow[]; brand: Brand; timeframe: Timeframe; onUpload: (file: File) => Promise<void> }
+interface LineItem { product: string; sku: string; qty: string; price: string; cogs: string }
+interface Props {
+  data: SalesRow[]
+  brand: Brand
+  timeframe: Timeframe
+  onUpload: (file: File) => Promise<void>
+  products: ProductMaster[]
+  onManualAdd?: (rows: SalesRow[]) => void
+}
 
-export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
+const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', price: '', cogs: '' }
+
+export default function SalesView({ data, brand, timeframe, onUpload, products, onManualAdd }: Props) {
   const accent = BRAND_COLOR[brand]
   const filtered = filterByDays(data, timeframe)
+  const brandProducts = products.filter(p => p.brand === brand)
+
+  const [modal, setModal] = useState(false)
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [customerName, setCustomerName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [channel, setChannel] = useState(CHANNELS[0])
+  const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE }])
+
+  function pickProduct(idx: number, sku: string) {
+    const pm = brandProducts.find(p => p.sku === sku)
+    if (!pm) return
+    setLines(prev => prev.map((l, i) => i === idx
+      ? { ...l, sku: pm.sku, product: pm.name, price: String(pm.price), cogs: String(pm.cogs) }
+      : l))
+  }
+
+  function addLine() { setLines(prev => [...prev, { ...EMPTY_LINE }]) }
+  function removeLine(idx: number) { setLines(prev => prev.filter((_, i) => i !== idx)) }
+  function updateLine(idx: number, key: keyof LineItem, val: string) {
+    setLines(prev => prev.map((l, i) => i === idx ? { ...l, [key]: val } : l))
+  }
+
+  function handleSave() {
+    const rows: SalesRow[] = lines
+      .filter(l => l.product && Number(l.qty) > 0)
+      .map(l => {
+        const qty = Number(l.qty) || 0
+        const price = Number(l.price) || 0
+        const cogs = Number(l.cogs) || 0
+        return {
+          date, product: l.product, qty,
+          revenue: price * qty,
+          channel,
+          cogs: cogs * qty,
+          grossProfit: (price - cogs) * qty,
+          customerName, phone, address,
+        }
+      })
+    if (rows.length === 0) return
+    onManualAdd?.(rows)
+    setModal(false)
+    setLines([{ ...EMPTY_LINE }])
+    setCustomerName(''); setPhone(''); setAddress('')
+  }
 
   const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0)
   const totalQty = filtered.reduce((s, r) => s + r.qty, 0)
   const totalProfit = filtered.reduce((s, r) => s + r.grossProfit, 0)
   const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
 
-  // Top products
   const productMap: Record<string, { qty: number; revenue: number }> = {}
   filtered.forEach(r => {
     if (!productMap[r.product]) productMap[r.product] = { qty: 0, revenue: 0 }
     productMap[r.product].qty += r.qty
     productMap[r.product].revenue += r.revenue
   })
-  const topProducts = Object.entries(productMap)
-    .map(([product, v]) => ({ product, ...v }))
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 5)
+  const topProducts = Object.entries(productMap).map(([product, v]) => ({ product, ...v })).sort((a, b) => b.revenue - a.revenue).slice(0, 5)
 
-  // Channel breakdown
   const channelMap: Record<string, number> = {}
   filtered.forEach(r => { channelMap[r.channel] = (channelMap[r.channel] || 0) + r.revenue })
   const channelData = Object.entries(channelMap).map(([name, value]) => ({ name, value }))
 
-  // Revenue trend
   const dateMap: Record<string, { revenue: number; profit: number }> = {}
   filtered.forEach(r => {
     if (!dateMap[r.date]) dateMap[r.date] = { revenue: 0, profit: 0 }
     dateMap[r.date].revenue += r.revenue
     dateMap[r.date].profit += r.grossProfit
   })
-  const trendData = Object.entries(dateMap).sort(([a], [b]) => a.localeCompare(b))
-    .slice(-30).map(([date, v]) => ({ date, Revenue: v.revenue, Profit: v.profit }))
+  const trendData = Object.entries(dateMap).sort(([a], [b]) => a.localeCompare(b)).slice(-30).map(([date, v]) => ({ date, Revenue: v.revenue, Profit: v.profit }))
 
   return (
     <div className="space-y-6">
@@ -55,10 +106,17 @@ export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
             <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
             <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#4B5563' }}>Sales Data</span>
           </div>
-          <p className="text-sm" style={{ color: '#4B5563' }}>{filtered.length > 0 ? `${filtered.length} transaksi` : 'Upload CSV untuk mulai'}</p>
+          <p className="text-sm" style={{ color: '#4B5563' }}>{filtered.length > 0 ? `${filtered.length} transaksi` : 'Upload CSV atau input manual'}</p>
         </div>
-        <div className="w-56 flex-shrink-0">
-          <CSVUploader platform="tiktok-organic" hasData={data.length > 0} onUpload={onUpload} accent={accent} />
+        <div className="flex items-center gap-3">
+          <button onClick={() => setModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex-shrink-0"
+            style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.15)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.3)`, color: accent }}>
+            <Plus size={14} /> Input Manual
+          </button>
+          <div className="w-56 flex-shrink-0">
+            <CSVUploader platform="tiktok-organic" hasData={data.length > 0} onUpload={onUpload} accent={accent} />
+          </div>
         </div>
       </div>
 
@@ -70,7 +128,6 @@ export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
             <MetricCard label="Units Sold" value={fmtNum(totalQty)} icon={<Package size={14} />} accent="#8B5CF6" />
             <MetricCard label="Profit Margin" value={margin.toFixed(1) + '%'} icon={<ShoppingCart size={14} />} accent="#00D4FF" />
           </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div style={chartStyle}>
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Top 5 Produk (Revenue)</p>
@@ -84,14 +141,13 @@ export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-
             <div style={chartStyle}>
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Revenue per Channel</p>
               {channelData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie data={channelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      labelLine={false}>
+                    <Pie data={channelData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75}
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                       {channelData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
@@ -101,7 +157,6 @@ export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
               ) : <div className="flex items-center justify-center h-40" style={{ color: '#374151' }}>Tidak ada data channel</div>}
             </div>
           </div>
-
           {trendData.length > 0 && (
             <div style={chartStyle}>
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Revenue & Profit Trend</p>
@@ -128,9 +183,151 @@ export default function SalesView({ data, brand, timeframe, onUpload }: Props) {
             <DollarSign size={28} style={{ color: accent }} />
           </div>
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data sales</p>
-          <p className="text-sm" style={{ color: '#374151' }}>Upload CSV penjualan di panel kanan atas</p>
+          <p className="text-sm" style={{ color: '#374151' }}>Upload CSV atau klik "+ Input Manual" di atas</p>
         </div>
       )}
+
+      {/* Manual Input Modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div>
+                <p className="font-semibold" style={{ color: '#F0F0F5' }}>Input Manual — Acquisition by CS</p>
+                <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Tambah transaksi baru</p>
+              </div>
+              <button onClick={() => setModal(false)} style={{ color: '#6B7280' }}><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Tanggal + Channel */}
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Tanggal">
+                  <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input-dark" />
+                </Field>
+                <Field label="Channel">
+                  <select value={channel} onChange={e => setChannel(e.target.value)} className="input-dark">
+                    {CHANNELS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Field>
+              </div>
+
+              {/* Customer info */}
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="Nama Customer">
+                  <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Siti Rahma" className="input-dark" />
+                </Field>
+                <Field label="No. HP">
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="081234567890" className="input-dark" />
+                </Field>
+                <Field label="Alamat">
+                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Jl. Sudirman..." className="input-dark" />
+                </Field>
+              </div>
+
+              {/* Product lines */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>Produk</p>
+                  <button onClick={addLine} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                    style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.1)`, color: accent }}>
+                    <Plus size={11} /> Tambah Baris
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {lines.map((line, idx) => (
+                    <div key={idx} className="grid gap-2 items-end" style={{ gridTemplateColumns: '2fr 80px 120px 120px 32px' }}>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Produk</label>}
+                        {brandProducts.length > 0 ? (
+                          <select value={line.sku} onChange={e => pickProduct(idx, e.target.value)} className="input-dark">
+                            <option value="">— Pilih produk —</option>
+                            {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
+                          </select>
+                        ) : (
+                          <input value={line.product} onChange={e => updateLine(idx, 'product', e.target.value)} placeholder="Nama produk" className="input-dark" />
+                        )}
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Qty</label>}
+                        <input type="number" min="1" value={line.qty} onChange={e => updateLine(idx, 'qty', e.target.value)} className="input-dark" />
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Harga Jual</label>}
+                        <input type="number" value={line.price} onChange={e => updateLine(idx, 'price', e.target.value)}
+                          placeholder={brandProducts.length > 0 ? 'Auto' : '150000'} className="input-dark"
+                          readOnly={!!line.sku} style={{ opacity: line.sku ? 0.6 : 1 }} />
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>COGS</label>}
+                        <input type="number" value={line.cogs} onChange={e => updateLine(idx, 'cogs', e.target.value)}
+                          placeholder={brandProducts.length > 0 ? 'Auto' : '60000'} className="input-dark"
+                          readOnly={!!line.sku} style={{ opacity: line.sku ? 0.6 : 1 }} />
+                      </div>
+                      <button onClick={() => removeLine(idx)} disabled={lines.length === 1}
+                        className="pb-0.5" style={{ color: lines.length === 1 ? '#374151' : '#6B7280' }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total preview */}
+                {lines.some(l => l.price && l.qty) && (
+                  <div className="mt-3 p-3 rounded-xl flex gap-6 text-xs" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {(() => {
+                      const rev = lines.reduce((s, l) => s + (Number(l.price) || 0) * (Number(l.qty) || 0), 0)
+                      const cogs = lines.reduce((s, l) => s + (Number(l.cogs) || 0) * (Number(l.qty) || 0), 0)
+                      const gp = rev - cogs
+                      return <>
+                        <span style={{ color: '#9CA3AF' }}>Revenue: <strong style={{ color: '#F0F0F5' }}>{fmtCurrency(rev)}</strong></span>
+                        <span style={{ color: '#9CA3AF' }}>COGS: <strong style={{ color: '#F0F0F5' }}>{fmtCurrency(cogs)}</strong></span>
+                        <span style={{ color: '#9CA3AF' }}>Gross Profit: <strong style={{ color: '#10B981' }}>{fmtCurrency(gp)}</strong></span>
+                        {rev > 0 && <span style={{ color: '#9CA3AF' }}>Margin: <strong style={{ color: gp / rev >= 0.3 ? '#10B981' : '#F59E0B' }}>{((gp / rev) * 100).toFixed(1)}%</strong></span>}
+                      </>
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button onClick={() => setModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+                  Batal
+                </button>
+                <button onClick={handleSave} className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                  style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.2)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.4)`, color: accent }}>
+                  Simpan Transaksi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .input-dark {
+          width: 100%;
+          padding: 8px 12px;
+          border-radius: 10px;
+          font-size: 13px;
+          outline: none;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: #F0F0F5;
+          transition: border-color 0.15s;
+        }
+        .input-dark:focus { border-color: rgba(255,255,255,0.2); }
+        .input-dark option { background: #0E0E1C; color: #F0F0F5; }
+      `}</style>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>{label}</label>
+      {children}
     </div>
   )
 }
