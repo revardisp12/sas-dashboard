@@ -1,8 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 const SYSTEM_PROMPT = `Kamu adalah AI Support Assistant untuk SAS Dashboard — platform marketing analytics untuk brand skincare (Reglow Skincare & Amura).
 
 Dashboard ini punya fitur:
@@ -26,6 +24,11 @@ Jawab dalam Bahasa Indonesia, singkat dan langsung ke inti. Maksimal 3-4 kalimat
 
 export async function POST(req: NextRequest) {
   try {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
+    }
+
     const body = await req.json()
     const { messages, context } = body as {
       messages: { role: 'user' | 'assistant'; content: string }[]
@@ -51,19 +54,20 @@ export async function POST(req: NextRequest) {
 - Product Master: ${context.productCount} produk
 - Bundle Master: ${context.bundleCount} bundle`
 
-    const systemWithContext = `${SYSTEM_PROMPT}\n\n${contextBlock}`
+    const client = new Anthropic({ apiKey })
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
-      system: systemWithContext,
+      system: `${SYSTEM_PROMPT}\n\n${contextBlock}`,
       messages,
     })
 
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
     return NextResponse.json({ reply: text })
   } catch (err) {
-    console.error('[/api/chat]', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[/api/chat]', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
