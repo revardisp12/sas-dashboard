@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { SalesRow, CRMRow, Brand, Timeframe } from '@/lib/types'
+import { SalesRow, CRMRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
@@ -18,6 +18,81 @@ interface ProductStat {
   trend: { date: string; units: number; revenue: number }[]
 }
 
+interface ResolvedLabel {
+  label: string
+  isBundle: boolean
+  components?: string[]
+}
+
+function resolveLabel(
+  productStr: string,
+  brandProducts: ProductMaster[],
+  brandBundles: BundleMaster[],
+): ResolvedLabel {
+  // 1. Direct bundle name match (from CS manual input)
+  const bundleByName = brandBundles.find(b => b.name === productStr)
+  if (bundleByName) {
+    return {
+      label: bundleByName.name,
+      isBundle: true,
+      components: bundleByName.components.map(c => {
+        const p = brandProducts.find(p => p.sku === c.sku)
+        return `${c.qty}× ${p ? p.name : c.sku}`
+      }),
+    }
+  }
+
+  // 2. Single SKU lookup
+  const singleProduct = brandProducts.find(p => p.sku === productStr)
+  if (singleProduct) return { label: singleProduct.name, isBundle: false }
+
+  // 3. Parse "N SKU, N SKU, ..." format (from CSV upload)
+  const parts = productStr.split(',').map(p => p.trim()).filter(Boolean)
+  const parsed = parts.map(part => {
+    const match = part.match(/^(\d+)\s+(.+)$/)
+    return match ? { qty: parseInt(match[1]), sku: match[2].trim() } : null
+  }).filter((p): p is { qty: number; sku: string } => p !== null)
+
+  if (parsed.length > 0) {
+    // Try bundle matching by SKU set
+    const skuSet = new Set(parsed.map(p => p.sku))
+    const matchedBundle = brandBundles.find(b => {
+      const bundleSkuSet = new Set(b.components.map(c => c.sku))
+      return skuSet.size === bundleSkuSet.size && [...skuSet].every(sku => bundleSkuSet.has(sku))
+    })
+
+    if (matchedBundle) {
+      return {
+        label: matchedBundle.name,
+        isBundle: true,
+        components: matchedBundle.components.map(c => {
+          const p = brandProducts.find(p => p.sku === c.sku)
+          return `${c.qty}× ${p ? p.name : c.sku}`
+        }),
+      }
+    }
+
+    // Opsi B: resolve each SKU to name, show primary + "+N lainnya"
+    const resolvedNames = parsed.map(p => {
+      const product = brandProducts.find(prod => prod.sku === p.sku)
+      return product ? product.name : p.sku
+    })
+
+    if (resolvedNames.length === 1) {
+      return { label: resolvedNames[0], isBundle: false }
+    }
+
+    return {
+      label: `${resolvedNames[0]} +${resolvedNames.length - 1} lainnya`,
+      isBundle: false,
+      components: parsed.map((p, i) => `${p.qty}× ${resolvedNames[i]}`),
+    }
+  }
+
+  // 4. Fallback — show as-is
+  return { label: productStr, isBundle: false }
+}
+
 function filterCRMByDays(data: CRMRow[], days: number): CRMRow[] {
   if (days === 0 || data.length === 0) return data
   const timestamps = data.map(r => new Date(r.date).getTime()).filter(t => !isNaN(t))
@@ -32,7 +107,6 @@ function calcProductStats(sales: SalesRow[], crm: CRMRow[], days: number): Produ
   const filteredSales = filterByDays(sales, days as Timeframe)
   const filteredCRM = filterCRMByDays(crm, days)
 
-  // Merge both sources into unified rows
   const unified: { date: string; product: string; qty: number; revenue: number; customer?: string }[] = [
     ...filteredSales.map(r => ({ date: r.date, product: r.product, qty: r.qty, revenue: r.revenue })),
     ...filteredCRM.map(r => ({ date: r.date, product: r.product, qty: r.qty, revenue: r.revenue, customer: r.phone || r.customerName })),
@@ -54,7 +128,6 @@ function calcProductStats(sales: SalesRow[], crm: CRMRow[], days: number): Produ
     const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0)
     const uniqueCustomers = new Set(rows.filter(r => r.customer).map(r => r.customer)).size
 
-    // Avg days between purchases per customer (from CRM rows)
     const crmRows = rows.filter(r => r.customer)
     let avgDays = 0
     if (crmRows.length > 1) {
@@ -75,11 +148,9 @@ function calcProductStats(sales: SalesRow[], crm: CRMRow[], days: number): Produ
       avgDays = gaps.length > 0 ? Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length) : 0
     }
 
-    // Speed: units per month
     const unitsPerMonth = (totalUnits / periodDays) * 30
     const speed: ProductStat['speed'] = unitsPerMonth >= 80 ? 'fast' : unitsPerMonth >= 30 ? 'medium' : 'slow'
 
-    // Trend by date
     const dateMap: Record<string, { units: number; revenue: number }> = {}
     rows.forEach(r => {
       if (!dateMap[r.date]) dateMap[r.date] = { units: 0, revenue: 0 }
@@ -104,12 +175,23 @@ const TIMEFRAME_OPTIONS = [
   { label: '180H', value: 180 }, { label: '1 Tahun', value: 365 }, { label: 'All', value: 0 },
 ]
 
-interface Props { salesData: SalesRow[]; crmData: CRMRow[]; brand: Brand; timeframe: Timeframe }
+interface Props {
+  salesData: SalesRow[]
+  crmData: CRMRow[]
+  brand: Brand
+  timeframe: Timeframe
+  products: ProductMaster[]
+  bundles: BundleMaster[]
+}
 
-export default function ProductAnalysisView({ salesData, crmData, brand, timeframe: globalTf }: Props) {
+export default function ProductAnalysisView({ salesData, crmData, brand, timeframe: globalTf, products, bundles }: Props) {
   const accent = BRAND_COLOR[brand]
   const [localTf, setLocalTf] = useState<number>(globalTf || 90)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
+  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
+
+  const brandProducts = products.filter(p => p.brand === brand)
+  const brandBundles = bundles.filter(b => b.brand === brand)
 
   const stats = useMemo(() => calcProductStats(salesData, crmData, localTf), [salesData, crmData, localTf])
   const hasData = stats.length > 0
@@ -119,6 +201,14 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
   const fastCount = stats.filter(s => s.speed === 'fast').length
   const slowCount = stats.filter(s => s.speed === 'slow').length
   const maxUnits = Math.max(...stats.map(s => s.totalUnits), 1)
+
+  const getResolved = (product: string) => resolveLabel(product, brandProducts, brandBundles)
+
+  // Build display name map for chart axes
+  const statsWithDisplay = stats.map(s => ({
+    ...s,
+    displayName: getResolved(s.product).label,
+  }))
 
   if (!hasData) {
     return (
@@ -168,7 +258,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           { label: 'Total SKU', value: stats.length.toString(), icon: <Package size={14} />, color: accent },
           { label: 'Fast Moving', value: fastCount.toString(), icon: <TrendingUp size={14} />, color: '#10B981' },
           { label: 'Slow Moving', value: slowCount.toString(), icon: <Package size={14} />, color: '#EF4444' },
-          { label: 'Top Produk', value: stats[0]?.product || '–', icon: <Repeat size={14} />, color: '#8B5CF6' },
+          { label: 'Top Produk', value: stats[0] ? getResolved(stats[0].product).label : '–', icon: <Repeat size={14} />, color: '#8B5CF6' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <div className="flex items-center justify-between mb-2">
@@ -187,16 +277,26 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           {stats.map(s => {
             const cfg = SPEED_CONFIG[s.speed]
             const pct = (s.totalUnits / maxUnits) * 100
+            const resolved = getResolved(s.product)
+            const isHovered = hoveredProduct === s.product
+
             return (
               <div key={s.product}
                 onClick={() => setSelectedProduct(s.product)}
-                className="cursor-pointer group">
+                onMouseEnter={() => setHoveredProduct(s.product)}
+                onMouseLeave={() => setHoveredProduct(null)}
+                className="cursor-pointer group relative">
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">{cfg.icon}</span>
-                    <span className="text-sm font-medium" style={{ color: selectedProduct === s.product ? '#111827' : '#9CA3AF' }}>{s.product}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs flex-shrink-0">{cfg.icon}</span>
+                    <span className="text-sm font-medium truncate" style={{ color: selectedProduct === s.product ? '#111827' : '#9CA3AF' }}>
+                      {resolved.label}
+                    </span>
+                    {resolved.components && (
+                      <span className="text-[10px] flex-shrink-0" style={{ color: '#D1D5DB' }}>ⓘ</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                     <span className="text-xs font-bold" style={{ color: cfg.color }}>{fmtNum(s.totalUnits)} unit</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                   </div>
@@ -205,6 +305,19 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                   <div className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${pct}%`, background: cfg.color, boxShadow: `0 0 8px ${cfg.color}60` }} />
                 </div>
+
+                {/* Tooltip */}
+                {isHovered && resolved.components && resolved.components.length > 0 && (
+                  <div className="absolute left-0 bottom-full mb-2 z-20 rounded-xl shadow-lg pointer-events-none"
+                    style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', padding: '10px 14px', minWidth: 180 }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#9CA3AF' }}>
+                      {resolved.isBundle ? '📦 Bundle Detail' : 'Komponen'}
+                    </p>
+                    {resolved.components.map((c, i) => (
+                      <p key={i} className="text-xs" style={{ color: '#374151' }}>{c}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -216,12 +329,12 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div style={chartStyle}>
           <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>Customer per Produk</p>
-          {stats.some(s => s.uniqueCustomers > 0) ? (
+          {statsWithDisplay.some(s => s.uniqueCustomers > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stats} layout="vertical">
+              <BarChart data={statsWithDisplay} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
-                <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
+                <YAxis type="category" dataKey="displayName" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
                 <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
                   formatter={(v: unknown) => [`${v} customers`, 'Unique Customers']} />
                 <Bar dataKey="uniqueCustomers" fill={accent} radius={[0, 4, 4, 0]} />
@@ -239,12 +352,12 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
 
         <div style={chartStyle}>
           <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>Avg. Frekuensi Beli (hari)</p>
-          {stats.some(s => s.avgDaysBetweenPurchases > 0) ? (
+          {statsWithDisplay.some(s => s.avgDaysBetweenPurchases > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stats.filter(s => s.avgDaysBetweenPurchases > 0)} layout="vertical">
+              <BarChart data={statsWithDisplay.filter(s => s.avgDaysBetweenPurchases > 0)} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} unit=" hr" />
-                <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
+                <YAxis type="category" dataKey="displayName" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
                 <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
                   formatter={(v: unknown) => [`${v} hari`, 'Avg. interval beli']} />
                 <Bar dataKey="avgDaysBetweenPurchases" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
@@ -268,17 +381,20 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
             <div>
               <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#6B7280' }}>Detail Produk</p>
               <div className="flex items-center gap-2 flex-wrap">
-                {stats.map(s => (
-                  <button key={s.product} onClick={() => setSelectedProduct(s.product)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: selected.product === s.product ? SPEED_CONFIG[s.speed].bg : '#F9FAFB',
-                      color: selected.product === s.product ? SPEED_CONFIG[s.speed].color : '#6B7280',
-                      border: selected.product === s.product ? `1px solid ${SPEED_CONFIG[s.speed].color}40` : '1px solid transparent',
-                    }}>
-                    {s.product}
-                  </button>
-                ))}
+                {stats.map(s => {
+                  const r = getResolved(s.product)
+                  return (
+                    <button key={s.product} onClick={() => setSelectedProduct(s.product)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      style={{
+                        background: selected.product === s.product ? SPEED_CONFIG[s.speed].bg : '#F9FAFB',
+                        color: selected.product === s.product ? SPEED_CONFIG[s.speed].color : '#6B7280',
+                        border: selected.product === s.product ? `1px solid ${SPEED_CONFIG[s.speed].color}40` : '1px solid transparent',
+                      }}>
+                      {r.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>

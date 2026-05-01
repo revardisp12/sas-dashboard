@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Brand, ActiveView, Timeframe, DateRange, BrandData, emptyBrandData, ProductMaster } from '@/lib/types'
-import { loadData, saveData, resetData, loadProducts, saveProducts } from '@/lib/storage'
+import { Brand, ActiveView, Timeframe, DateRange, BrandData, emptyBrandData, ProductMaster, BundleMaster } from '@/lib/types'
+import { loadData, saveData, resetData, loadProducts, saveProducts, loadBundles, saveBundles } from '@/lib/storage'
 import { parseFile } from '@/lib/csvParser'
 import { filterByDays, filterByRange } from '@/lib/utils'
 import Sidebar from '@/components/Sidebar'
@@ -35,10 +35,12 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange | null>(null)
   const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData() })
   const [products, setProducts] = useState<ProductMaster[]>([])
+  const [bundles, setBundles] = useState<BundleMaster[]>([])
 
   useEffect(() => {
     setData(loadData())
     setProducts(loadProducts())
+    setBundles(loadBundles())
   }, [])
 
   async function handleUpload(file: File) {
@@ -63,6 +65,11 @@ export default function Dashboard() {
   function handleProductsChange(updated: ProductMaster[]) {
     setProducts(updated)
     saveProducts(updated)
+  }
+
+  function handleBundlesChange(updated: BundleMaster[]) {
+    setBundles(updated)
+    saveBundles(updated)
   }
 
   function handleManualSales(rows: import('@/lib/types').SalesRow[]) {
@@ -155,7 +162,7 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto px-8 py-6">
           {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} products={products} />}
           {view === 'funnel' && <FunnelView data={bd} brand={brand} timeframe={timeframe} />}
-          {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} products={products} onManualAdd={handleManualSales} />}
+          {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} products={products} bundles={bundles} onManualAdd={handleManualSales} />}
           {view === 'google-ads' && <GoogleAdsView data={filtered.googleAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('googleAds')} salesData={filtered.sales} />}
           {view === 'meta-ads' && <MetaAdsView data={filtered.metaAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('metaAds')} salesData={filtered.sales} />}
           {view === 'tiktok-shop' && <TikTokShopView data={filtered.tiktokShop} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokShop')} />}
@@ -163,8 +170,8 @@ export default function Dashboard() {
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('instagram')} />}
           {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokOrganic')} />}
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} products={products} onManualAdd={handleManualCRM} />}
-          {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} />}
-          {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} />}
+          {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
+          {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} bundles={bundles} onBundlesChange={handleBundlesChange} />}
         </main>
       </div>
     </div>

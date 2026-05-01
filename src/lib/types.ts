@@ -15,6 +15,21 @@ export interface ProductMaster {
   brand: Brand
 }
 
+export interface BundleComponent {
+  sku: string
+  qty: number
+}
+
+export interface BundleMaster {
+  id: string
+  name: string
+  components: BundleComponent[]
+  price: number
+  cogs: number
+  margin: number
+  brand: Brand
+}
+
 export type RFMSegment =
   | 'Champions' | 'Loyal Customers' | 'Potential Loyalist' | 'New Customers'
   | 'Promising' | 'Need Attention' | 'About to Sleep' | "Can't Lose Them"

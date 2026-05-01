@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { SalesRow, Brand, Timeframe, ProductMaster } from '@/lib/types'
+import { SalesRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import CSVUploader from '@/components/CSVUploader'
 import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from 'lucide-react'
@@ -17,22 +17,24 @@ const AD_SOURCES = [
   { value: 'tiktok-ads', label: 'TikTok Ads', color: '#FF0050' },
 ]
 
-interface LineItem { product: string; sku: string; qty: string; price: string; cogs: string }
+interface LineItem { product: string; sku: string; qty: string; price: string; cogs: string; selectValue: string }
 interface Props {
   data: SalesRow[]
   brand: Brand
   timeframe: Timeframe
   onUpload: (file: File) => Promise<void>
   products: ProductMaster[]
+  bundles: BundleMaster[]
   onManualAdd?: (rows: SalesRow[]) => void
 }
 
-const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', price: '', cogs: '' }
+const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', price: '', cogs: '', selectValue: '' }
 
-export default function SalesView({ data, brand, timeframe, onUpload, products, onManualAdd }: Props) {
+export default function SalesView({ data, brand, timeframe, onUpload, products, bundles, onManualAdd }: Props) {
   const accent = BRAND_COLOR[brand]
   const filtered = filterByDays(data, timeframe)
   const brandProducts = products.filter(p => p.brand === brand)
+  const brandBundles = bundles.filter(b => b.brand === brand)
 
   const [modal, setModal] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
@@ -43,12 +45,25 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
   const [source, setSource] = useState('organic')
   const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE }])
 
-  function pickProduct(idx: number, sku: string) {
-    const pm = brandProducts.find(p => p.sku === sku)
-    if (!pm) return
-    setLines(prev => prev.map((l, i) => i === idx
-      ? { ...l, sku: pm.sku, product: pm.name, price: String(pm.price), cogs: String(pm.cogs) }
-      : l))
+  function handleProductSelect(idx: number, value: string) {
+    if (!value) {
+      setLines(prev => prev.map((l, i) => i === idx ? { ...EMPTY_LINE } : l))
+      return
+    }
+    if (value.startsWith('bundle:')) {
+      const bundleId = value.replace('bundle:', '')
+      const b = brandBundles.find(b => b.id === bundleId)
+      if (!b) return
+      setLines(prev => prev.map((l, i) => i === idx
+        ? { ...l, selectValue: value, sku: '', product: b.name, price: String(b.price), cogs: String(b.cogs) }
+        : l))
+    } else {
+      const pm = brandProducts.find(p => p.sku === value)
+      if (!pm) return
+      setLines(prev => prev.map((l, i) => i === idx
+        ? { ...l, selectValue: value, sku: pm.sku, product: pm.name, price: String(pm.price), cogs: String(pm.cogs) }
+        : l))
+    }
   }
 
   function addLine() { setLines(prev => [...prev, { ...EMPTY_LINE }]) }
@@ -78,6 +93,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
     onManualAdd?.(rows)
     setModal(false)
     setLines([{ ...EMPTY_LINE }])
+
     setCustomerName(''); setPhone(''); setAddress('')
     setSource('organic')
   }
@@ -266,10 +282,19 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
                     <div key={idx} className="grid gap-2 items-end" style={{ gridTemplateColumns: '2fr 80px 120px 120px 32px' }}>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Produk</label>}
-                        {brandProducts.length > 0 ? (
-                          <select value={line.sku} onChange={e => pickProduct(idx, e.target.value)} className="input-dark">
+                        {brandProducts.length > 0 || brandBundles.length > 0 ? (
+                          <select value={line.selectValue} onChange={e => handleProductSelect(idx, e.target.value)} className="input-dark">
                             <option value="">— Pilih produk —</option>
-                            {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
+                            {brandProducts.length > 0 && (
+                              <optgroup label="── Individual ──">
+                                {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
+                              </optgroup>
+                            )}
+                            {brandBundles.length > 0 && (
+                              <optgroup label="── Bundle ──">
+                                {brandBundles.map(b => <option key={b.id} value={`bundle:${b.id}`}>📦 {b.name}</option>)}
+                              </optgroup>
+                            )}
                           </select>
                         ) : (
                           <input value={line.product} onChange={e => updateLine(idx, 'product', e.target.value)} placeholder="Nama produk" className="input-dark" />
@@ -283,13 +308,13 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Harga Jual</label>}
                         <input type="number" value={line.price} onChange={e => updateLine(idx, 'price', e.target.value)}
                           placeholder={brandProducts.length > 0 ? 'Auto' : '150000'} className="input-dark"
-                          readOnly={!!line.sku} style={{ opacity: line.sku ? 0.6 : 1 }} />
+                          readOnly={!!line.selectValue} style={{ opacity: line.selectValue ? 0.6 : 1 }} />
                       </div>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>COGS</label>}
                         <input type="number" value={line.cogs} onChange={e => updateLine(idx, 'cogs', e.target.value)}
                           placeholder={brandProducts.length > 0 ? 'Auto' : '60000'} className="input-dark"
-                          readOnly={!!line.sku} style={{ opacity: line.sku ? 0.6 : 1 }} />
+                          readOnly={!!line.selectValue} style={{ opacity: line.selectValue ? 0.6 : 1 }} />
                       </div>
                       <button onClick={() => removeLine(idx)} disabled={lines.length === 1}
                         className="pb-0.5" style={{ color: lines.length === 1 ? '#374151' : '#6B7280' }}>
