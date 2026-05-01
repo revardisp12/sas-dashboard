@@ -64,7 +64,7 @@ export interface MetaAdsRow {
 }
 export interface TikTokShopRow {
   date: string; gmv: number; orders: number; unitsSold: number
-  revenue: number; convRate: number; avgOrderValue: number
+  revenue: number; productViews: number
 }
 export interface InstagramRow {
   date: string; followers: number; reach: number; impressions: number
@@ -77,6 +77,7 @@ export interface SalesRow {
   date: string; product: string; qty: number; revenue: number
   channel: string; cogs: number; grossProfit: number
   customerName?: string; phone?: string; address?: string
+  source?: string
 }
 
 export interface ShopeeRow {
@@ -85,10 +86,8 @@ export interface ShopeeRow {
   orders: number
   unitsSold: number
   revenue: number
-  convRate: number
-  avgOrderValue: number
+  productViews: number
   adSpend: number
-  adRoas: number
   adClicks: number
   adImpressions: number
 }

@@ -59,8 +59,7 @@ export async function parseTikTokShop(file: File): Promise<TikTokShopRow[]> {
     orders: toNum(r['Orders'] || r['orders'] || r['Total orders']),
     unitsSold: toNum(r['Units sold'] || r['units_sold'] || r['Qty sold']),
     revenue: toNum(r['Revenue'] || r['revenue'] || r['Net revenue']),
-    convRate: toNum(r['Conversion rate'] || r['conv_rate'] || r['CVR']),
-    avgOrderValue: toNum(r['Avg order value'] || r['AOV'] || r['Average order value']),
+    productViews: toNum(r['Product views'] || r['product_views'] || r['Views']),
   }))
 }
 
@@ -101,6 +100,7 @@ export async function parseSales(file: File): Promise<SalesRow[]> {
     customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
     phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
     address: r['Address'] || r['Alamat'] || r['address'] || '',
+    source: r['Source'] || r['source'] || r['Ad Source'] || 'organic',
   }))
 }
 
@@ -112,10 +112,8 @@ export async function parseShopee(file: File): Promise<ShopeeRow[]> {
     orders: toNum(r['Orders'] || r['orders'] || r['Total orders']),
     unitsSold: toNum(r['Units sold'] || r['units_sold'] || r['Qty sold']),
     revenue: toNum(r['Revenue'] || r['revenue'] || r['Net revenue']),
-    convRate: toNum(r['Conversion rate'] || r['conv_rate'] || r['CVR']),
-    avgOrderValue: toNum(r['Avg order value'] || r['AOV'] || r['Average order value']),
+    productViews: toNum(r['Product views'] || r['product_views'] || r['Views']),
     adSpend: toNum(r['Ad Spend'] || r['ad_spend'] || r['Ads Spend'] || r['Iklan']),
-    adRoas: toNum(r['Ad ROAS'] || r['ROAS'] || r['ad_roas']),
     adClicks: toNum(r['Ad Clicks'] || r['ad_clicks'] || r['Clicks']),
     adImpressions: toNum(r['Ad Impressions'] || r['ad_impressions'] || r['Impressions']),
   }))
@@ -160,8 +158,8 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
   },
   'tiktok-shop': {
     name: 'tiktok_shop_template.csv',
-    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Conversion rate', 'Avg order value'],
-    example: ['2024-04-01', '15000000', '75', '90', '14000000', '4.50', '200000'],
+    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Product views'],
+    example: ['2024-04-01', '15000000', '75', '90', '14000000', '1800'],
   },
   instagram: {
     name: 'instagram_template.csv',
@@ -175,13 +173,13 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
   },
   sales: {
     name: 'sales_template.csv',
-    headers: ['Date', 'Customer Name', 'Phone', 'Address', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit'],
-    example: ['2024-04-01', 'Siti Rahma', '081234567890', 'Jl. Sudirman No. 1 Jakarta', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000'],
+    headers: ['Date', 'Customer Name', 'Phone', 'Address', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit', 'Source'],
+    example: ['2024-04-01', 'Siti Rahma', '081234567890', 'Jl. Sudirman No. 1 Jakarta', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000', 'google-ads'],
   },
   shopee: {
     name: 'shopee_template.csv',
-    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Conversion rate', 'Avg order value', 'Ad Spend', 'Ad ROAS', 'Ad Clicks', 'Ad Impressions'],
-    example: ['2024-04-01', '18000000', '90', '110', '17000000', '3.80', '200000', '1500000', '11.3', '3200', '85000'],
+    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Product views', 'Ad Spend', 'Ad Clicks', 'Ad Impressions'],
+    example: ['2024-04-01', '18000000', '90', '110', '17000000', '2370', '1500000', '3200', '85000'],
   },
   crm: {
     name: 'crm_template.csv',

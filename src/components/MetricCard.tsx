@@ -7,9 +7,10 @@ interface Props {
   icon?: ReactNode
   change?: number
   accent?: string
+  sub?: string
 }
 
-export default function MetricCard({ label, value, icon, change, accent = '#F07830' }: Props) {
+export default function MetricCard({ label, value, icon, change, accent = '#F07830', sub }: Props) {
   const r = parseInt(accent.slice(1, 3), 16)
   const g = parseInt(accent.slice(3, 5), 16)
   const b = parseInt(accent.slice(5, 7), 16)
@@ -38,6 +39,8 @@ export default function MetricCard({ label, value, icon, change, accent = '#F078
       </div>
 
       <p className="text-2xl font-bold tracking-tight relative z-10" style={{ color: '#F0F0F5' }}>{value}</p>
+
+      {sub && <p className="text-[10px] relative z-10 truncate" style={{ color: '#4B5563' }}>{sub}</p>}
 
       {change !== undefined && (
         <div className={`flex items-center gap-1 text-xs font-semibold relative z-10 ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>

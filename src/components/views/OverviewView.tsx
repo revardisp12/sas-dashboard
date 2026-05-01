@@ -106,14 +106,14 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
               { label: 'GMV', value: fmtCurrency(tts.reduce((s, r) => s + r.gmv, 0)) },
               { label: 'Orders', value: fmtNum(tts.reduce((s, r) => s + r.orders, 0)) },
               { label: 'Units Sold', value: fmtNum(tts.reduce((s, r) => s + r.unitsSold, 0)) },
-              { label: 'Avg CVR', value: tts.length > 0 ? (tts.reduce((s, r) => s + r.convRate, 0) / tts.length).toFixed(2) + '%' : '-' },
+              { label: 'Avg CVR', value: (() => { const views = tts.reduce((s, r) => s + (r.productViews || 0), 0); const orders = tts.reduce((s, r) => s + r.orders, 0); return views > 0 ? (orders / views * 100).toFixed(2) + '%' : '-' })() },
             ]} empty={tts.length === 0} />
           <PlatformCard icon={<ShoppingBag size={14} />} color="#F05536" title="Shopee"
             items={[
               { label: 'GMV', value: fmtCurrency(shopee.reduce((s, r) => s + r.gmv, 0)) },
               { label: 'Orders', value: fmtNum(shopee.reduce((s, r) => s + r.orders, 0)) },
               { label: 'Ad Spend', value: fmtCurrency(shopee.reduce((s, r) => s + r.adSpend, 0)) },
-              { label: 'Avg ROAS', value: shopee.length > 0 ? (shopee.reduce((s, r) => s + r.adRoas, 0) / shopee.length).toFixed(2) + 'x' : '-' },
+              { label: 'Avg ROAS', value: (() => { const spend = shopee.reduce((s, r) => s + r.adSpend, 0); const rev = shopee.reduce((s, r) => s + r.revenue, 0); return spend > 0 ? (rev / spend).toFixed(2) + 'x' : '-' })() },
             ]} empty={shopee.length === 0} />
         </div>
       </Section>

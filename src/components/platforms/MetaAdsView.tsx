@@ -4,7 +4,8 @@ import { MetaAdsRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal from '@/components/ManualInputModal'
-import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Plus } from 'lucide-react'
+import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Plus, Link, Percent } from 'lucide-react'
+import { SalesRow } from '@/lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -18,8 +19,6 @@ const META_FIELDS = [
   { key: 'clicks', label: 'Link Clicks', type: 'number' as const, placeholder: '240' },
   { key: 'ctr', label: 'CTR (%)', type: 'number' as const, placeholder: '2.00' },
   { key: 'spend', label: 'Spend (Rp)', type: 'number' as const, placeholder: '500000' },
-  { key: 'purchases', label: 'Purchases', type: 'number' as const, placeholder: '18' },
-  { key: 'roas', label: 'ROAS', type: 'number' as const, placeholder: '3.2' },
   { key: 'cpm', label: 'CPM (Rp)', type: 'number' as const, placeholder: '41667' },
 ]
 
@@ -31,18 +30,23 @@ function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
 
 const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
 
-interface Props { data: MetaAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: MetaAdsRow[]) => void }
+interface Props { data: MetaAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: MetaAdsRow[]) => void; salesData?: SalesRow[] }
 
-export default function MetaAdsView({ data, brand, onUpload, onManualAdd }: Props) {
+export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesData = [] }: Props) {
   const [modal, setModal] = useState(false)
   const accent = ACCENT[brand]
   const totalSpend = data.reduce((s, r) => s + r.spend, 0)
   const totalReach = data.reduce((s, r) => s + r.reach, 0)
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
-  const totalPurchases = data.reduce((s, r) => s + r.purchases, 0)
   const avgCtr = data.length > 0 ? data.reduce((s, r) => s + r.ctr, 0) / data.length : 0
-  const avgRoas = data.length > 0 ? data.reduce((s, r) => s + r.roas, 0) / data.length : 0
-  const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Reach: r.reach, ROAS: r.roas }))
+
+  const csSales = salesData.filter(s => s.source === 'meta-ads')
+  const csRevenue = csSales.reduce((s, r) => s + r.revenue, 0)
+  const csPurchases = csSales.length
+  const roas = totalSpend > 0 && csRevenue > 0 ? csRevenue / totalSpend : null
+  const convRate = totalClicks > 0 && csPurchases > 0 ? (csPurchases / totalClicks) * 100 : null
+
+  const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Reach: r.reach }))
 
   return (
     <div className="space-y-6">
@@ -73,8 +77,12 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd }: Prop
             <MetricCard label="Reach" value={fmt(totalReach)} icon={<Users size={14} />} accent={accent} />
             <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
             <MetricCard label="CTR" value={fmt(avgCtr, 'percent')} icon={<Target size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Purchases" value={fmt(totalPurchases)} icon={<ShoppingCart size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Avg ROAS" value={avgRoas.toFixed(2) + 'x'} icon={<TrendingUp size={14} />} accent="#10B981" />
+            <MetricCard label="CS Revenue" value={csRevenue > 0 ? fmt(csRevenue, 'currency') : '—'} icon={<Link size={14} />} accent="#10B981" sub="dari CS Sales" />
+            <MetricCard label="CS Purchases" value={csPurchases > 0 ? fmt(csPurchases) : '—'} icon={<ShoppingCart size={14} />} accent="#10B981" sub="dari CS Sales" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <MetricCard label="ROAS" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub={roas !== null ? 'CS Rev ÷ Spend' : 'Butuh data CS (source: Meta Ads)'} />
+            <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" sub={convRate !== null ? 'CS Purchases ÷ Clicks' : 'Butuh data CS (source: Meta Ads)'} />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div style={chartStyle}>
@@ -92,14 +100,14 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd }: Prop
               </ResponsiveContainer>
             </div>
             <div style={chartStyle}>
-              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>ROAS per Hari</p>
+              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Clicks per Hari</p>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
-                  <Bar dataKey="ROAS" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Reach" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -127,8 +135,8 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd }: Prop
               date: row.date, campaign: row.campaign,
               reach: Number(row.reach) || 0, impressions: Number(row.impressions) || 0,
               clicks: Number(row.clicks) || 0, ctr: Number(row.ctr) || 0,
-              spend: Number(row.spend) || 0, purchases: Number(row.purchases) || 0,
-              roas: Number(row.roas) || 0, cpm: Number(row.cpm) || 0,
+              spend: Number(row.spend) || 0, purchases: 0,
+              roas: 0, cpm: Number(row.cpm) || 0,
             }
             onManualAdd?.([r]); setModal(false)
           }}

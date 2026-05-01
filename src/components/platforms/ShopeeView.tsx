@@ -13,10 +13,8 @@ const SHOPEE_FIELDS = [
   { key: 'orders', label: 'Orders', type: 'number' as const, placeholder: '90' },
   { key: 'unitsSold', label: 'Units Sold', type: 'number' as const, placeholder: '110' },
   { key: 'revenue', label: 'Revenue (Rp)', type: 'number' as const, placeholder: '17000000' },
-  { key: 'convRate', label: 'Conv. Rate (%)', type: 'number' as const, placeholder: '3.80' },
-  { key: 'avgOrderValue', label: 'Avg Order Value (Rp)', type: 'number' as const, placeholder: '200000' },
+  { key: 'productViews', label: 'Product Views', type: 'number' as const, placeholder: '2370' },
   { key: 'adSpend', label: 'Ad Spend (Rp)', type: 'number' as const, placeholder: '1500000' },
-  { key: 'adRoas', label: 'Ad ROAS', type: 'number' as const, placeholder: '11.3' },
   { key: 'adClicks', label: 'Ad Clicks', type: 'number' as const, placeholder: '3200' },
   { key: 'adImpressions', label: 'Ad Impressions', type: 'number' as const, placeholder: '85000' },
 ]
@@ -41,10 +39,11 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
   const totalOrders = data.reduce((s, r) => s + r.orders, 0)
   const totalUnits = data.reduce((s, r) => s + r.unitsSold, 0)
   const totalRevenue = data.reduce((s, r) => s + r.revenue, 0)
-  const avgConvRate = data.length > 0 ? data.reduce((s, r) => s + r.convRate, 0) / data.length : 0
+  const totalProductViews = data.reduce((s, r) => s + (r.productViews || 0), 0)
+  const convRate = totalProductViews > 0 ? (totalOrders / totalProductViews) * 100 : null
   const avgAov = totalOrders > 0 ? totalRevenue / totalOrders : 0
   const totalAdSpend = data.reduce((s, r) => s + r.adSpend, 0)
-  const avgAdRoas = data.length > 0 ? data.reduce((s, r) => s + r.adRoas, 0) / data.length : 0
+  const adRoas = totalAdSpend > 0 ? totalRevenue / totalAdSpend : null
   const totalAdClicks = data.reduce((s, r) => s + r.adClicks, 0)
   const totalImpressions = data.reduce((s, r) => s + r.adImpressions, 0)
 
@@ -53,7 +52,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
     GMV: r.gmv,
     Orders: r.orders,
     'Ad Spend': r.adSpend,
-    'Ad ROAS': r.adRoas,
+    'Ad ROAS': r.adSpend > 0 ? r.revenue / r.adSpend : 0,
   }))
 
   return (
@@ -88,7 +87,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               <MetricCard label="Orders" value={fmt(totalOrders)} icon={<ShoppingCart size={14} />} accent={accent} />
               <MetricCard label="Units Sold" value={fmt(totalUnits)} icon={<Package size={14} />} accent={accent} />
               <MetricCard label="Revenue" value={fmt(totalRevenue, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
-              <MetricCard label="Conv. Rate" value={fmt(avgConvRate, 'percent')} icon={<Percent size={14} />} accent="#10B981" />
+              <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" />
               <MetricCard label="Avg AOV" value={fmt(avgAov, 'currency')} icon={<ShoppingBag size={14} />} accent={accent} />
             </div>
           </div>
@@ -98,7 +97,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
             <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#6B7280' }}>Shopee Ads Metrics</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <MetricCard label="Ad Spend" value={fmt(totalAdSpend, 'currency')} icon={<Target size={14} />} accent="#F59E0B" />
-              <MetricCard label="Avg ROAS" value={avgAdRoas.toFixed(2) + 'x'} icon={<TrendingUp size={14} />} accent="#10B981" />
+              <MetricCard label="Ad ROAS" value={adRoas !== null ? adRoas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" />
               <MetricCard label="Ad Clicks" value={fmt(totalAdClicks)} icon={<MousePointer size={14} />} accent={PLATFORM_COLOR} />
               <MetricCard label="Impressions" value={fmt(totalImpressions)} icon={<Package size={14} />} accent={accent} />
             </div>
@@ -174,8 +173,8 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               date: row.date,
               gmv: Number(row.gmv) || 0, orders: Number(row.orders) || 0,
               unitsSold: Number(row.unitsSold) || 0, revenue: Number(row.revenue) || 0,
-              convRate: Number(row.convRate) || 0, avgOrderValue: Number(row.avgOrderValue) || 0,
-              adSpend: Number(row.adSpend) || 0, adRoas: Number(row.adRoas) || 0,
+              productViews: Number(row.productViews) || 0,
+              adSpend: Number(row.adSpend) || 0,
               adClicks: Number(row.adClicks) || 0, adImpressions: Number(row.adImpressions) || 0,
             }
             onManualAdd?.([r]); setModal(false)

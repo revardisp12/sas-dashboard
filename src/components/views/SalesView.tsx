@@ -10,6 +10,12 @@ const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050'
 const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
 const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
 const CHANNELS = ['TikTok Shop', 'Shopee', 'Tokopedia', 'Instagram DM', 'WhatsApp', 'Website', 'Offline', 'Lainnya']
+const AD_SOURCES = [
+  { value: 'organic', label: 'Organic / Direct', color: '#6B7280' },
+  { value: 'google-ads', label: 'Google Ads', color: '#4285F4' },
+  { value: 'meta-ads', label: 'Meta Ads', color: '#1877F2' },
+  { value: 'tiktok-ads', label: 'TikTok Ads', color: '#FF0050' },
+]
 
 interface LineItem { product: string; sku: string; qty: string; price: string; cogs: string }
 interface Props {
@@ -34,6 +40,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [channel, setChannel] = useState(CHANNELS[0])
+  const [source, setSource] = useState('organic')
   const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE }])
 
   function pickProduct(idx: number, sku: string) {
@@ -64,6 +71,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
           cogs: cogs * qty,
           grossProfit: (price - cogs) * qty,
           customerName, phone, address,
+          source,
         }
       })
     if (rows.length === 0) return
@@ -71,6 +79,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
     setModal(false)
     setLines([{ ...EMPTY_LINE }])
     setCustomerName(''); setPhone(''); setAddress('')
+    setSource('organic')
   }
 
   const totalRevenue = filtered.reduce((s, r) => s + r.revenue, 0)
@@ -209,6 +218,25 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
                     {CHANNELS.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </Field>
+              </div>
+
+              {/* Ad Source */}
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#4B5563' }}>
+                  Sumber Iklan (Ad Source)
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {AD_SOURCES.map(s => (
+                    <button key={s.value} type="button" onClick={() => setSource(s.value)}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                      style={source === s.value
+                        ? { background: s.color, color: '#fff', border: `1px solid ${s.color}` }
+                        : { background: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid rgba(255,255,255,0.08)' }
+                      }>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Customer info */}

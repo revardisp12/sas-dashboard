@@ -13,8 +13,7 @@ const TTS_FIELDS = [
   { key: 'orders', label: 'Orders', type: 'number' as const, placeholder: '75' },
   { key: 'unitsSold', label: 'Units Sold', type: 'number' as const, placeholder: '90' },
   { key: 'revenue', label: 'Revenue (Rp)', type: 'number' as const, placeholder: '14000000' },
-  { key: 'convRate', label: 'Conv. Rate (%)', type: 'number' as const, placeholder: '4.50' },
-  { key: 'avgOrderValue', label: 'Avg Order Value (Rp)', type: 'number' as const, placeholder: '200000' },
+  { key: 'productViews', label: 'Product Views', type: 'number' as const, placeholder: '1800' },
 ]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -37,7 +36,8 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
   const totalOrders = data.reduce((s, r) => s + r.orders, 0)
   const totalUnits = data.reduce((s, r) => s + r.unitsSold, 0)
   const totalRevenue = data.reduce((s, r) => s + r.revenue, 0)
-  const avgConvRate = data.length > 0 ? data.reduce((s, r) => s + r.convRate, 0) / data.length : 0
+  const totalProductViews = data.reduce((s, r) => s + (r.productViews || 0), 0)
+  const convRate = totalProductViews > 0 ? (totalOrders / totalProductViews) * 100 : null
   const avgAov = totalOrders > 0 ? totalRevenue / totalOrders : 0
   const chartData = data.slice(-30).map(r => ({ date: r.date, GMV: r.gmv, Orders: r.orders }))
 
@@ -70,7 +70,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
             <MetricCard label="Orders" value={fmt(totalOrders)} icon={<ShoppingCart size={14} />} accent={accent} />
             <MetricCard label="Units Sold" value={fmt(totalUnits)} icon={<Package size={14} />} accent={accent} />
             <MetricCard label="Revenue" value={fmt(totalRevenue, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Conv. Rate" value={fmt(avgConvRate, 'percent')} icon={<Percent size={14} />} accent="#10B981" />
+            <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" />
             <MetricCard label="Avg AOV" value={fmt(avgAov, 'currency')} icon={<ShoppingBag size={14} />} accent={accent} />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -128,7 +128,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
               date: row.date,
               gmv: Number(row.gmv) || 0, orders: Number(row.orders) || 0,
               unitsSold: Number(row.unitsSold) || 0, revenue: Number(row.revenue) || 0,
-              convRate: Number(row.convRate) || 0, avgOrderValue: Number(row.avgOrderValue) || 0,
+              productViews: Number(row.productViews) || 0,
             }
             onManualAdd?.([r]); setModal(false)
           }}

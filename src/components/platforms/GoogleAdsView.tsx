@@ -4,7 +4,8 @@ import { GoogleAdsRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal from '@/components/ManualInputModal'
-import { BarChart2, DollarSign, MousePointer, TrendingUp, ShoppingCart, Percent, Plus } from 'lucide-react'
+import { BarChart2, DollarSign, MousePointer, TrendingUp, ShoppingCart, Percent, Plus, Link } from 'lucide-react'
+import { SalesRow } from '@/lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const GA_FIELDS = [
@@ -16,8 +17,6 @@ const GA_FIELDS = [
   { key: 'conversions', label: 'Conversions', type: 'number' as const, placeholder: '42' },
   { key: 'ctr', label: 'CTR (%)', type: 'number' as const, placeholder: '3.50' },
   { key: 'cpc', label: 'Avg CPC (Rp)', type: 'number' as const, placeholder: '2500' },
-  { key: 'convRate', label: 'Conv. Rate (%)', type: 'number' as const, placeholder: '12.00' },
-  { key: 'roas', label: 'ROAS', type: 'number' as const, placeholder: '3.5' },
 ]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -36,9 +35,9 @@ const chartStyle = {
   padding: 20,
 }
 
-interface Props { data: GoogleAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: GoogleAdsRow[]) => void }
+interface Props { data: GoogleAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: GoogleAdsRow[]) => void; salesData?: SalesRow[] }
 
-export default function GoogleAdsView({ data, brand, onUpload, onManualAdd }: Props) {
+export default function GoogleAdsView({ data, brand, onUpload, onManualAdd, salesData = [] }: Props) {
   const accent = ACCENT[brand]
   const [modal, setModal] = useState(false)
   const totalSpend = data.reduce((s, r) => s + r.spend, 0)
@@ -46,8 +45,14 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd }: Pr
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
   const totalConversions = data.reduce((s, r) => s + r.conversions, 0)
   const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
-  const avgRoas = data.length > 0 ? data.reduce((s, r) => s + r.roas, 0) / data.length : 0
-  const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Clicks: r.clicks, ROAS: r.roas }))
+
+  const csSales = salesData.filter(s => s.source === 'google-ads')
+  const csRevenue = csSales.reduce((s, r) => s + r.revenue, 0)
+  const csPurchases = csSales.length
+  const roas = totalSpend > 0 && csRevenue > 0 ? csRevenue / totalSpend : null
+  const convRate = totalClicks > 0 && csPurchases > 0 ? (csPurchases / totalClicks) * 100 : null
+
+  const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Clicks: r.clicks }))
 
   return (
     <div className="space-y-6">
@@ -78,8 +83,12 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd }: Pr
             <MetricCard label="Impressions" value={fmt(totalImpressions)} icon={<BarChart2 size={14} />} accent={accent} />
             <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
             <MetricCard label="CTR" value={fmt(avgCtr, 'percent')} icon={<Percent size={14} />} accent={accent} />
-            <MetricCard label="Conversions" value={fmt(totalConversions)} icon={<ShoppingCart size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Avg ROAS" value={avgRoas.toFixed(2) + 'x'} icon={<TrendingUp size={14} />} accent="#10B981" />
+            <MetricCard label="CS Revenue" value={csRevenue > 0 ? fmt(csRevenue, 'currency') : '—'} icon={<Link size={14} />} accent="#10B981" sub="dari CS Sales" />
+            <MetricCard label="CS Purchases" value={csPurchases > 0 ? fmt(csPurchases) : '—'} icon={<ShoppingCart size={14} />} accent="#10B981" sub="dari CS Sales" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <MetricCard label="ROAS" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub={roas !== null ? `CS Rev ÷ Spend` : 'Butuh data CS (source: Google Ads)'} />
+            <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" sub={convRate !== null ? `CS Purchases ÷ Clicks` : 'Butuh data CS (source: Google Ads)'} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -98,14 +107,14 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd }: Pr
               </ResponsiveContainer>
             </div>
             <div style={chartStyle}>
-              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>ROAS per Hari</p>
+              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Clicks per Hari</p>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
-                  <Bar dataKey="ROAS" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Clicks" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -125,7 +134,7 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd }: Pr
               impressions: Number(row.impressions) || 0, clicks: Number(row.clicks) || 0,
               ctr: Number(row.ctr) || 0, cpc: Number(row.cpc) || 0,
               spend: Number(row.spend) || 0, conversions: Number(row.conversions) || 0,
-              convRate: Number(row.convRate) || 0, roas: Number(row.roas) || 0,
+              convRate: 0, roas: 0,
             }
             onManualAdd?.([r]); setModal(false)
           }}
