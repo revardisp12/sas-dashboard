@@ -1,17 +1,29 @@
 'use client'
+import { useState } from 'react'
 import { InstagramRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import { Camera, Users, Eye, Heart, TrendingUp, Activity } from 'lucide-react'
+import ManualInputModal from '@/components/ManualInputModal'
+import { Camera, Users, Eye, Heart, TrendingUp, Activity, Plus } from 'lucide-react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const PLATFORM_COLOR = '#E1306C'
 const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
 function fmt(n: number) { return n.toLocaleString('id-ID') }
 
-interface Props { data: InstagramRow[]; brand: Brand; onUpload: (file: File) => Promise<void> }
+const IG_FIELDS = [
+  { key: 'date', label: 'Tanggal', type: 'date' as const },
+  { key: 'followers', label: 'Followers', type: 'number' as const, placeholder: '25000' },
+  { key: 'reach', label: 'Reach', type: 'number' as const, placeholder: '8500' },
+  { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '12000' },
+  { key: 'profileVisits', label: 'Profile Visits', type: 'number' as const, placeholder: '420' },
+  { key: 'engagements', label: 'Engagements', type: 'number' as const, placeholder: '680' },
+]
 
-export default function InstagramView({ data, brand, onUpload }: Props) {
+interface Props { data: InstagramRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: InstagramRow[]) => void }
+
+export default function InstagramView({ data, brand, onUpload, onManualAdd }: Props) {
+  const [modal, setModal] = useState(false)
   const latestFollowers = data.length > 0 ? data[data.length - 1].followers : 0
   const firstFollowers = data.length > 0 ? data[0].followers : 0
   const followerGrowth = data.length > 1 ? latestFollowers - firstFollowers : 0
@@ -31,8 +43,15 @@ export default function InstagramView({ data, brand, onUpload }: Props) {
           </div>
           <p className="text-sm" style={{ color: '#4B5563' }}>{data.length > 0 ? `${data.length} baris data` : 'Upload CSV untuk mulai'}</p>
         </div>
-        <div className="w-56 flex-shrink-0">
-          <CSVUploader platform="instagram" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
+        <div className="flex items-center gap-3">
+          <button onClick={() => setModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold flex-shrink-0"
+            style={{ background: 'rgba(225,48,108,0.12)', border: '1px solid rgba(225,48,108,0.3)', color: PLATFORM_COLOR }}>
+            <Plus size={14} /> Input Manual
+          </button>
+          <div className="w-56 flex-shrink-0">
+            <CSVUploader platform="instagram" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
+          </div>
         </div>
       </div>
 
@@ -90,6 +109,25 @@ export default function InstagramView({ data, brand, onUpload }: Props) {
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data Instagram</p>
           <p className="text-sm" style={{ color: '#374151' }}>Upload CSV export dari Meta Business Suite</p>
         </div>
+      )}
+
+      {modal && (
+        <ManualInputModal
+          title="Input Manual — Instagram"
+          subtitle="Tambah baris data Instagram"
+          brand={brand}
+          fields={IG_FIELDS}
+          onSave={row => {
+            const r: InstagramRow = {
+              date: row.date,
+              followers: Number(row.followers) || 0, reach: Number(row.reach) || 0,
+              impressions: Number(row.impressions) || 0, profileVisits: Number(row.profileVisits) || 0,
+              engagements: Number(row.engagements) || 0,
+            }
+            onManualAdd?.([r]); setModal(false)
+          }}
+          onClose={() => setModal(false)}
+        />
       )}
     </div>
   )

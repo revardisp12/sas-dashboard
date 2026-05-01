@@ -1,9 +1,24 @@
 'use client'
+import { useState } from 'react'
 import { GoogleAdsRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import { BarChart2, DollarSign, MousePointer, TrendingUp, ShoppingCart, Percent } from 'lucide-react'
+import ManualInputModal from '@/components/ManualInputModal'
+import { BarChart2, DollarSign, MousePointer, TrendingUp, ShoppingCart, Percent, Plus } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+
+const GA_FIELDS = [
+  { key: 'date', label: 'Tanggal', type: 'date' as const },
+  { key: 'campaign', label: 'Campaign', type: 'text' as const, placeholder: 'Brand Campaign' },
+  { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '10000' },
+  { key: 'clicks', label: 'Clicks', type: 'number' as const, placeholder: '350' },
+  { key: 'spend', label: 'Spend (Rp)', type: 'number' as const, placeholder: '875000' },
+  { key: 'conversions', label: 'Conversions', type: 'number' as const, placeholder: '42' },
+  { key: 'ctr', label: 'CTR (%)', type: 'number' as const, placeholder: '3.50' },
+  { key: 'cpc', label: 'Avg CPC (Rp)', type: 'number' as const, placeholder: '2500' },
+  { key: 'convRate', label: 'Conv. Rate (%)', type: 'number' as const, placeholder: '12.00' },
+  { key: 'roas', label: 'ROAS', type: 'number' as const, placeholder: '3.5' },
+]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 const PLATFORM_COLOR = '#4285F4'
@@ -21,10 +36,11 @@ const chartStyle = {
   padding: 20,
 }
 
-interface Props { data: GoogleAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void> }
+interface Props { data: GoogleAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: GoogleAdsRow[]) => void }
 
-export default function GoogleAdsView({ data, brand, onUpload }: Props) {
+export default function GoogleAdsView({ data, brand, onUpload, onManualAdd }: Props) {
   const accent = ACCENT[brand]
+  const [modal, setModal] = useState(false)
   const totalSpend = data.reduce((s, r) => s + r.spend, 0)
   const totalImpressions = data.reduce((s, r) => s + r.impressions, 0)
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
@@ -43,8 +59,15 @@ export default function GoogleAdsView({ data, brand, onUpload }: Props) {
           </div>
           <p className="text-sm" style={{ color: '#4B5563' }}>{data.length > 0 ? `${data.length} baris data` : 'Upload CSV untuk mulai'}</p>
         </div>
-        <div className="w-56 flex-shrink-0">
-          <CSVUploader platform="google-ads" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
+        <div className="flex items-center gap-3">
+          <button onClick={() => setModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold flex-shrink-0"
+            style={{ background: 'rgba(66,133,244,0.12)', border: '1px solid rgba(66,133,244,0.3)', color: PLATFORM_COLOR }}>
+            <Plus size={14} /> Input Manual
+          </button>
+          <div className="w-56 flex-shrink-0">
+            <CSVUploader platform="google-ads" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
+          </div>
         </div>
       </div>
 
@@ -89,6 +112,26 @@ export default function GoogleAdsView({ data, brand, onUpload }: Props) {
           </div>
         </>
       ) : <EmptyState />}
+
+      {modal && (
+        <ManualInputModal
+          title="Input Manual — Google Ads"
+          subtitle="Tambah baris data Google Ads"
+          brand={brand}
+          fields={GA_FIELDS}
+          onSave={row => {
+            const r: GoogleAdsRow = {
+              date: row.date, campaign: row.campaign,
+              impressions: Number(row.impressions) || 0, clicks: Number(row.clicks) || 0,
+              ctr: Number(row.ctr) || 0, cpc: Number(row.cpc) || 0,
+              spend: Number(row.spend) || 0, conversions: Number(row.conversions) || 0,
+              convRate: Number(row.convRate) || 0, roas: Number(row.roas) || 0,
+            }
+            onManualAdd?.([r]); setModal(false)
+          }}
+          onClose={() => setModal(false)}
+        />
+      )}
     </div>
   )
 }

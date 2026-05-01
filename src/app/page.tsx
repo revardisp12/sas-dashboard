@@ -80,6 +80,17 @@ export default function Dashboard() {
     })
   }
 
+  function makeManualHandler<K extends keyof import('@/lib/types').BrandData>(key: K) {
+    return (rows: import('@/lib/types').BrandData[K] extends (infer T)[] ? T[] : never) => {
+      setData(prev => {
+        const existing = prev[brand][key] as unknown[]
+        const next = { ...prev, [brand]: { ...prev[brand], [key]: [...existing, ...rows] } }
+        saveData(next)
+        return next
+      })
+    }
+  }
+
   function handleReset() {
     setData(resetData())
   }
@@ -139,12 +150,12 @@ export default function Dashboard() {
           {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} products={products} />}
           {view === 'funnel' && <FunnelView data={bd} brand={brand} timeframe={timeframe} />}
           {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} products={products} onManualAdd={handleManualSales} />}
-          {view === 'google-ads' && <GoogleAdsView data={filtered.googleAds} brand={brand} onUpload={handleUpload} />}
-          {view === 'meta-ads' && <MetaAdsView data={filtered.metaAds} brand={brand} onUpload={handleUpload} />}
-          {view === 'tiktok-shop' && <TikTokShopView data={filtered.tiktokShop} brand={brand} onUpload={handleUpload} />}
-          {view === 'shopee' && <ShopeeView data={filtered.shopee} brand={brand} onUpload={handleUpload} />}
-          {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} />}
-          {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} />}
+          {view === 'google-ads' && <GoogleAdsView data={filtered.googleAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('googleAds')} />}
+          {view === 'meta-ads' && <MetaAdsView data={filtered.metaAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('metaAds')} />}
+          {view === 'tiktok-shop' && <TikTokShopView data={filtered.tiktokShop} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokShop')} />}
+          {view === 'shopee' && <ShopeeView data={filtered.shopee} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('shopee')} />}
+          {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('instagram')} />}
+          {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokOrganic')} />}
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} products={products} onManualAdd={handleManualCRM} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} />}

@@ -1,9 +1,21 @@
 'use client'
+import { useState } from 'react'
 import { TikTokShopRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart } from 'lucide-react'
+import ManualInputModal from '@/components/ManualInputModal'
+import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Plus } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+const TTS_FIELDS = [
+  { key: 'date', label: 'Tanggal', type: 'date' as const },
+  { key: 'gmv', label: 'GMV (Rp)', type: 'number' as const, placeholder: '15000000' },
+  { key: 'orders', label: 'Orders', type: 'number' as const, placeholder: '75' },
+  { key: 'unitsSold', label: 'Units Sold', type: 'number' as const, placeholder: '90' },
+  { key: 'revenue', label: 'Revenue (Rp)', type: 'number' as const, placeholder: '14000000' },
+  { key: 'convRate', label: 'Conv. Rate (%)', type: 'number' as const, placeholder: '4.50' },
+  { key: 'avgOrderValue', label: 'Avg Order Value (Rp)', type: 'number' as const, placeholder: '200000' },
+]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 const PLATFORM_COLOR = '#FF0050'
@@ -16,9 +28,10 @@ function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
 
 const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
 
-interface Props { data: TikTokShopRow[]; brand: Brand; onUpload: (file: File) => Promise<void> }
+interface Props { data: TikTokShopRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: TikTokShopRow[]) => void }
 
-export default function TikTokShopView({ data, brand, onUpload }: Props) {
+export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: Props) {
+  const [modal, setModal] = useState(false)
   const accent = ACCENT[brand]
   const totalGmv = data.reduce((s, r) => s + r.gmv, 0)
   const totalOrders = data.reduce((s, r) => s + r.orders, 0)
@@ -38,8 +51,15 @@ export default function TikTokShopView({ data, brand, onUpload }: Props) {
           </div>
           <p className="text-sm" style={{ color: '#4B5563' }}>{data.length > 0 ? `${data.length} baris data` : 'Upload CSV untuk mulai'}</p>
         </div>
-        <div className="w-56 flex-shrink-0">
-          <CSVUploader platform="tiktok-shop" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
+        <div className="flex items-center gap-3">
+          <button onClick={() => setModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold flex-shrink-0"
+            style={{ background: 'rgba(255,0,80,0.12)', border: '1px solid rgba(255,0,80,0.3)', color: PLATFORM_COLOR }}>
+            <Plus size={14} /> Input Manual
+          </button>
+          <div className="w-56 flex-shrink-0">
+            <CSVUploader platform="tiktok-shop" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
+          </div>
         </div>
       </div>
 
@@ -95,6 +115,25 @@ export default function TikTokShopView({ data, brand, onUpload }: Props) {
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data TikTok Shop</p>
           <p className="text-sm" style={{ color: '#374151' }}>Upload CSV export dari TikTok Seller Center</p>
         </div>
+      )}
+
+      {modal && (
+        <ManualInputModal
+          title="Input Manual — TikTok Shop"
+          subtitle="Tambah baris data TikTok Shop"
+          brand={brand}
+          fields={TTS_FIELDS}
+          onSave={row => {
+            const r: TikTokShopRow = {
+              date: row.date,
+              gmv: Number(row.gmv) || 0, orders: Number(row.orders) || 0,
+              unitsSold: Number(row.unitsSold) || 0, revenue: Number(row.revenue) || 0,
+              convRate: Number(row.convRate) || 0, avgOrderValue: Number(row.avgOrderValue) || 0,
+            }
+            onManualAdd?.([r]); setModal(false)
+          }}
+          onClose={() => setModal(false)}
+        />
       )}
     </div>
   )
