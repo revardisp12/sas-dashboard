@@ -199,34 +199,42 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
     setTasks(updated.filter(t => t.brand === brand))
   }
 
-  if (data.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <p className="text-xs font-semibold tracking-widest uppercase mb-1" style={{ color: '#4B5563' }}>Sales Retention by CRM</p>
-            <p className="text-sm" style={{ color: '#4B5563' }}>Upload data transaksi CS untuk mulai analisis RFM</p>
-          </div>
-          <div className="w-56 flex-shrink-0">
-            <CSVUploader platform="crm" hasData={false} onUpload={onUpload} accent={accent} />
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: `${accent}15`, border: `1px solid ${accent}30`, boxShadow: `0 0 30px ${accent}15` }}>
-            <Users size={28} style={{ color: accent }} />
-          </div>
-          <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data CRM</p>
-          <p className="text-sm mb-1" style={{ color: '#374151' }}>Upload CSV transaksi customer dari CS</p>
-          <p className="text-xs" style={{ color: '#1F2937' }}>Format: Date, Customer Name, Phone, Product, Qty, Revenue</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-5">
+      {/* Empty state */}
+      {data.length === 0 && (
+        <div className="space-y-6">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <p className="text-xs font-semibold tracking-widest uppercase mb-1" style={{ color: '#4B5563' }}>Sales Retention by CRM</p>
+              <p className="text-sm" style={{ color: '#4B5563' }}>Upload data transaksi CS untuk mulai analisis RFM</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setCrmModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold flex-shrink-0"
+                style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.15)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.3)`, color: accent }}>
+                <Plus size={14} /> Input Manual
+              </button>
+              <div className="w-56 flex-shrink-0">
+                <CSVUploader platform="crm" hasData={false} onUpload={onUpload} accent={accent} />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: `${accent}15`, border: `1px solid ${accent}30`, boxShadow: `0 0 30px ${accent}15` }}>
+              <Users size={28} style={{ color: accent }} />
+            </div>
+            <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data CRM</p>
+            <p className="text-sm mb-1" style={{ color: '#374151' }}>Upload CSV transaksi customer dari CS</p>
+            <p className="text-xs" style={{ color: '#1F2937' }}>Format: Date, Customer Name, Phone, Product, Qty, Revenue</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main content when data exists */}
+      {data.length > 0 && <>
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -583,8 +591,9 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
           </div>
         </div>
       )}
+      </>}
 
-      {/* CRM Manual Input Modal */}
+      {/* CRM Manual Input Modal — shown in both empty and filled state */}
       {crmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
           <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
