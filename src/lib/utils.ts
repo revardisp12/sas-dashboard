@@ -1,3 +1,7 @@
+export function filterByRange<T extends { date: string }>(data: T[], from: string, to: string): T[] {
+  return data.filter(r => r.date >= from && r.date <= to)
+}
+
 export function filterByDays<T extends { date: string }>(data: T[], days: number): T[] {
   if (days === 0 || data.length === 0) return data
   const timestamps = data.map(r => new Date(r.date).getTime()).filter(t => !isNaN(t))

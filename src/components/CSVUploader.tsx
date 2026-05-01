@@ -38,8 +38,8 @@ export default function CSVUploader({ platform, hasData, onUpload, accent = '#F0
         onClick={() => inputRef.current?.click()}
         className="rounded-xl p-5 text-center cursor-pointer transition-all duration-300 border"
         style={{
-          background: dragging ? `rgba(${r},${g},${b},0.1)` : hasData ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)',
-          borderColor: dragging ? accent : hasData ? '#10B981' : 'rgba(255,255,255,0.08)',
+          background: dragging ? `rgba(${r},${g},${b},0.06)` : hasData ? 'rgba(16,185,129,0.04)' : '#F9FAFB',
+          borderColor: dragging ? accent : hasData ? '#10B981' : '#E5E7EB',
           borderStyle: 'dashed',
           boxShadow: dragging ? `0 0 20px rgba(${r},${g},${b},0.2)` : 'none',
         }}

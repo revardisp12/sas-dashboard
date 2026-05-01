@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Brand, ActiveView, Timeframe, BrandData, emptyBrandData, ProductMaster } from '@/lib/types'
+import { Brand, ActiveView, Timeframe, DateRange, BrandData, emptyBrandData, ProductMaster } from '@/lib/types'
 import { loadData, saveData, resetData, loadProducts, saveProducts } from '@/lib/storage'
 import { parseFile } from '@/lib/csvParser'
-import { filterByDays } from '@/lib/utils'
+import { filterByDays, filterByRange } from '@/lib/utils'
 import Sidebar from '@/components/Sidebar'
 import TimeframeSelector from '@/components/TimeframeSelector'
 import OverviewView from '@/components/views/OverviewView'
@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [brand, setBrand] = useState<Brand>('reglow')
   const [view, setView] = useState<ActiveView>('overview')
   const [timeframe, setTimeframe] = useState<Timeframe>(30)
+  const [dateRange, setDateRange] = useState<DateRange | null>(null)
   const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData() })
   const [products, setProducts] = useState<ProductMaster[]>([])
 
@@ -98,19 +99,24 @@ export default function Dashboard() {
   const bd = data[brand]
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
+  function applyFilter<T extends { date: string }>(rows: T[]): T[] {
+    if (dateRange) return filterByRange(rows, dateRange.from, dateRange.to)
+    return filterByDays(rows, timeframe)
+  }
+
   // Pre-filter data for platform views
   const filtered = {
-    googleAds: filterByDays(bd.googleAds, timeframe),
-    metaAds: filterByDays(bd.metaAds, timeframe),
-    tiktokShop: filterByDays(bd.tiktokShop, timeframe),
-    shopee: filterByDays(bd.shopee ?? [], timeframe),
-    instagram: filterByDays(bd.instagram, timeframe),
-    tiktokOrganic: filterByDays(bd.tiktokOrganic, timeframe),
-    sales: filterByDays(bd.sales, timeframe),
+    googleAds: applyFilter(bd.googleAds),
+    metaAds: applyFilter(bd.metaAds),
+    tiktokShop: applyFilter(bd.tiktokShop),
+    shopee: applyFilter(bd.shopee ?? []),
+    instagram: applyFilter(bd.instagram),
+    tiktokOrganic: applyFilter(bd.tiktokOrganic),
+    sales: applyFilter(bd.sales),
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#08080F' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#F8F9FC' }}>
       <Sidebar brand={brand} view={view}
         onBrandChange={b => { setBrand(b); setView('overview') }}
         onViewChange={setView}
@@ -120,21 +126,21 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: 240 }}>
         {/* Top bar */}
         <div className="flex items-center justify-between px-8 py-3 flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,10,24,0.9)', backdropFilter: 'blur(12px)' }}>
+          style={{ borderBottom: '1px solid #E5E7EB', background: '#FFFFFF' }}>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#374151' }}>{BRAND_LABELS[brand]}</span>
-              <span style={{ color: '#1F2937' }}>/</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#4B5563' }}>{VIEW_LABELS[view]}</span>
+              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#9CA3AF' }}>{BRAND_LABELS[brand]}</span>
+              <span style={{ color: '#D1D5DB' }}>/</span>
+              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>{VIEW_LABELS[view]}</span>
             </div>
-            <h1 className="text-lg font-bold" style={{ color: '#F0F0F5' }}>
+            <h1 className="text-lg font-bold" style={{ color: '#111827' }}>
               {VIEW_LABELS[view]}
-              <span className="text-sm font-normal ml-2" style={{ color: '#374151' }}>Analytics</span>
+              <span className="text-sm font-normal ml-2" style={{ color: '#9CA3AF' }}>Analytics</span>
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
-            <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+            <TimeframeSelector value={timeframe} onChange={t => { setTimeframe(t); setDateRange(null) }} dateRange={dateRange} onDateRangeChange={setDateRange} />
             <div className="text-right hidden lg:block">
               <p className="text-[10px]" style={{ color: '#374151' }}>{today}</p>
               <div className="flex items-center gap-1.5 mt-0.5 justify-end">

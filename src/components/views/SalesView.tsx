@@ -7,7 +7,7 @@ import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from '
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
-const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
+const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
 const CHANNELS = ['TikTok Shop', 'Shopee', 'Tokopedia', 'Instagram DM', 'WhatsApp', 'Website', 'Offline', 'Lainnya']
 const AD_SOURCES = [
@@ -142,10 +142,10 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Top 5 Produk (Revenue)</p>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={topProducts} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={90} />
-                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
                   <Bar dataKey="revenue" fill={accent} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -159,7 +159,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
                       label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                       {channelData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
+                    <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
                       formatter={(v) => fmtCurrency(Number(v))} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -171,10 +171,10 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Revenue & Profit Trend</p>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
                     formatter={(v) => fmtCurrency(Number(v))} />
                   <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
                   <Line type="monotone" dataKey="Revenue" stroke={accent} strokeWidth={2} dot={false} />
@@ -186,7 +186,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
             style={{ background: `${accent}15`, border: `1px solid ${accent}30`, boxShadow: `0 0 30px ${accent}15` }}>
             <DollarSign size={28} style={{ color: accent }} />
@@ -199,10 +199,10 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
       {/* Manual Input Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <div>
-                <p className="font-semibold" style={{ color: '#F0F0F5' }}>Input Manual — Acquisition by CS</p>
+                <p className="font-semibold" style={{ color: '#111827' }}>Input Manual — Acquisition by CS</p>
                 <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Tambah transaksi baru</p>
               </div>
               <button onClick={() => setModal(false)} style={{ color: '#6B7280' }}><X size={18} /></button>
@@ -231,7 +231,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
                       className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
                       style={source === s.value
                         ? { background: s.color, color: '#fff', border: `1px solid ${s.color}` }
-                        : { background: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid rgba(255,255,255,0.08)' }
+                        : { background: '#F9FAFB', color: '#6B7280', border: '1px solid #E5E7EB' }
                       }>
                       {s.label}
                     </button>
@@ -301,14 +301,14 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
 
                 {/* Total preview */}
                 {lines.some(l => l.price && l.qty) && (
-                  <div className="mt-3 p-3 rounded-xl flex gap-6 text-xs" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="mt-3 p-3 rounded-xl flex gap-6 text-xs" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
                     {(() => {
                       const rev = lines.reduce((s, l) => s + (Number(l.price) || 0) * (Number(l.qty) || 0), 0)
                       const cogs = lines.reduce((s, l) => s + (Number(l.cogs) || 0) * (Number(l.qty) || 0), 0)
                       const gp = rev - cogs
                       return <>
-                        <span style={{ color: '#9CA3AF' }}>Revenue: <strong style={{ color: '#F0F0F5' }}>{fmtCurrency(rev)}</strong></span>
-                        <span style={{ color: '#9CA3AF' }}>COGS: <strong style={{ color: '#F0F0F5' }}>{fmtCurrency(cogs)}</strong></span>
+                        <span style={{ color: '#9CA3AF' }}>Revenue: <strong style={{ color: '#111827' }}>{fmtCurrency(rev)}</strong></span>
+                        <span style={{ color: '#9CA3AF' }}>COGS: <strong style={{ color: '#111827' }}>{fmtCurrency(cogs)}</strong></span>
                         <span style={{ color: '#9CA3AF' }}>Gross Profit: <strong style={{ color: '#10B981' }}>{fmtCurrency(gp)}</strong></span>
                         {rev > 0 && <span style={{ color: '#9CA3AF' }}>Margin: <strong style={{ color: gp / rev >= 0.3 ? '#10B981' : '#F59E0B' }}>{((gp / rev) * 100).toFixed(1)}%</strong></span>}
                       </>
@@ -319,7 +319,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
 
               <div className="flex justify-end gap-3 pt-2">
                 <button onClick={() => setModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
                   Batal
                 </button>
                 <button onClick={handleSave} className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
@@ -339,13 +339,13 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
           border-radius: 10px;
           font-size: 13px;
           outline: none;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: #F0F0F5;
+          background: #F9FAFB;
+          border: 1px solid #E5E7EB;
+          color: #111827;
           transition: border-color 0.15s;
         }
-        .input-dark:focus { border-color: rgba(255,255,255,0.2); }
-        .input-dark option { background: #0E0E1C; color: #F0F0F5; }
+        .input-dark:focus { border-color: #D1D5DB; }
+        .input-dark option { background: #FFFFFF; color: #111827; }
       `}</style>
     </div>
   )
@@ -372,7 +372,7 @@ function MetricCard({ label, value, icon, accent }: { label: string; value: stri
         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ background: `rgba(${r},${g},${b},0.15)`, color: accent }}>{icon}</div>
       </div>
-      <p className="text-xl font-bold" style={{ color: '#F0F0F5' }}>{value}</p>
+      <p className="text-xl font-bold" style={{ color: '#111827' }}>{value}</p>
     </div>
   )
 }

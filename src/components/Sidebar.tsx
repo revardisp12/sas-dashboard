@@ -48,10 +48,10 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
 
   return (
     <aside className="fixed left-0 top-0 h-screen flex flex-col z-50 overflow-y-auto"
-      style={{ width: 240, background: '#0A0A18', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ width: 240, background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}>
 
       {/* Logo */}
-      <div className="px-5 py-5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="px-5 py-5 flex-shrink-0" style={{ borderBottom: '1px solid #F3F4F6' }}>
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
             style={{ background: 'rgba(240,120,48,0.1)', border: '1px solid rgba(240,120,48,0.2)' }}>
@@ -66,7 +66,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
       </div>
 
       {/* Brand dropdown */}
-      <div className="px-4 py-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="px-4 py-4 flex-shrink-0" style={{ borderBottom: '1px solid #F3F4F6' }}>
         <p className="text-[9px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#374151' }}>Brand</p>
         <div className="relative">
           <button
@@ -86,7 +86,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
 
           {brandDropOpen && (
             <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
-              style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+              style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
               {(['reglow', 'amura'] as Brand[]).map(b => {
                 const c = BRAND_CONFIG[b]
                 const active = brand === b
@@ -95,7 +95,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
                     onClick={() => { onBrandChange(b); setBrandDropOpen(false) }}
                     className="w-full flex items-center gap-2.5 px-3 py-3 text-left transition-all"
                     style={{ background: active ? `rgba(${c.rgb},0.1)` : 'transparent' }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#F9FAFB' }}
                     onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.color }} />
                     <span className="text-sm font-medium" style={{ color: active ? c.color : '#9CA3AF' }}>{c.label}</span>
@@ -136,13 +136,13 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, onRe
       </div>
 
       {/* Settings + Reset */}
-      <div className="px-3 pb-4 flex-shrink-0 space-y-1.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+      <div className="px-3 pb-4 flex-shrink-0 space-y-1.5" style={{ borderTop: '1px solid #F3F4F6', paddingTop: 12 }}>
         <NavItem icon={Settings} label="Settings" color="#6B7280" active={view === 'settings'} onClick={() => onViewChange('settings')} />
         <button onClick={handleReset}
           className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
           style={{
-            background: confirmReset ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)',
-            border: `1px solid ${confirmReset ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.06)'}`,
+            background: confirmReset ? 'rgba(239,68,68,0.08)' : '#F9FAFB',
+            border: `1px solid ${confirmReset ? 'rgba(239,68,68,0.3)' : '#E5E7EB'}`,
             color: confirmReset ? '#F87171' : '#4B5563',
           }}>
           <Trash2 size={13} />
@@ -183,12 +183,12 @@ function NavItem({ icon: Icon, label, color, active, onClick, indent = false }: 
       }}>
       <div className={`${indent ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg flex items-center justify-center flex-shrink-0 transition-all`}
         style={{
-          background: active ? `${color}25` : 'rgba(255,255,255,0.04)',
+          background: active ? `${color}25` : '#F3F4F6',
           boxShadow: active ? `0 0 10px ${color}40` : 'none',
         }}>
         <Icon size={indent ? 12 : 14} style={{ color: active ? color : '#6B7280' }} />
       </div>
-      <span className={`${indent ? 'text-xs' : 'text-sm'} font-medium`} style={{ color: active ? '#F0F0F5' : '#6B7280' }}>
+      <span className={`${indent ? 'text-xs' : 'text-sm'} font-medium`} style={{ color: active ? '#111827' : '#6B7280' }}>
         {label}
       </span>
     </button>

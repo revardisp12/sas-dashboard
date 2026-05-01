@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wireframe — Light Theme + Date Range</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f0f0; color: #111; }
+
+  .wf-header { background: #1a1a2e; color: #fff; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .wf-header h1 { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+  .wf-header p { font-size: 12px; color: #888; margin-top: 4px; }
+  .wf-header .tag { background: #f59e0b; color: #000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; }
+
+  .section { padding: 32px 40px; border-bottom: 2px solid #ddd; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  .section-label { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .section-desc { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 20px; }
+
+  .number-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #111; color: #fff; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+  .note { font-size: 12px; color: #555; background: #fff9c4; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 12px; }
+  .note.info { background: #e0f2fe; border-left-color: #0284c7; }
+  .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 4px; }
+  .ba-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .ba-label.before { color: #dc2626; }
+  .ba-label.after { color: #16a34a; }
+
+  /* ===== LIGHT THEME MOCKUP ===== */
+  .mock-shell {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #ddd;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  /* DARK version */
+  .mock-dark { background: #08080F; }
+  .mock-dark .mock-sidebar {
+    width: 200px; background: #0A0A18; border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 16px 12px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .mock-dark .mock-logo { font-size: 13px; font-weight: 800; color: #F0F0F5; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .mock-dark .mock-logo-icon { width: 28px; height: 28px; background: #C9A96E; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #000; }
+  .mock-dark .mock-nav-item { font-size: 11px; color: #4B5563; padding: 6px 8px; border-radius: 6px; }
+  .mock-dark .mock-nav-item.active { background: rgba(201,169,110,0.1); color: #C9A96E; font-weight: 700; }
+  .mock-dark .mock-section-label { font-size: 9px; color: #374151; text-transform: uppercase; letter-spacing: 1px; padding: 8px 8px 4px; font-weight: 700; }
+  .mock-dark .mock-main { flex: 1; padding: 16px 20px; }
+  .mock-dark .mock-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .mock-dark .mock-title { font-size: 16px; font-weight: 800; color: #F0F0F5; }
+  .mock-dark .mock-pills { display: flex; gap: 4px; }
+  .mock-dark .mock-pill { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); color: #6B7280; border: 1px solid rgba(255,255,255,0.06); }
+  .mock-dark .mock-pill.active { background: #C9A96E; color: #000; border-color: #C9A96E; }
+  .mock-dark .mock-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+  .mock-dark .mock-card { background: rgba(201,169,110,0.05); border: 1px solid rgba(201,169,110,0.12); border-radius: 10px; padding: 12px; }
+  .mock-dark .mock-card-label { font-size: 9px; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .mock-dark .mock-card-value { font-size: 16px; font-weight: 800; color: #F0F0F5; }
+  .mock-dark .mock-chart { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #374151; }
+
+  /* LIGHT version */
+  .mock-light { background: #F8F9FC; }
+  .mock-light .mock-sidebar {
+    width: 200px; background: #FFFFFF; border-right: 1px solid #E5E7EB;
+    padding: 16px 12px; display: flex; flex-direction: column; gap: 6px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+  }
+  .mock-light .mock-logo { font-size: 13px; font-weight: 800; color: #111827; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .mock-light .mock-logo-icon { width: 28px; height: 28px; background: #C9A96E; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #000; }
+  .mock-light .mock-nav-item { font-size: 11px; color: #9CA3AF; padding: 6px 8px; border-radius: 6px; }
+  .mock-light .mock-nav-item.active { background: #FEF3C7; color: #92400E; font-weight: 700; }
+  .mock-light .mock-section-label { font-size: 9px; color: #D1D5DB; text-transform: uppercase; letter-spacing: 1px; padding: 8px 8px 4px; font-weight: 700; }
+  .mock-light .mock-main { flex: 1; padding: 16px 20px; }
+  .mock-light .mock-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .mock-light .mock-title { font-size: 16px; font-weight: 800; color: #111827; }
+  .mock-light .mock-pills { display: flex; gap: 4px; }
+  .mock-light .mock-pill { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: #F3F4F6; color: #9CA3AF; border: 1px solid #E5E7EB; }
+  .mock-light .mock-pill.active { background: #C9A96E; color: #fff; border-color: #C9A96E; }
+  .mock-light .mock-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+  .mock-light .mock-card { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .mock-light .mock-card-label { font-size: 9px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .mock-light .mock-card-value { font-size: 16px; font-weight: 800; color: #111827; }
+  .mock-light .mock-chart { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #D1D5DB; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .mock-light .mock-topbar-bar { background: #FFFFFF; border-bottom: 1px solid #E5E7EB; margin: -16px -20px 16px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+
+  .mock-flex { display: flex; height: 280px; }
+
+  /* ===== DATE RANGE MOCKUP ===== */
+  .mock-daterange-before { display: flex; gap: 4px; align-items: center; }
+  .mock-pill-sm { font-size: 10px; font-weight: 700; padding: 5px 12px; border-radius: 8px; }
+  .mock-pill-sm.active { background: #C9A96E; color: #fff; }
+  .mock-pill-sm.default { background: #F3F4F6; color: #9CA3AF; border: 1px solid #E5E7EB; }
+
+  .mock-daterange-after { display: flex; gap: 8px; align-items: center; }
+  .date-pill-group { display: flex; gap: 3px; background: #F3F4F6; padding: 3px; border-radius: 10px; border: 1px solid #E5E7EB; }
+  .date-pill-item { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 7px; color: #9CA3AF; cursor: pointer; }
+  .date-pill-item.active { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .date-separator { font-size: 12px; color: #9CA3AF; }
+  .date-input-box {
+    display: flex; align-items: center; gap: 6px;
+    background: #FFFFFF; border: 1.5px solid #E5E7EB;
+    border-radius: 8px; padding: 5px 10px; font-size: 11px;
+    color: #374151; font-weight: 600; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .date-input-box:hover { border-color: #C9A96E; }
+  .date-input-box .icon { font-size: 12px; color: #9CA3AF; }
+  .date-input-divider { font-size: 11px; color: #D1D5DB; font-weight: 700; }
+
+  /* CALENDAR DROPDOWN */
+  .calendar-dropdown {
+    background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px;
+    padding: 16px; width: 580px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    margin-top: 8px;
+  }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-title { font-size: 13px; font-weight: 700; color: #111827; }
+  .cal-nav { font-size: 12px; color: #9CA3AF; cursor: pointer; padding: 4px 8px; border-radius: 6px; background: #F3F4F6; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+  .cal-day-header { font-size: 9px; font-weight: 700; text-align: center; color: #9CA3AF; text-transform: uppercase; padding: 4px 0; }
+  .cal-day { font-size: 11px; text-align: center; padding: 6px 4px; border-radius: 6px; cursor: pointer; color: #374151; }
+  .cal-day.other-month { color: #D1D5DB; }
+  .cal-day.selected-start { background: #C9A96E; color: #fff; font-weight: 700; border-radius: 6px 0 0 6px; }
+  .cal-day.selected-end { background: #C9A96E; color: #fff; font-weight: 700; border-radius: 0 6px 6px 0; }
+  .cal-day.in-range { background: #FEF3C7; color: #92400E; border-radius: 0; }
+  .cal-day.today { font-weight: 800; color: #C9A96E; }
+  .cal-two-months { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 16px; }
+  .cal-divider { background: #E5E7EB; }
+  .cal-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #F3F4F6; }
+  .cal-preset { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: #F3F4F6; color: #6B7280; cursor: pointer; border: 1px solid #E5E7EB; }
+  .cal-preset.active { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+  .cal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  .cal-btn { font-size: 12px; font-weight: 700; padding: 6px 16px; border-radius: 8px; cursor: pointer; }
+  .cal-btn.cancel { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
+  .cal-btn.apply { background: #C9A96E; color: #fff; border: 1px solid #C9A96E; }
+
+  /* COLOR PALETTE */
+  .palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 12px; }
+  .swatch { border-radius: 8px; padding: 10px; text-align: center; border: 1px solid transparent; }
+  .swatch-color { width: 100%; height: 32px; border-radius: 6px; margin-bottom: 6px; }
+  .swatch-name { font-size: 10px; font-weight: 700; color: #555; }
+  .swatch-hex { font-size: 9px; color: #888; font-family: monospace; }
+
+  .todo-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .todo-item { display: flex; align-items: flex-start; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; }
+  .todo-num { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: 50%; background: #374151; color: #fff; font-size: 10px; font-weight: 800; margin-top: 2px; }
+  .todo-file { font-size: 11px; font-weight: 700; color: #6b7280; font-family: monospace; background: #e5e7eb; padding: 1px 6px; border-radius: 4px; }
+  .todo-text { font-size: 13px; color: #374151; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="wf-header">
+  <div>
+    <h1>SAS Dashboard — Wireframe</h1>
+    <p>Light Theme + Date Range Picker</p>
+  </div>
+  <div class="tag">2 Perubahan</div>
+</div>
+
+<!-- ===== SECTION 1: LIGHT THEME BEFORE/AFTER ===== -->
+<div class="section" style="background:#fff;">
+  <div class="section-title">Perubahan 1</div>
+  <div class="section-label"><span class="number-badge">1</span> Light Theme — Before vs After</div>
+  <div class="section-desc">Ganti dark background menjadi clean white. Lebih mudah dibaca, lebih profesional untuk presentasi ke klien/manajemen.</div>
+
+  <div class="before-after">
+
+    <!-- BEFORE: DARK -->
+    <div>
+      <div class="ba-label before">✕ Before — Dark Theme</div>
+      <div class="mock-shell mock-dark">
+        <div class="mock-flex">
+          <div class="mock-sidebar">
+            <div class="mock-logo"><div class="mock-logo-icon">SAS</div>SAS</div>
+            <div class="mock-section-label">Menu</div>
+            <div class="mock-nav-item">Overview</div>
+            <div class="mock-nav-item">Funnel Analysis</div>
+            <div class="mock-nav-item active">TikTok Organic</div>
+            <div class="mock-section-label">Paid Traffic</div>
+            <div class="mock-nav-item">Google Ads</div>
+            <div class="mock-nav-item">Meta Ads</div>
+          </div>
+          <div class="mock-main" style="background:#08080F;">
+            <div class="mock-topbar">
+              <div class="mock-title">TikTok Organic</div>
+              <div class="mock-pills">
+                <div class="mock-pill">7H</div>
+                <div class="mock-pill active">14H</div>
+                <div class="mock-pill">30H</div>
+                <div class="mock-pill">90H</div>
+                <div class="mock-pill">All</div>
+              </div>
+            </div>
+            <div class="mock-cards">
+              <div class="mock-card"><div class="mock-card-label">Followers</div><div class="mock-card-value" style="color:#F0F0F5;">18.303</div></div>
+              <div class="mock-card"><div class="mock-card-label">Total Views</div><div class="mock-card-value" style="color:#F0F0F5;">1.047.483</div></div>
+              <div class="mock-card"><div class="mock-card-label">Comments</div><div class="mock-card-value" style="color:#F0F0F5;">334</div></div>
+              <div class="mock-card"><div class="mock-card-label">Eng. Rate</div><div class="mock-card-value" style="color:#10B981;">0.34%</div></div>
+            </div>
+            <div class="mock-chart" style="background:rgba(255,255,255,0.02);border-color:rgba(255,255,255,0.06);color:#374151;">Chart area</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER: LIGHT -->
+    <div>
+      <div class="ba-label after">✓ After — Light Theme</div>
+      <div class="mock-shell mock-light">
+        <div class="mock-flex">
+          <div class="mock-sidebar">
+            <div class="mock-logo"><div class="mock-logo-icon">SAS</div>SAS</div>
+            <div class="mock-section-label">Menu</div>
+            <div class="mock-nav-item">Overview</div>
+            <div class="mock-nav-item">Funnel Analysis</div>
+            <div class="mock-nav-item active">TikTok Organic</div>
+            <div class="mock-section-label">Paid Traffic</div>
+            <div class="mock-nav-item">Google Ads</div>
+            <div class="mock-nav-item">Meta Ads</div>
+          </div>
+          <div class="mock-main" style="background:#F8F9FC;flex:1;">
+            <div class="mock-topbar-bar">
+              <div class="mock-title">TikTok Organic</div>
+              <div class="mock-pills">
+                <div class="mock-pill">7H</div>
+                <div class="mock-pill active">14H</div>
+                <div class="mock-pill">30H</div>
+                <div class="mock-pill">90H</div>
+                <div class="mock-pill">All</div>
+              </div>
+            </div>
+            <div class="mock-cards">
+              <div class="mock-card"><div class="mock-card-label">Followers</div><div class="mock-card-value">18.303</div></div>
+              <div class="mock-card"><div class="mock-card-label">Total Views</div><div class="mock-card-value">1.047.483</div></div>
+              <div class="mock-card"><div class="mock-card-label">Comments</div><div class="mock-card-value">334</div></div>
+              <div class="mock-card"><div class="mock-card-label" style="color:#16a34a;">Eng. Rate</div><div class="mock-card-value" style="color:#16a34a;">0.34%</div></div>
+            </div>
+            <div class="mock-chart">Chart area</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== SECTION 2: COLOR PALETTE ===== -->
+<div class="section" style="background:#f8f8f8;">
+  <div class="section-title">Light Theme — Color Palette</div>
+  <div class="section-label">Token warna yang dipakai</div>
+  <div class="section-desc">Semua warna dark diganti ke versi light yang tetap clean dan tidak terlalu flat.</div>
+
+  <div class="palette">
+    <div class="swatch" style="background:#fff;border-color:#E5E7EB;">
+      <div class="swatch-color" style="background:#F8F9FC;border:1px solid #E5E7EB;"></div>
+      <div class="swatch-name">Page BG</div>
+      <div class="swatch-hex">#F8F9FC</div>
+    </div>
+    <div class="swatch" style="background:#fff;border-color:#E5E7EB;">
+      <div class="swatch-color" style="background:#FFFFFF;border:1px solid #E5E7EB;"></div>
+      <div class="swatch-name">Card / Sidebar</div>
+      <div class="swatch-hex">#FFFFFF</div>
+    </div>
+    <div class="swatch" style="background:#fff;border-color:#E5E7EB;">
+      <div class="swatch-color" style="background:#111827;"></div>
+      <div class="swatch-name">Text Primary</div>
+      <div class="swatch-hex">#111827</div>
+    </div>
+    <div class="swatch" style="background:#fff;border-color:#E5E7EB;">
+      <div class="swatch-color" style="background:#6B7280;"></div>
+      <div class="swatch-name">Text Secondary</div>
+      <div class="swatch-hex">#6B7280</div>
+    </div>
+    <div class="swatch" style="background:#fff;border-color:#E5E7EB;">
+      <div class="swatch-color" style="background:#E5E7EB;"></div>
+      <div class="swatch-name">Border</div>
+      <div class="swatch-hex">#E5E7EB</div>
+    </div>
+    <div class="swatch" style="background:#fff;border-color:#E5E7EB;">
+      <div class="swatch-color" style="background:#C9A96E;"></div>
+      <div class="swatch-name">Accent (Reglow)</div>
+      <div class="swatch-hex">#C9A96E</div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:16px;">Neon glow effects, glassmorphism, dan box-shadow besar dihapus. Diganti dengan subtle border + drop shadow tipis agar terasa clean.</div>
+</div>
+
+<!-- ===== SECTION 3: DATE RANGE PICKER ===== -->
+<div class="section" style="background:#fff;">
+  <div class="section-title">Perubahan 2</div>
+  <div class="section-label"><span class="number-badge">2</span> Date Range Picker — Before vs After</div>
+  <div class="section-desc">Ganti timeframe pills (7H/14H/30H) dengan date range picker yang bisa pilih dari tanggal berapa sampai tanggal berapa. Pills tetap ada sebagai shortcut cepat.</div>
+
+  <div style="display:flex;flex-direction:column;gap:24px;">
+
+    <!-- BEFORE -->
+    <div>
+      <div class="ba-label before" style="margin-bottom:10px;">✕ Before — Fixed Pills Only</div>
+      <div style="background:#F8F9FC;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:6px;">
+        <div class="mock-pill-sm default">7H</div>
+        <div class="mock-pill-sm active">14H</div>
+        <div class="mock-pill-sm default">30H</div>
+        <div class="mock-pill-sm default">90H</div>
+        <div class="mock-pill-sm default">All</div>
+      </div>
+      <div class="note" style="margin-top:8px;display:inline-block;">Tidak bisa pilih tanggal spesifik. Misal mau lihat data 3–15 April tidak bisa.</div>
+    </div>
+
+    <!-- AFTER -->
+    <div>
+      <div class="ba-label after" style="margin-bottom:10px;">✓ After — Pills + Date Range</div>
+      <div style="background:#F8F9FC;border:1.5px solid #E5E7EB;border-radius:10px;padding:14px 18px;display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;">
+
+        <!-- Quick pills tetap ada -->
+        <div class="date-pill-group">
+          <div class="date-pill-item">7H</div>
+          <div class="date-pill-item active">14H</div>
+          <div class="date-pill-item">30H</div>
+          <div class="date-pill-item">90H</div>
+          <div class="date-pill-item">All</div>
+        </div>
+
+        <div style="width:1px;height:20px;background:#E5E7EB;"></div>
+
+        <!-- Date range input -->
+        <div class="date-input-box">
+          <span class="icon">📅</span>
+          <span>18 Apr 2026</span>
+        </div>
+        <div class="date-input-divider">→</div>
+        <div class="date-input-box" style="border-color:#C9A96E;">
+          <span class="icon">📅</span>
+          <span style="color:#C9A96E;">01 Mei 2026</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CALENDAR DROPDOWN -->
+    <div>
+      <div class="ba-label after" style="margin-bottom:10px;">✓ Calendar Dropdown (klik date input)</div>
+      <div class="calendar-dropdown">
+        <div class="cal-two-months">
+          <!-- Month 1: April -->
+          <div>
+            <div class="cal-header">
+              <div class="cal-nav">‹</div>
+              <div class="cal-title">April 2026</div>
+              <div class="cal-nav" style="visibility:hidden;">›</div>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-header">Sen</div><div class="cal-day-header">Sel</div><div class="cal-day-header">Rab</div><div class="cal-day-header">Kam</div><div class="cal-day-header">Jum</div><div class="cal-day-header">Sab</div><div class="cal-day-header">Min</div>
+              <div class="cal-day other-month">31</div><div class="cal-day">1</div><div class="cal-day">2</div><div class="cal-day">3</div><div class="cal-day">4</div><div class="cal-day">5</div><div class="cal-day">6</div>
+              <div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div><div class="cal-day">11</div><div class="cal-day">12</div><div class="cal-day">13</div>
+              <div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div><div class="cal-day">17</div><div class="cal-day selected-start">18</div><div class="cal-day in-range">19</div><div class="cal-day in-range">20</div>
+              <div class="cal-day in-range">21</div><div class="cal-day in-range">22</div><div class="cal-day in-range">23</div><div class="cal-day in-range">24</div><div class="cal-day in-range">25</div><div class="cal-day in-range">26</div><div class="cal-day in-range">27</div>
+              <div class="cal-day in-range">28</div><div class="cal-day in-range">29</div><div class="cal-day in-range">30</div><div class="cal-day other-month">1</div><div class="cal-day other-month">2</div><div class="cal-day other-month">3</div><div class="cal-day other-month">4</div>
+            </div>
+          </div>
+
+          <div class="cal-divider"></div>
+
+          <!-- Month 2: Mei -->
+          <div>
+            <div class="cal-header">
+              <div class="cal-nav" style="visibility:hidden;">‹</div>
+              <div class="cal-title">Mei 2026</div>
+              <div class="cal-nav">›</div>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-header">Sen</div><div class="cal-day-header">Sel</div><div class="cal-day-header">Rab</div><div class="cal-day-header">Kam</div><div class="cal-day-header">Jum</div><div class="cal-day-header">Sab</div><div class="cal-day-header">Min</div>
+              <div class="cal-day other-month">28</div><div class="cal-day other-month">29</div><div class="cal-day other-month">30</div><div class="cal-day in-range">1</div><div class="cal-day selected-end">1</div>
+              <div class="cal-day other-month"></div><div class="cal-day other-month"></div>
+              <div class="cal-day">5</div><div class="cal-day">6</div><div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div><div class="cal-day">11</div>
+              <div class="cal-day">12</div><div class="cal-day today">13</div><div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div><div class="cal-day">17</div><div class="cal-day">18</div>
+              <div class="cal-day">19</div><div class="cal-day">20</div><div class="cal-day">21</div><div class="cal-day">22</div><div class="cal-day">23</div><div class="cal-day">24</div><div class="cal-day">25</div>
+              <div class="cal-day">26</div><div class="cal-day">27</div><div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day">31</div><div class="cal-day other-month">1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="cal-presets">
+          <span style="font-size:10px;color:#9CA3AF;align-self:center;font-weight:600;">Shortcut:</span>
+          <div class="cal-preset">Hari ini</div>
+          <div class="cal-preset">7 hari</div>
+          <div class="cal-preset active">14 hari</div>
+          <div class="cal-preset">30 hari</div>
+          <div class="cal-preset">90 hari</div>
+          <div class="cal-preset">Bulan ini</div>
+          <div class="cal-preset">Bulan lalu</div>
+          <div class="cal-preset">Semua data</div>
+        </div>
+
+        <div class="cal-footer">
+          <div class="cal-btn cancel">Batal</div>
+          <div class="cal-btn apply">Terapkan</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== SECTION 4: TODO LIST ===== -->
+<div class="section" style="background:#f8f8f8;border-bottom:none;">
+  <div class="section-title">Kerjaan Sore Ini</div>
+  <div class="section-label">List implementasi</div>
+  <br/>
+
+  <ul class="todo-list">
+    <li class="todo-item">
+      <span class="todo-num">1</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">globals.css + tailwind.config</span>
+        </div>
+        <div class="todo-text">Ganti semua CSS variable dark ke light. Background utama: <code>#F8F9FC</code>, card: <code>#FFFFFF</code>, sidebar: <code>#FFFFFF</code>, border: <code>#E5E7EB</code>, text: <code>#111827</code>. Hapus neon glow, glassmorphism, dan dark background inline styles.</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">2</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">src/components/Sidebar.tsx</span>
+        </div>
+        <div class="todo-text">Ganti background sidebar dari dark ke white. Update warna nav item, section label, brand dropdown, dan active state ke light theme.</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">3</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">src/components/MetricCard.tsx</span>
+        </div>
+        <div class="todo-text">Ganti background card dari dark semi-transparent ke white. Border dari rgba ke <code>#E5E7EB</code>. Tambah subtle box-shadow. Hapus glow effect.</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">4</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">src/app/page.tsx + semua platform views</span>
+        </div>
+        <div class="todo-text">Ganti semua inline style dark background (<code>#08080F</code>, <code>#0E0E1C</code>, dll) ke light. Update warna teks dan border di chart tooltip, modal, empty state, dsb.</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">5</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">src/lib/types.ts</span>
+        </div>
+        <div class="todo-text">Ganti type <code>Timeframe = 7 | 14 | 30 | 90 | 0</code> menjadi support date range: tambah interface <code>DateRange = { from: string; to: string }</code> atau ubah Timeframe ke <code>Timeframe | DateRange</code>.</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">6</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">src/components/TimeframeSelector.tsx (redesign)</span>
+        </div>
+        <div class="todo-text">Redesign komponen: tambah dua date input (From / To) di samping pills. Klik input → tampilkan calendar dropdown dual-month dengan preset shortcuts. Saat user pilih custom range, pills otomatis di-deselect. Saat user klik pill, date range mengikuti.</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">7</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="todo-file">src/lib/utils.ts</span>
+        </div>
+        <div class="todo-text">Update fungsi <code>filterByDays</code> → tambah fungsi baru <code>filterByRange(data, from, to)</code> yang filter berdasarkan date string range. Update semua caller di <code>page.tsx</code>.</div>
+      </div>
+    </li>
+  </ul>
+
+  <div class="note info" style="margin-top:20px;">
+    <strong>Urutan yang disarankan:</strong> Kerjain Light Theme dulu (Todo 1–4) karena impactnya besar dan independen. Setelah theme selesai baru Date Range (Todo 5–7) supaya testing lebih mudah.
+  </div>
+</div>
+
+</body>
+</html>

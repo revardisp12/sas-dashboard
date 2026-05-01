@@ -221,7 +221,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
             </div>
           </div>
           <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
               style={{ background: `${accent}15`, border: `1px solid ${accent}30`, boxShadow: `0 0 30px ${accent}15` }}>
               <Users size={28} style={{ color: accent }} />
@@ -245,11 +245,11 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
           <p className="text-sm" style={{ color: '#4B5563' }}>{customers.length} customers dianalisis</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
             {TIMEFRAME_OPTIONS.map(opt => (
               <button key={opt.value} onClick={() => setTimeframe(opt.value)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                style={{ background: timeframe === opt.value ? accent : 'transparent', color: timeframe === opt.value ? '#08080F' : '#6B7280', boxShadow: timeframe === opt.value ? `0 0 12px ${accent}60` : 'none' }}>
+                style={{ background: timeframe === opt.value ? accent : 'transparent', color: timeframe === opt.value ? '#FFFFFF' : '#6B7280', boxShadow: timeframe === opt.value ? `0 0 12px ${accent}60` : 'none' }}>
                 {opt.label}
               </button>
             ))}
@@ -286,7 +286,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
           { label: 'At Risk / Can\'t Lose', value: fmtNum((segmentCounts['At Risk'] || 0) + (segmentCounts["Can't Lose Them"] || 0)), color: '#EF4444' },
           { label: 'Total Revenue', value: fmtCurrency(customers.reduce((s, c) => s + c.monetary, 0)), color: '#8B5CF6' },
         ].map(stat => (
-          <div key={stat.label} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div key={stat.label} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#4B5563' }}>{stat.label}</p>
             <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
           </div>
@@ -294,11 +294,11 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
         {([['rfm', 'RFM Matrix'], ['pipeline', 'Pipeline'], ['actions', 'Action List']] as [Tab, string][]).map(([t, label]) => (
           <button key={t} onClick={() => setTab(t)}
             className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-            style={{ background: tab === t ? accent : 'transparent', color: tab === t ? '#08080F' : '#6B7280', boxShadow: tab === t ? `0 0 12px ${accent}60` : 'none' }}>
+            style={{ background: tab === t ? accent : 'transparent', color: tab === t ? '#FFFFFF' : '#6B7280', boxShadow: tab === t ? `0 0 12px ${accent}60` : 'none' }}>
             {label}
           </button>
         ))}
@@ -307,7 +307,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
       {/* ── TAB: RFM MATRIX ── */}
       {tab === 'rfm' && (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>RFM Matrix</p>
             <div className="flex gap-3">
               <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
@@ -325,8 +325,8 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                       <button key={`${rScore}-${fScore}`}
                         onClick={() => { setSelectedSegment(isSelected ? null : seg); setPage(1) }}
                         className="rounded-lg flex flex-col items-center justify-center transition-all"
-                        style={{ aspectRatio: '1', background: count > 0 ? cfg.bg : 'rgba(255,255,255,0.02)', border: isSelected ? `2px solid ${cfg.color}` : `1px solid ${count > 0 ? cfg.color + '30' : 'rgba(255,255,255,0.04)'}`, boxShadow: isSelected ? `0 0 16px ${cfg.color}40` : 'none', opacity: selectedSegment && !isSelected ? 0.4 : 1 }}>
-                        {count > 0 ? (<><span className="text-xs font-bold leading-none" style={{ color: cfg.color }}>{pct}%</span><span className="text-[9px] leading-none mt-0.5" style={{ color: cfg.color + 'aa' }}>{count}</span></>) : (<span style={{ color: 'rgba(255,255,255,0.08)', fontSize: 10 }}>–</span>)}
+                        style={{ aspectRatio: '1', background: count > 0 ? cfg.bg : '#F9FAFB', border: isSelected ? `2px solid ${cfg.color}` : `1px solid ${count > 0 ? cfg.color + '30' : '#F9FAFB'}`, boxShadow: isSelected ? `0 0 16px ${cfg.color}40` : 'none', opacity: selectedSegment && !isSelected ? 0.4 : 1 }}>
+                        {count > 0 ? (<><span className="text-xs font-bold leading-none" style={{ color: cfg.color }}>{pct}%</span><span className="text-[9px] leading-none mt-0.5" style={{ color: cfg.color + 'aa' }}>{count}</span></>) : (<span style={{ color: '#F9FAFB', fontSize: 10 }}>–</span>)}
                       </button>
                     )
                   }))}
@@ -338,7 +338,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
               </div>
             </div>
           </div>
-          <div className="lg:col-span-2 rounded-2xl p-5 space-y-1.5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="lg:col-span-2 rounded-2xl p-5 space-y-1.5" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: '#6B7280' }}>Segments</p>
             {(Object.entries(SEGMENT_CONFIG) as [RFMSegment, typeof SEGMENT_CONFIG[RFMSegment]][]).map(([seg, cfg]) => {
               const count = segmentCounts[seg] || 0
@@ -349,9 +349,9 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-left"
                   style={{ background: isSelected ? cfg.bg : 'transparent', border: isSelected ? `1px solid ${cfg.color}40` : '1px solid transparent', opacity: selectedSegment && !isSelected ? 0.4 : 1 }}>
                   <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: cfg.color }} />
-                  <span className="text-xs flex-1" style={{ color: isSelected ? '#F0F0F5' : '#9CA3AF' }}>{seg}</span>
+                  <span className="text-xs flex-1" style={{ color: isSelected ? '#111827' : '#9CA3AF' }}>{seg}</span>
                   <span className="text-xs font-bold" style={{ color: cfg.color }}>{count}</span>
-                  <div className="w-12 h-1.5 rounded-full overflow-hidden flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="w-12 h-1.5 rounded-full overflow-hidden flex-shrink-0" style={{ background: '#F9FAFB' }}>
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, background: cfg.color }} />
                   </div>
                 </button>
@@ -360,8 +360,8 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
           </div>
 
           {/* Customer Table */}
-          <div className="lg:col-span-5 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="lg:col-span-5 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>Customer List</p>
               {selectedSegment && (
                 <button onClick={() => { setSelectedSegment(null); setPage(1) }}
@@ -375,7 +375,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
                     {['Nama', 'No HP', 'Last Buy', 'Orders', 'Total Spend', 'R', 'F', 'M', 'Segment', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#374151' }}>{h}</th>
                     ))}
@@ -385,13 +385,13 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                   {pageCustomers.map((c, i) => {
                     const cfg = SEGMENT_CONFIG[c.segment]
                     return (
-                      <tr key={i} className="transition-all" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                      <tr key={i} className="transition-all" style={{ borderBottom: '1px solid #E5E7EB' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td className="px-4 py-3 text-sm font-medium cursor-pointer" style={{ color: '#F0F0F5' }} onClick={() => setSelectedCustomer(c)}>{c.customerName}</td>
+                        <td className="px-4 py-3 text-sm font-medium cursor-pointer" style={{ color: '#111827' }} onClick={() => setSelectedCustomer(c)}>{c.customerName}</td>
                         <td className="px-4 py-3 text-xs" style={{ color: '#6B7280' }}>{c.phone || '–'}</td>
                         <td className="px-4 py-3 text-xs" style={{ color: '#6B7280' }}>{c.lastOrderDate}</td>
-                        <td className="px-4 py-3 text-sm font-bold" style={{ color: '#F0F0F5' }}>{c.frequency}x</td>
+                        <td className="px-4 py-3 text-sm font-bold" style={{ color: '#111827' }}>{c.frequency}x</td>
                         <td className="px-4 py-3 text-sm font-bold" style={{ color: '#10B981' }}>{fmtCurrency(c.monetary)}</td>
                         <td className="px-4 py-3"><ScoreBadge score={c.rScore} /></td>
                         <td className="px-4 py-3"><ScoreBadge score={c.fScore} /></td>
@@ -400,7 +400,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                         <td className="px-4 py-3">
                           <button onClick={() => { setAddTaskModal({ customer: c }); setTaskForm({ note: SEGMENT_CONFIG[c.segment].action, dueDate: todayStr }) }}
                             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all"
-                            style={{ background: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>
+                            style={{ background: '#F9FAFB', color: '#6B7280' }}>
                             <Plus size={10} /> Task
                           </button>
                         </td>
@@ -411,11 +411,11 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid #E5E7EB' }}>
                 <span className="text-[10px]" style={{ color: '#4B5563' }}>{(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, displayedCustomers.length)} of {displayedCustomers.length}</span>
                 <div className="flex gap-2">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded-lg text-xs disabled:opacity-30" style={{ background: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>← Prev</button>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded-lg text-xs disabled:opacity-30" style={{ background: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }}>Next →</button>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded-lg text-xs disabled:opacity-30" style={{ background: '#F9FAFB', color: '#9CA3AF' }}>← Prev</button>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded-lg text-xs disabled:opacity-30" style={{ background: '#F9FAFB', color: '#9CA3AF' }}>Next →</button>
                 </div>
               </div>
             )}
@@ -435,8 +435,8 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
             const colTasks = tasks.filter(t => t.status === status)
             const { label, color } = labels[status]
             return (
-              <div key={status} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div key={status} className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ background: color }} />
                     <span className="text-xs font-semibold" style={{ color }}>{label}</span>
@@ -451,10 +451,10 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                     const segCfg = SEGMENT_CONFIG[task.segment]
                     const isOverdue = task.dueDate < todayStr && task.status !== 'done'
                     return (
-                      <div key={task.id} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div key={task.id} className="rounded-xl p-3" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>{task.customerName}</p>
+                            <p className="text-sm font-semibold" style={{ color: '#111827' }}>{task.customerName}</p>
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: segCfg.bg, color: segCfg.color }}>{task.segment}</span>
                           </div>
                           <button onClick={() => deleteTask(task.id)} style={{ color: '#374151' }}><X size={12} /></button>
@@ -465,8 +465,8 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                             📅 {task.dueDate}{isOverdue ? ' — Overdue!' : ''}
                           </span>
                           <div className="flex gap-1">
-                            {status !== 'todo' && <button onClick={() => updateTaskStatus(task.id, status === 'ongoing' ? 'todo' : 'ongoing')} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>←</button>}
-                            {status !== 'done' && <button onClick={() => updateTaskStatus(task.id, status === 'todo' ? 'ongoing' : 'done')} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#6B7280' }}>→</button>}
+                            {status !== 'todo' && <button onClick={() => updateTaskStatus(task.id, status === 'ongoing' ? 'todo' : 'ongoing')} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#F9FAFB', color: '#6B7280' }}>←</button>}
+                            {status !== 'done' && <button onClick={() => updateTaskStatus(task.id, status === 'todo' ? 'ongoing' : 'done')} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#F9FAFB', color: '#6B7280' }}>→</button>}
                           </div>
                         </div>
                       </div>
@@ -487,7 +487,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
             .map(([seg, cfg]) => {
               const segCustomers = customers.filter(c => c.segment === seg)
               return (
-                <div key={seg} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${cfg.color}20` }}>
+                <div key={seg} className="rounded-2xl p-4" style={{ background: '#F9FAFB', border: `1px solid ${cfg.color}20` }}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm" style={{ background: cfg.color }} />
@@ -515,16 +515,16 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
       {/* Customer Detail Modal */}
       {selectedCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }} onClick={() => setSelectedCustomer(null)}>
-          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between p-5" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-bold" style={{ color: '#F0F0F5' }}>{selectedCustomer.customerName}</h3>
+                  <h3 className="text-lg font-bold" style={{ color: '#111827' }}>{selectedCustomer.customerName}</h3>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: SEGMENT_CONFIG[selectedCustomer.segment].bg, color: SEGMENT_CONFIG[selectedCustomer.segment].color }}>{selectedCustomer.segment}</span>
                 </div>
                 <p className="text-xs" style={{ color: '#6B7280' }}>{SEGMENT_CONFIG[selectedCustomer.segment].action}</p>
               </div>
-              <button onClick={() => setSelectedCustomer(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: '#6B7280' }}><X size={14} /></button>
+              <button onClick={() => setSelectedCustomer(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#F9FAFB', color: '#6B7280' }}><X size={14} /></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -535,7 +535,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {[{ label: 'Recency', score: selectedCustomer.rScore, sub: `${selectedCustomer.recencyDays} hari lalu` }, { label: 'Frequency', score: selectedCustomer.fScore, sub: `${selectedCustomer.frequency}x order` }, { label: 'Monetary', score: selectedCustomer.mScore, sub: fmtCurrency(selectedCustomer.monetary) }].map(item => (
-                  <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#4B5563' }}>{item.label}</p>
                     <p className="text-2xl font-bold" style={{ color: scoreColor(item.score) }}>{item.score}</p>
                     <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{item.sub}</p>
@@ -546,8 +546,8 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                 <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#4B5563' }}>Riwayat Transaksi</p>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {selectedCustomer.transactions.map((tx, i) => (
-                    <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                      <div><p className="text-xs font-medium" style={{ color: '#F0F0F5' }}>{tx.product}</p><p className="text-[10px]" style={{ color: '#4B5563' }}>{tx.date} · {tx.qty}x</p></div>
+                    <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: '#F9FAFB' }}>
+                      <div><p className="text-xs font-medium" style={{ color: '#111827' }}>{tx.product}</p><p className="text-[10px]" style={{ color: '#4B5563' }}>{tx.date} · {tx.qty}x</p></div>
                       <p className="text-sm font-bold" style={{ color: '#10B981' }}>{fmtCurrency(tx.revenue)}</p>
                     </div>
                   ))}
@@ -561,30 +561,30 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
       {/* Add Task Modal */}
       {addTaskModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }} onClick={() => setAddTaskModal(null)}>
-          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <div>
-                <h3 className="text-base font-bold" style={{ color: '#F0F0F5' }}>Tambah Follow-up Task</h3>
+                <h3 className="text-base font-bold" style={{ color: '#111827' }}>Tambah Follow-up Task</h3>
                 <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{addTaskModal.customer.customerName} · <span style={{ color: SEGMENT_CONFIG[addTaskModal.customer.segment].color }}>{addTaskModal.customer.segment}</span></p>
               </div>
-              <button onClick={() => setAddTaskModal(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: '#6B7280' }}><X size={14} /></button>
+              <button onClick={() => setAddTaskModal(null)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#F9FAFB', color: '#6B7280' }}><X size={14} /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
                 <label className="text-[10px] font-semibold tracking-widest uppercase mb-2 block" style={{ color: '#4B5563' }}>Catatan / Aksi</label>
                 <textarea value={taskForm.note} onChange={e => setTaskForm(p => ({ ...p, note: e.target.value }))} rows={3}
                   className="w-full rounded-xl px-3 py-2.5 text-sm resize-none outline-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
               <div>
                 <label className="text-[10px] font-semibold tracking-widest uppercase mb-2 block" style={{ color: '#4B5563' }}>Due Date</label>
                 <input type="date" value={taskForm.dueDate} onChange={e => setTaskForm(p => ({ ...p, dueDate: e.target.value }))}
                   className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
               <button onClick={() => addTask(addTaskModal.customer)}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
-                style={{ background: accent, color: '#08080F', boxShadow: `0 0 20px ${accent}60` }}>
+                style={{ background: accent, color: '#FFFFFF', boxShadow: `0 0 20px ${accent}60` }}>
                 Tambah Task
               </button>
             </div>
@@ -596,10 +596,10 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
       {/* CRM Manual Input Modal — shown in both empty and filled state */}
       {crmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <div>
-                <p className="font-semibold" style={{ color: '#F0F0F5' }}>Input Manual — CRM</p>
+                <p className="font-semibold" style={{ color: '#111827' }}>Input Manual — CRM</p>
                 <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Tambah transaksi customer</p>
               </div>
               <button onClick={() => setCrmModal(false)} style={{ color: '#6B7280' }}><X size={18} /></button>
@@ -610,20 +610,20 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                   <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>Tanggal</label>
                   <input type="date" value={crmDate} onChange={e => setCrmDate(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                    style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                 </div>
                 <div>
                   <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>Nama Customer</label>
                   <input value={crmCustomer} onChange={e => setCrmCustomer(e.target.value)} placeholder="Siti Rahma"
                     className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                    style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                 </div>
               </div>
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4B5563' }}>No. HP</label>
                 <input value={crmPhone} onChange={e => setCrmPhone(e.target.value)} placeholder="081234567890"
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
 
               {/* Product lines */}
@@ -643,21 +643,21 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                         {brandProducts.length > 0 ? (
                           <select value={line.sku} onChange={e => pickCrmProduct(idx, e.target.value)}
                             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }}>
+                            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}>
                             <option value="">— Pilih produk —</option>
                             {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
                           </select>
                         ) : (
                           <input value={line.product} onChange={e => updateCrmLine(idx, 'product', e.target.value)} placeholder="Nama produk"
                             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                         )}
                       </div>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Qty</label>}
                         <input type="number" min="1" value={line.qty} onChange={e => updateCrmLine(idx, 'qty', e.target.value)}
                           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                          style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                       </div>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Revenue (Rp)</label>}
@@ -665,7 +665,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                           placeholder={line.sku ? 'Auto' : '150000'}
                           readOnly={!!line.sku}
                           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5', opacity: line.sku ? 0.6 : 1 }} />
+                          style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827', opacity: line.sku ? 0.6 : 1 }} />
                       </div>
                       <button onClick={() => removeCrmLine(idx)} disabled={crmLines.length === 1}
                         className="pb-0.5" style={{ color: crmLines.length === 1 ? '#374151' : '#6B7280' }}>
@@ -678,7 +678,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
 
               <div className="flex justify-end gap-3 pt-2">
                 <button onClick={() => setCrmModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
                   Batal
                 </button>
                 <button onClick={saveCrmManual} className="px-5 py-2.5 rounded-xl text-sm font-semibold"

@@ -112,8 +112,8 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
           <button key={id} onClick={() => setTab(id)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
-              background: tab === id ? `rgba(${rgb},0.15)` : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${tab === id ? `rgba(${rgb},0.4)` : 'rgba(255,255,255,0.06)'}`,
+              background: tab === id ? `rgba(${rgb},0.15)` : '#F9FAFB',
+              border: `1px solid ${tab === id ? `rgba(${rgb},0.3)` : '#E5E7EB'}`,
               color: tab === id ? color : '#6B7280',
             }}>
             <Icon size={14} />
@@ -125,36 +125,36 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
       {tab === 'product-master' && (
         <div className="space-y-5">
           {/* Add product form */}
-          <div className="rounded-2xl p-5 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>Tambah Produk</p>
+          <div className="rounded-2xl p-5 space-y-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+            <p className="text-sm font-semibold" style={{ color: '#111827' }}>Tambah Produk</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#6B7280' }}>SKU</label>
                 <input value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))}
                   placeholder="e.g. SVC-001"
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#6B7280' }}>Nama Produk</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Serum Vitamin C"
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#6B7280' }}>Harga Jual (Rp)</label>
                 <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                   placeholder="150000"
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#6B7280' }}>COGS / HPP (Rp)</label>
                 <input value={form.cogs} onChange={e => setForm(f => ({ ...f, cogs: e.target.value }))}
                   placeholder="60000"
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
               </div>
             </div>
             {/* Margin preview */}
@@ -177,11 +177,11 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
               </button>
               <button onClick={() => { downloadTemplate('product-master') }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
                 Download Template CSV
               </button>
               <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
                 <Upload size={14} /> Bulk Import CSV
                 <input ref={fileRef} type="file" accept=".csv" className="hidden"
                   onChange={e => { if (e.target.files?.[0]) handleCSV(e.target.files[0]) }} />
@@ -190,9 +190,9 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
           </div>
 
           {/* Product list */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #E5E7EB' }}>
             <div className="px-5 py-3 grid text-[10px] font-semibold uppercase tracking-widest"
-              style={{ gridTemplateColumns: '100px 1fr 120px 120px 80px 80px', color: '#4B5563', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              style={{ gridTemplateColumns: '100px 1fr 120px 120px 80px 80px', color: '#4B5563', background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
               <span>SKU</span><span>Nama Produk</span><span>Harga Jual</span><span>COGS</span><span>Margin</span><span></span>
             </div>
             {brandProducts.length === 0 ? (
@@ -205,23 +205,23 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
                 className="px-5 py-3.5 grid items-center"
                 style={{
                   gridTemplateColumns: '100px 1fr 120px 120px 80px 80px',
-                  borderBottom: i < brandProducts.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                  background: editId === p.id ? 'rgba(255,255,255,0.03)' : 'transparent',
+                  borderBottom: i < brandProducts.length - 1 ? '1px solid #F3F4F6' : 'none',
+                  background: editId === p.id ? '#F9FAFB' : 'transparent',
                 }}>
                 {editId === p.id ? (
                   <>
                     <input value={editForm.sku} onChange={e => setEditForm(f => ({ ...f, sku: e.target.value }))}
                       className="px-2 py-1 rounded-lg text-xs mr-2 outline-none"
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#F0F0F5' }} />
+                      style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                     <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
                       className="px-2 py-1 rounded-lg text-xs mr-2 outline-none"
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#F0F0F5' }} />
+                      style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                     <input value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
                       className="px-2 py-1 rounded-lg text-xs mr-2 outline-none"
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#F0F0F5' }} />
+                      style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                     <input value={editForm.cogs} onChange={e => setEditForm(f => ({ ...f, cogs: e.target.value }))}
                       className="px-2 py-1 rounded-lg text-xs mr-2 outline-none"
-                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#F0F0F5' }} />
+                      style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
                     <span className="text-xs font-bold" style={{ color: marginColor(toNum(editForm.price) > 0 ? Math.round(((toNum(editForm.price) - toNum(editForm.cogs)) / toNum(editForm.price)) * 100) : 0) }}>
                       {toNum(editForm.price) > 0 ? Math.round(((toNum(editForm.price) - toNum(editForm.cogs)) / toNum(editForm.price)) * 100) + '%' : '—'}
                     </span>
@@ -233,15 +233,15 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
                 ) : (
                   <>
                     <span className="text-xs font-mono" style={{ color: '#9CA3AF' }}>{p.sku}</span>
-                    <span className="text-sm font-medium" style={{ color: '#F0F0F5' }}>{p.name}</span>
+                    <span className="text-sm font-medium" style={{ color: '#111827' }}>{p.name}</span>
                     <span className="text-sm" style={{ color: '#9CA3AF' }}>{fmtRp(p.price)}</span>
                     <span className="text-sm" style={{ color: '#9CA3AF' }}>{fmtRp(p.cogs)}</span>
                     <span className="text-sm font-bold" style={{ color: marginColor(p.margin) }}>{p.margin}%</span>
                     <div className="flex gap-1.5 justify-end">
-                      <button onClick={() => startEdit(p)} className="p-1.5 rounded-lg transition-all" style={{ background: 'rgba(255,255,255,0.04)', color: '#6B7280' }}><Edit2 size={12} /></button>
+                      <button onClick={() => startEdit(p)} className="p-1.5 rounded-lg transition-all" style={{ background: '#F9FAFB', color: '#6B7280' }}><Edit2 size={12} /></button>
                       <button onClick={() => deleteProduct(p.id)}
                         className="p-1.5 rounded-lg transition-all"
-                        style={{ background: deleteId === p.id ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)', color: deleteId === p.id ? '#F87171' : '#6B7280' }}>
+                        style={{ background: deleteId === p.id ? 'rgba(239,68,68,0.15)' : '#F9FAFB', color: deleteId === p.id ? '#F87171' : '#6B7280' }}>
                         <Trash2 size={12} />
                       </button>
                     </div>
@@ -267,13 +267,13 @@ export default function SettingsView({ brand, products, onProductsChange }: Prop
             { name: 'TikTok Ads API', desc: 'Pull data TikTok Ads & Shop', color: '#FF0050', status: 'Planned' },
           ].map(api => (
             <div key={api.name} className="flex items-center justify-between px-5 py-4 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
               <div className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${api.color}18` }}>
                   <Zap size={14} style={{ color: api.color }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>{api.name}</p>
+                  <p className="text-sm font-medium" style={{ color: '#111827' }}>{api.name}</p>
                   <p className="text-xs" style={{ color: '#6B7280' }}>{api.desc}</p>
                 </div>
               </div>

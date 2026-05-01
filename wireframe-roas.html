@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wireframe — Auto ROAS & Conv Rate</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f0f0; color: #222; }
+
+  /* LAYOUT */
+  .page { display: flex; flex-direction: column; gap: 0; }
+  .section { padding: 32px 40px; border-bottom: 2px solid #ddd; }
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #888; margin-bottom: 20px;
+  }
+  .section-label {
+    font-size: 18px; font-weight: 700; color: #111; margin-bottom: 6px;
+  }
+  .section-desc {
+    font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.6;
+  }
+
+  /* WIREFRAME COMPONENTS */
+  .wf-card {
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+  }
+  .wf-card-title {
+    font-size: 12px; font-weight: 700; color: #555;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
+  }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+  /* METRIC CARD */
+  .metric {
+    background: #f8f8f8;
+    border: 2px dashed #bbb;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .metric.auto {
+    border-color: #22c55e;
+    background: #f0fdf4;
+  }
+  .metric.input {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+  .metric-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+  .metric-value { font-size: 22px; font-weight: 800; color: #111; }
+  .metric-sub { font-size: 10px; color: #aaa; }
+  .metric.auto .metric-label { color: #16a34a; }
+  .metric.auto .metric-value { color: #15803d; }
+  .metric.input .metric-label { color: #2563eb; }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; padding: 3px 8px;
+    border-radius: 99px;
+  }
+  .badge.auto { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; }
+  .badge.manual { background: #dbeafe; color: #2563eb; border: 1px solid #93c5fd; }
+  .badge.linked { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+
+  /* FORM */
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+  .form-field label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666; }
+  .form-field .input-box {
+    height: 36px; border: 2px solid #ccc; border-radius: 6px;
+    background: #fafafa; display: flex; align-items: center;
+    padding: 0 10px; font-size: 12px; color: #999;
+  }
+  .form-field .input-box.highlight { border-color: #f59e0b; background: #fffbeb; color: #92400e; font-weight: 700; }
+  .form-field .input-box.auto-calc { border-color: #22c55e; background: #f0fdf4; color: #15803d; font-weight: 700; }
+
+  /* SOURCE PILLS */
+  .source-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .source-pill {
+    padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700;
+    border: 2px solid #ccc; background: #fff; color: #666; cursor: pointer;
+  }
+  .source-pill.active { border-color: #f59e0b; background: #fef3c7; color: #92400e; }
+
+  /* ARROW / FLOW */
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+  .flow-box {
+    padding: 10px 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    border: 2px solid #ccc; background: #fff; white-space: nowrap;
+  }
+  .flow-box.cs { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+  .flow-box.platform { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+  .flow-box.result { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+  .flow-arrow { font-size: 20px; color: #999; }
+
+  /* FORMULA */
+  .formula {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #1e1e2e; color: #cdd6f4; font-size: 12px; font-weight: 600;
+    padding: 8px 14px; border-radius: 8px; font-family: monospace;
+  }
+  .formula .green { color: #a6e3a1; }
+  .formula .blue { color: #89b4fa; }
+  .formula .yellow { color: #f9e2af; }
+
+  /* SECTION COLORS */
+  .bg-yellow { background: #fffbeb; }
+  .bg-blue { background: #eff6ff; }
+  .bg-green { background: #f0fdf4; }
+  .bg-white { background: #fff; }
+
+  /* NOTE */
+  .note {
+    font-size: 12px; color: #666; background: #fff9c4;
+    border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 0 6px 6px 0;
+    margin-top: 12px;
+  }
+
+  /* TABLE */
+  .wf-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .wf-table th { font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: #888; border-bottom: 2px solid #e5e5e5;
+    padding: 8px 10px; text-align: left; background: #f8f8f8; }
+  .wf-table td { font-size: 12px; padding: 8px 10px; border-bottom: 1px solid #eee; color: #444; }
+  .wf-table td.auto-cell { color: #15803d; font-weight: 700; background: #f0fdf4; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 2px dashed #e0e0e0; margin: 16px 0; }
+
+  /* HEADER */
+  .wf-header {
+    background: #1a1a2e; color: #fff; padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .wf-header h1 { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+  .wf-header p { font-size: 12px; color: #888; margin-top: 4px; }
+  .wf-header .tag {
+    background: #f59e0b; color: #000; font-size: 11px; font-weight: 800;
+    padding: 4px 12px; border-radius: 99px; letter-spacing: 1px;
+  }
+
+  .number-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #111; color: #fff; font-size: 11px; font-weight: 800;
+    margin-right: 6px; flex-shrink: 0;
+  }
+  .section-header { display: flex; align-items: center; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="wf-header">
+    <div>
+      <h1>SAS Dashboard — Wireframe</h1>
+      <p>Auto ROAS & Conv Rate · CS Source Linking · Google & Meta Integration</p>
+    </div>
+    <div class="tag">WIREFRAME v1</div>
+  </div>
+
+  <!-- ===== SECTION 1: KONSEP FLOW ===== -->
+  <div class="section bg-white">
+    <div class="section-title">Konsep Utama</div>
+    <div class="section-label">Bagaimana data mengalir otomatis</div>
+    <div class="section-desc">
+      CS mencatat penjualan + memilih <strong>source channel</strong> → revenue otomatis
+      masuk ke Google/Meta → ROAS & Conv Rate terhitung sendiri tanpa upload manual.
+    </div>
+
+    <div class="flow">
+      <div class="flow-box cs">CS Input Sales<br><small style="font-weight:400">+ pilih Source</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box platform">Google Ads<br><small style="font-weight:400">Revenue aggregated</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box result">ROAS auto<br><small style="font-weight:400">= Revenue / Spend</small></div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-box cs">CS Input Sales<br><small style="font-weight:400">+ pilih Source</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box platform">Meta Ads<br><small style="font-weight:400">Purchases counted</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box result">Conv Rate auto<br><small style="font-weight:400">= Purchases / Clicks</small></div>
+    </div>
+
+    <hr class="divider" />
+
+    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+      <div class="formula">
+        <span class="yellow">ROAS</span> =
+        <span class="green">Revenue (dari CS)</span> /
+        <span class="blue">Ad Spend (input)</span>
+      </div>
+      <div class="formula">
+        <span class="yellow">Conv Rate</span> =
+        <span class="green">Purchases (dari CS)</span> /
+        <span class="blue">Clicks (input)</span> × 100%
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 2: CS FORM BARU ===== -->
+  <div class="section bg-yellow">
+    <div class="section-title">Perubahan 1</div>
+    <div class="section-label">
+      <span class="number-badge">1</span>
+      Manual Input Sales (CS) — Tambah Field Source/Channel
+    </div>
+    <div class="section-desc">
+      Tambah satu baris baru di form CS: <strong>Source Channel</strong>.
+      CS tinggal klik dari mana lead datang. Data ini yang jadi basis kalkulasi ROAS & Conv Rate.
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-card-title">Modal: Input Manual Sales (CS) — After</div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Customer Name</label>
+          <div class="input-box">e.g. Budi Santoso</div>
+        </div>
+        <div class="form-field">
+          <label>Phone</label>
+          <div class="input-box">e.g. 0812xxxx</div>
+        </div>
+        <div class="form-field">
+          <label>Address</label>
+          <div class="input-box">e.g. Jakarta Selatan</div>
+        </div>
+      </div>
+
+      <!-- NEW FIELD -->
+      <div style="background:#fef3c7; border:2px solid #f59e0b; border-radius:8px; padding:14px; margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#92400e;">🆕 Source / Channel</span>
+          <span class="badge linked">Wajib diisi</span>
+        </div>
+        <div class="source-group">
+          <div class="source-pill">Organic / Direct</div>
+          <div class="source-pill active">Google Ads ✓</div>
+          <div class="source-pill">Meta Ads</div>
+          <div class="source-pill">TikTok Ads</div>
+          <div class="source-pill">Shopee</div>
+          <div class="source-pill">Referral</div>
+        </div>
+        <div class="note" style="margin-top:10px;">
+          Pilihan ini menentukan ke channel mana revenue order ini di-attribute.
+          Jika sumber tidak diketahui, pilih "Organic / Direct".
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>SKU Produk</label>
+          <div class="input-box">Pilih produk... ▾</div>
+        </div>
+        <div class="form-field">
+          <label>Qty</label>
+          <div class="input-box">1</div>
+        </div>
+        <div class="form-field">
+          <label>Revenue (auto)</label>
+          <div class="input-box auto-calc">Rp 150.000 ✓</div>
+        </div>
+        <div class="form-field">
+          <label>Gross Profit (auto)</label>
+          <div class="input-box auto-calc">Rp 90.000 ✓</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">Tidak ada perubahan UX yang besar — hanya tambah satu row pill selector sebelum product lines.</div>
+  </div>
+
+  <!-- ===== SECTION 3: GOOGLE ADS VIEW BARU ===== -->
+  <div class="section bg-blue">
+    <div class="section-title">Perubahan 2</div>
+    <div class="section-label">
+      <span class="number-badge">2</span>
+      Google Ads View — ROAS & Conv Rate Auto-Calculated
+    </div>
+    <div class="section-desc">
+      Di Google Ads, CS hanya input <strong>Clicks & Ad Spend</strong>.
+      Revenue, Purchases, ROAS, dan Conv Rate otomatis terisi dari data CS yang source-nya "Google Ads".
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-card-title">Google Ads — KPI Cards (After)</div>
+      <div class="grid-4" style="margin-bottom:12px;">
+
+        <div class="metric input">
+          <div class="metric-label">Ad Spend <span class="badge manual">Input</span></div>
+          <div class="metric-value">Rp 5.2jt</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+
+        <div class="metric input">
+          <div class="metric-label">Clicks <span class="badge manual">Input</span></div>
+          <div class="metric-value">1.240</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+
+        <div class="metric auto">
+          <div class="metric-label">Revenue <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value">Rp 18.6jt</div>
+          <div class="metric-sub">Dari CS Sales (source: Google)</div>
+        </div>
+
+        <div class="metric auto">
+          <div class="metric-label">Purchases <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value">124</div>
+          <div class="metric-sub">Dari CS Sales (source: Google)</div>
+        </div>
+
+      </div>
+
+      <div class="grid-2">
+        <div class="metric auto" style="padding:16px 20px;">
+          <div class="metric-label">ROAS <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:28px;">3.58x</div>
+          <div class="metric-sub">= Revenue Rp18.6jt ÷ Spend Rp5.2jt</div>
+        </div>
+        <div class="metric auto" style="padding:16px 20px;">
+          <div class="metric-label">Conv Rate <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:28px;">10.0%</div>
+          <div class="metric-sub">= 124 purchases ÷ 1,240 clicks</div>
+        </div>
+      </div>
+
+      <div class="note">Field Revenue, Purchases, ROAS, Conv Rate tidak bisa diedit manual — hanya dibaca dari CS data.</div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="wf-card" style="margin-top:0;">
+      <div class="wf-card-title">Google Ads — Input Form (Hanya field yang masih manual)</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Tanggal</label>
+          <div class="input-box">01 Mei 2026</div>
+        </div>
+        <div class="form-field">
+          <label>Ad Spend (Rp) <span class="badge manual">Input</span></label>
+          <div class="input-box highlight">5.200.000</div>
+        </div>
+        <div class="form-field">
+          <label>Impressions <span class="badge manual">Input</span></label>
+          <div class="input-box highlight">48.200</div>
+        </div>
+        <div class="form-field">
+          <label>Clicks <span class="badge manual">Input</span></label>
+          <div class="input-box highlight">1.240</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Revenue (Rp) <span class="badge auto">Auto ✓</span></label>
+          <div class="input-box auto-calc">Rp 18.600.000 (dari CS)</div>
+        </div>
+        <div class="form-field">
+          <label>Purchases <span class="badge auto">Auto ✓</span></label>
+          <div class="input-box auto-calc">124 transaksi (dari CS)</div>
+        </div>
+        <div class="form-field">
+          <label>ROAS <span class="badge auto">Auto ✓</span></label>
+          <div class="input-box auto-calc">3.58x</div>
+        </div>
+        <div class="form-field">
+          <label>Conv Rate <span class="badge auto">Auto ✓</span></label>
+          <div class="input-box auto-calc">10.0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 4: META ADS VIEW ===== -->
+  <div class="section bg-white">
+    <div class="section-title">Perubahan 3</div>
+    <div class="section-label">
+      <span class="number-badge">3</span>
+      Meta Ads View — Same Pattern as Google
+    </div>
+    <div class="section-desc">
+      Meta Ads menggunakan pola yang sama persis: Spend + Reach + Impressions + Clicks diinput,
+      Revenue & Purchases auto-aggregated dari CS sales yang source-nya "Meta Ads".
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-card-title">Meta Ads — KPI Cards (After)</div>
+      <div class="grid-4" style="margin-bottom:12px;">
+        <div class="metric input">
+          <div class="metric-label">Ad Spend <span class="badge manual">Input</span></div>
+          <div class="metric-value">Rp 3.8jt</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Clicks <span class="badge manual">Input</span></div>
+          <div class="metric-value">890</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+        <div class="metric auto">
+          <div class="metric-label">Revenue <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value">Rp 12.1jt</div>
+          <div class="metric-sub">Dari CS Sales (source: Meta)</div>
+        </div>
+        <div class="metric auto">
+          <div class="metric-label">Purchases <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value">81</div>
+          <div class="metric-sub">Dari CS Sales (source: Meta)</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="metric auto" style="padding:16px 20px;">
+          <div class="metric-label">ROAS <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:28px;">3.18x</div>
+          <div class="metric-sub">= Revenue Rp12.1jt ÷ Spend Rp3.8jt</div>
+        </div>
+        <div class="metric auto" style="padding:16px 20px;">
+          <div class="metric-label">Conv Rate <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:28px;">9.1%</div>
+          <div class="metric-sub">= 81 purchases ÷ 890 clicks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 5: DATA ATTRIBUTION TABLE ===== -->
+  <div class="section bg-green">
+    <div class="section-title">Perubahan 4</div>
+    <div class="section-label">
+      <span class="number-badge">4</span>
+      CS Sales Table — Tambah Kolom Source
+    </div>
+    <div class="section-desc">
+      Tabel CS Sales di menu Akuisisi by CS ditambah kolom <strong>Source</strong>
+      sehingga tim bisa audit dari mana tiap order datang.
+    </div>
+
+    <div class="wf-card">
+      <div class="wf-card-title">Akuisisi by CS — Sales Table (After)</div>
+      <table class="wf-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th style="background:#fef9c3;color:#854d0e;">SOURCE ← NEW</th>
+            <th>SKU</th>
+            <th>Revenue</th>
+            <th>COGS</th>
+            <th>Gross Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>01 Mei 2026</td>
+            <td>Budi Santoso</td>
+            <td>0812xxxx</td>
+            <td class="auto-cell">🔵 Google Ads</td>
+            <td>SVC-001</td>
+            <td>Rp 150.000</td>
+            <td>Rp 60.000</td>
+            <td>Rp 90.000</td>
+          </tr>
+          <tr>
+            <td>01 Mei 2026</td>
+            <td>Siti Rahayu</td>
+            <td>0813xxxx</td>
+            <td style="color:#7c3aed;font-weight:700;">🟣 Meta Ads</td>
+            <td>SVC-002</td>
+            <td>Rp 200.000</td>
+            <td>Rp 80.000</td>
+            <td>Rp 120.000</td>
+          </tr>
+          <tr>
+            <td>30 Apr 2026</td>
+            <td>Andi Wijaya</td>
+            <td>0814xxxx</td>
+            <td style="color:#888;font-weight:700;">⚪ Organic</td>
+            <td>SVC-001</td>
+            <td>Rp 150.000</td>
+            <td>Rp 60.000</td>
+            <td>Rp 90.000</td>
+          </tr>
+          <tr>
+            <td>30 Apr 2026</td>
+            <td>Dewi Kusuma</td>
+            <td>0815xxxx</td>
+            <td class="auto-cell">🔵 Google Ads</td>
+            <td>SVC-003</td>
+            <td>Rp 300.000</td>
+            <td>Rp 100.000</td>
+            <td>Rp 200.000</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">Kolom Source hanya tampil sebagai label — tidak bisa diedit dari tabel. Edit via modal.</div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 6: SUMMARY IMPACT ===== -->
+  <div class="section bg-white" style="border-bottom:none;">
+    <div class="section-title">Summary Perubahan</div>
+    <div class="section-label">Yang perlu diubah di codebase</div>
+    <br/>
+
+    <div class="grid-2">
+      <div class="wf-card">
+        <div class="wf-card-title">Files yang berubah</div>
+        <table class="wf-table">
+          <thead><tr><th>File</th><th>Perubahan</th></tr></thead>
+          <tbody>
+            <tr><td><code>types.ts</code></td><td>Tambah field <code>source</code> di SalesRow</td></tr>
+            <tr><td><code>ManualInputModal.tsx</code></td><td>Tambah Source pill selector</td></tr>
+            <tr><td><code>page.tsx</code></td><td>Kalkulasi revenue per source, pass ke Google/Meta view</td></tr>
+            <tr><td><code>views/GoogleAds.tsx</code></td><td>Revenue/Purchases dari CS data, ROAS & CVR auto</td></tr>
+            <tr><td><code>views/MetaAds.tsx</code></td><td>Same as Google Ads</td></tr>
+            <tr><td><code>csvParser.ts</code></td><td>Tambah kolom source di template CSV sales</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="wf-card">
+        <div class="wf-card-title">Field yang TIDAK lagi manual</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">Revenue (Google Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">Purchases (Google Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">ROAS (Google Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">Conv Rate (Google Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">Revenue (Meta Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">Purchases (Meta Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">ROAS (Meta Ads) — manual input</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#ef4444;font-size:14px;">✕</span>
+            <span style="font-size:13px;text-decoration:line-through;color:#999;">Conv Rate (Meta Ads) — manual input</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:20px;background:#e0f2fe;border-left-color:#0284c7;">
+      <strong>Edge case:</strong> Kalau CS record sales tanpa source (old data / lupa isi),
+      revenue-nya masuk ke bucket "Unattributed" dan tidak ikut ke Google/Meta.
+      Perlu ada warning indicator di dashboard.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

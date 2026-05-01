@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wireframe — TikTok Shop Auto Conv Rate & AOV</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f0f0; color: #222; }
+
+  .page { display: flex; flex-direction: column; }
+  .section { padding: 32px 40px; border-bottom: 2px solid #ddd; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  .section-label { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .section-desc { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 20px; }
+
+  .wf-card { background: #fff; border: 2px solid #ccc; border-radius: 10px; padding: 20px; }
+  .wf-card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 14px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .metric { border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .metric.auto { border: 2px solid #22c55e; background: #f0fdf4; }
+  .metric.input { border: 2px dashed #3b82f6; background: #eff6ff; }
+  .metric.removed { border: 2px dashed #f87171; background: #fef2f2; opacity: 0.5; }
+  .metric-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; display: flex; align-items: center; gap: 6px; }
+  .metric.auto .metric-label { color: #16a34a; }
+  .metric.input .metric-label { color: #2563eb; }
+  .metric.removed .metric-label { color: #ef4444; }
+  .metric-value { font-size: 22px; font-weight: 800; color: #111; }
+  .metric.auto .metric-value { color: #15803d; }
+  .metric.removed .metric-value { color: #ef4444; text-decoration: line-through; }
+  .metric-sub { font-size: 10px; color: #aaa; line-height: 1.4; }
+
+  .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+  .badge.auto { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; }
+  .badge.manual { background: #dbeafe; color: #2563eb; border: 1px solid #93c5fd; }
+  .badge.removed { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+  .badge.new { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #555; display: flex; align-items: center; gap: 6px; }
+  .input-box { height: 38px; border-radius: 8px; padding: 0 12px; font-size: 13px; display: flex; align-items: center; }
+  .input-box.manual { border: 2px solid #93c5fd; background: #eff6ff; color: #1e40af; font-weight: 600; }
+  .input-box.auto { border: 2px solid #86efac; background: #f0fdf4; color: #15803d; font-weight: 700; cursor: not-allowed; }
+  .input-box.removed { border: 2px dashed #fca5a5; background: #fef2f2; color: #ef4444; text-decoration: line-through; opacity: 0.5; }
+  .input-box.default { border: 2px solid #e5e7eb; background: #f9fafb; color: #666; }
+
+  .formula { display: inline-flex; align-items: center; gap: 6px; background: #1e1e2e; color: #cdd6f4; font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 8px; font-family: monospace; }
+  .formula .green { color: #a6e3a1; }
+  .formula .blue { color: #89b4fa; }
+  .formula .yellow { color: #f9e2af; }
+  .formula .red { color: #f38ba8; }
+
+  .note { font-size: 12px; color: #555; background: #fff9c4; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 10px; }
+  .note.info { background: #e0f2fe; border-left-color: #0284c7; }
+  .note.danger { background: #fee2e2; border-left-color: #dc2626; }
+
+  .divider { border: none; border-top: 2px dashed #e5e5e5; margin: 18px 0; }
+
+  .number-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #111; color: #fff; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+
+  .wf-header { background: #1a1a2e; color: #fff; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .wf-header h1 { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+  .wf-header p { font-size: 12px; color: #888; margin-top: 4px; }
+  .wf-header .tag { background: #FF0050; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; letter-spacing: 1px; }
+
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  .flow-box { padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 2px solid #ccc; background: #fff; }
+  .flow-box.input { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+  .flow-box.calc { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+  .flow-arrow { font-size: 18px; color: #999; }
+
+  .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ba-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .ba-title.before { color: #dc2626; }
+  .ba-title.after { color: #16a34a; }
+
+  .todo-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .todo-item { display: flex; align-items: flex-start; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; }
+  .todo-num { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: 50%; background: #374151; color: #fff; font-size: 10px; font-weight: 800; margin-top: 1px; }
+  .todo-file { font-size: 11px; font-weight: 700; color: #6b7280; font-family: monospace; background: #e5e7eb; padding: 1px 6px; border-radius: 4px; }
+  .todo-text { font-size: 13px; color: #374151; line-height: 1.5; }
+
+  .bg-tiktok { background: #fff0f3; }
+  .bg-white { background: #fff; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="wf-header">
+    <div>
+      <h1>SAS Dashboard — Wireframe</h1>
+      <p>TikTok Shop · Auto Conv Rate & AOV · Remove Manual Fields</p>
+    </div>
+    <div class="tag">TikTok Shop</div>
+  </div>
+
+  <!-- SECTION 1: MASALAH SEKARANG -->
+  <div class="section bg-white">
+    <div class="section-title">Masalah yang Ada</div>
+    <div class="section-label">Kenapa Conv Rate & AOV tidak boleh manual</div>
+    <div class="section-desc">
+      Dua field ini harusnya <strong>derived metric</strong> — nilainya bisa dihitung dari data yang sudah ada. Input manual = potensi typo, salah hitung, dan angka yang tidak konsisten dengan revenue/orders actual.
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="note danger">
+          <strong>AOV manual saat ini:</strong> User input Rp 200.000, padahal Revenue = Rp 18jt dan Orders = 100 → AOV sebenarnya = Rp 180.000. Angka di dashboard salah tapi kelihatan normal.
+        </div>
+        <div class="note danger" style="margin-top:8px;">
+          <strong>Conv Rate manual saat ini:</strong> User input 4.50% — dari mana angka itu? Tidak ada denominator yang jelas. Tidak bisa diverifikasi.
+        </div>
+      </div>
+      <div>
+        <div class="note info">
+          <strong>AOV fix:</strong> Selalu hitung dari <code>Revenue ÷ Orders</code>. Tidak perlu disimpan, selalu fresh dari data actual.
+        </div>
+        <div class="note info" style="margin-top:8px;">
+          <strong>Conv Rate fix:</strong> Tambah field <strong>Product Views</strong> (sudah ada di TikTok Seller Center export), lalu hitung <code>Orders ÷ Product Views × 100%</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: FORMULA -->
+  <div class="section bg-tiktok">
+    <div class="section-title">Logika Kalkulasi</div>
+    <div class="section-label">Formula yang dipakai</div>
+    <br/>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">
+      <div class="formula">
+        <span class="yellow">AOV</span> =
+        <span class="green">Revenue</span> /
+        <span class="blue">Orders</span>
+      </div>
+      <div class="formula">
+        <span class="yellow">Conv Rate</span> =
+        <span class="blue">Orders</span> /
+        <span class="green">Product Views</span>
+        × 100%
+      </div>
+    </div>
+
+    <div class="flow" style="margin-top:16px;">
+      <div class="flow-box input">Input: Revenue<br/><small style="font-weight:400">Rp 18.000.000</small></div>
+      <div class="flow-arrow">÷</div>
+      <div class="flow-box input">Input: Orders<br/><small style="font-weight:400">100</small></div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box calc">AOV Auto<br/><small style="font-weight:400">Rp 180.000</small></div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-box input">Input: Orders<br/><small style="font-weight:400">100</small></div>
+      <div class="flow-arrow">÷</div>
+      <div class="flow-box input">Input: Product Views<br/><small style="font-weight:400">2.200</small></div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box calc">Conv Rate Auto<br/><small style="font-weight:400">4.55%</small></div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: BEFORE AFTER FORM -->
+  <div class="section bg-white">
+    <div class="section-title">Perubahan Form Manual Input</div>
+    <div class="section-label"><span class="number-badge">1</span> Modal Input Manual — Before vs After</div>
+    <br/>
+    <div class="before-after">
+
+      <!-- BEFORE -->
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div class="ba-title before">✕ Before (Sekarang)</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-field"><label>Tanggal</label><div class="input-box default">01/05/2026</div></div>
+          <div class="form-field"><label>Revenue (Rp)</label><div class="input-box default">150000000</div></div>
+          <div class="form-field"><label>GMV (Rp)</label><div class="input-box default">140000000</div></div>
+          <div class="form-field"><label>Orders</label><div class="input-box default">100</div></div>
+          <div class="form-field"><label>Units Sold</label><div class="input-box default">1200</div></div>
+          <div class="form-field">
+            <label>Conv. Rate (%) <span class="badge removed">Manual ⚠</span></label>
+            <div class="input-box removed">4.50</div>
+          </div>
+          <div class="form-field">
+            <label>Avg Order Value (Rp) <span class="badge removed">Manual ⚠</span></label>
+            <div class="input-box removed">200000</div>
+          </div>
+        </div>
+        <div class="note danger" style="margin-top:12px;">7 field — 2 diantaranya harusnya auto-calculated</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="wf-card" style="border-color:#86efac;">
+        <div class="ba-title after">✓ After (Proposed)</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-field"><label>Tanggal</label><div class="input-box manual">01/05/2026</div></div>
+          <div class="form-field"><label>Revenue (Rp)</label><div class="input-box manual">150000000</div></div>
+          <div class="form-field"><label>GMV (Rp)</label><div class="input-box manual">140000000</div></div>
+          <div class="form-field"><label>Orders</label><div class="input-box manual">100</div></div>
+          <div class="form-field"><label>Units Sold</label><div class="input-box manual">1200</div></div>
+          <div class="form-field">
+            <label>Product Views <span class="badge new">Baru</span></label>
+            <div class="input-box manual">2200</div>
+          </div>
+          <div class="form-field">
+            <label>Conv. Rate (%) <span class="badge auto">Auto ✓</span></label>
+            <div class="input-box auto">4.55% (100 ÷ 2200)</div>
+          </div>
+          <div class="form-field">
+            <label>Avg Order Value (Rp) <span class="badge auto">Auto ✓</span></label>
+            <div class="input-box auto">Rp 1.500.000 (Rev ÷ Orders)</div>
+          </div>
+        </div>
+        <div class="note" style="margin-top:12px;background:#f0fdf4;border-left-color:#22c55e;">6 field manual + 2 read-only auto. Conv Rate & AOV tidak bisa diedit.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 4: KPI CARDS AFTER -->
+  <div class="section bg-tiktok">
+    <div class="section-title">Perubahan KPI Cards</div>
+    <div class="section-label"><span class="number-badge">2</span> TikTok Shop View — KPI Cards After</div>
+    <div class="section-desc">Conv Rate dan AOV di cards tetap ditampilkan, tapi nilainya selalu dikalkulasi live dari data yang ada. Tidak lagi dari nilai yang disimpan.</div>
+
+    <div class="wf-card">
+      <div class="wf-card-title">KPI Cards — After</div>
+      <div class="grid-4" style="margin-bottom:12px;">
+        <div class="metric input">
+          <div class="metric-label">Total GMV <span class="badge manual">Input</span></div>
+          <div class="metric-value" style="font-size:16px;">Rp 140jt</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Orders <span class="badge manual">Input</span></div>
+          <div class="metric-value" style="font-size:16px;">100</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Units Sold <span class="badge manual">Input</span></div>
+          <div class="metric-value" style="font-size:16px;">1.200</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Revenue <span class="badge manual">Input</span></div>
+          <div class="metric-value" style="font-size:16px;">Rp 150jt</div>
+          <div class="metric-sub">Diinput manual / CSV</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="metric auto" style="padding:16px 20px;">
+          <div class="metric-label">Conv. Rate <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:26px;">4.55%</div>
+          <div class="metric-sub">= 100 orders ÷ 2.200 product views</div>
+        </div>
+        <div class="metric auto" style="padding:16px 20px;">
+          <div class="metric-label">Avg AOV <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:26px;">Rp 1.5jt</div>
+          <div class="metric-sub">= Rp 150jt revenue ÷ 100 orders</div>
+        </div>
+      </div>
+      <div class="note info" style="margin-top:12px;">
+        Jika <code>productViews = 0</code> (data lama / tidak diisi), Conv Rate tampil <strong>"—"</strong> bukan 0%. AOV tetap bisa dihitung selama orders > 0.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: CSV TEMPLATE CHANGE -->
+  <div class="section bg-white">
+    <div class="section-title">Perubahan CSV Template</div>
+    <div class="section-label"><span class="number-badge">3</span> CSV Template & Parser — Before vs After</div>
+    <br/>
+    <div class="before-after">
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div class="ba-title before">✕ CSV Template Before</div>
+        <div style="font-family:monospace;font-size:11px;background:#f8f8f8;padding:12px;border-radius:6px;overflow-x:auto;">
+          Date, GMV, Orders, Units sold, Revenue, <span style="color:#dc2626;text-decoration:line-through;">Conversion rate</span>, <span style="color:#dc2626;text-decoration:line-through;">Avg order value</span>
+          <br/>2024-04-01, 15000000, 75, 90, 14000000, 4.50, 200000
+        </div>
+      </div>
+      <div class="wf-card" style="border-color:#86efac;">
+        <div class="ba-title after">✓ CSV Template After</div>
+        <div style="font-family:monospace;font-size:11px;background:#f8f8f8;padding:12px;border-radius:6px;overflow-x:auto;">
+          Date, GMV, Orders, Units sold, Revenue, <span style="color:#16a34a;font-weight:700;">Product views</span>
+          <br/>2024-04-01, 15000000, 75, 90, 14000000, <span style="color:#16a34a;font-weight:700;">1800</span>
+        </div>
+        <div class="note" style="margin-top:8px;background:#f0fdf4;border-left-color:#22c55e;">
+          Conv Rate & AOV tidak ada di CSV — langsung dihitung saat parse. Kolom lama jika masih ada di file upload, diabaikan saja.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: TODO LIST -->
+  <div class="section bg-white" style="border-bottom:none;">
+    <div class="section-title">Kerjaan Nanti Siang</div>
+    <div class="section-label">List perubahan yang harus dikerjain</div>
+    <br/>
+    <ul class="todo-list">
+      <li class="todo-item">
+        <span class="todo-num">1</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">src/lib/types.ts</span>
+          </div>
+          <div class="todo-text">Di <code>TikTokShopRow</code>: hapus field <code>convRate</code> dan <code>avgOrderValue</code>, tambah <code>productViews: number</code></div>
+        </div>
+      </li>
+      <li class="todo-item">
+        <span class="todo-num">2</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">src/components/platforms/TikTokShopView.tsx</span>
+          </div>
+          <div class="todo-text">Di <code>TTS_FIELDS</code>: hapus <code>convRate</code> dan <code>avgOrderValue</code>, tambah <code>productViews</code> field. Update <code>onSave</code>: hapus dua field lama dari object <code>TikTokShopRow</code> yang dibangun. Update kalkulasi: <code>convRate = totalOrders / totalProductViews * 100</code>, <code>avgAov = totalRevenue / totalOrders</code>. Tampil "—" jika productViews = 0.</div>
+        </div>
+      </li>
+      <li class="todo-item">
+        <span class="todo-num">3</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">src/lib/csvParser.ts</span>
+          </div>
+          <div class="todo-text">Di <code>parseTikTokShop</code>: hapus mapping <code>convRate</code> dan <code>avgOrderValue</code>, tambah <code>productViews: toNum(r['Product views'] || r['product_views'] || r['Views'])</code>. Di CSV template <code>'tiktok-shop'</code>: ganti headers — hapus "Conversion rate" dan "Avg order value", tambah "Product views". Update example row.</div>
+        </div>
+      </li>
+      <li class="todo-item">
+        <span class="todo-num">4</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">Cek side effects</span>
+          </div>
+          <div class="todo-text">Cari semua reference ke <code>convRate</code> dan <code>avgOrderValue</code> di TikTokShopRow context: <code>OverviewView.tsx</code>, <code>FunnelView.tsx</code>. Pastikan kalkulasi di sana juga pakai formula baru (bukan field lama).</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="note info" style="margin-top:20px;">
+      <strong>Edge case penting:</strong> Data lama di localStorage sudah punya <code>convRate</code> dan <code>avgOrderValue</code> tapi tidak ada <code>productViews</code>. Solusi: saat kalkulasi, jika <code>productViews</code> undefined atau 0 → Conv Rate tampil "—". AOV tetap bisa dihitung dari revenue ÷ orders.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

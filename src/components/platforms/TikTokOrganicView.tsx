@@ -8,7 +8,7 @@ import { Music, Users, Play, Heart, MessageCircle, Share2, TrendingUp, Plus } fr
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const PLATFORM_COLOR = '#69C9D0'
-const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
+const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 function fmt(n: number) { return n.toLocaleString('id-ID') }
 
 const TT_FIELDS = [
@@ -78,10 +78,10 @@ export default function TikTokOrganicView({ data, brand, onUpload, onManualAdd }
                       <stop offset="95%" stopColor={PLATFORM_COLOR} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
                   <Area type="monotone" dataKey="Followers" stroke={PLATFORM_COLOR} fill="url(#ttGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -90,10 +90,10 @@ export default function TikTokOrganicView({ data, brand, onUpload, onManualAdd }
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Views & Likes</p>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
                   <Line type="monotone" dataKey="Views" stroke="#FF0050" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="Likes" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />

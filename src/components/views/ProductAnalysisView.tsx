@@ -6,7 +6,7 @@ import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
-const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
+const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 
 interface ProductStat {
   product: string
@@ -128,7 +128,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           <p className="text-sm" style={{ color: '#374151' }}>Upload data Sales CS atau CRM untuk melihat analisis produk</p>
         </div>
         <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
             style={{ background: `${accent}15`, border: `1px solid ${accent}30`, boxShadow: `0 0 30px ${accent}15` }}>
             <Package size={28} style={{ color: accent }} />
@@ -151,11 +151,11 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           </div>
           <p className="text-sm" style={{ color: '#4B5563' }}>{stats.length} SKU dianalisis · dari data CS + CRM</p>
         </div>
-        <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
           {TIMEFRAME_OPTIONS.map(opt => (
             <button key={opt.value} onClick={() => setLocalTf(opt.value)}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: localTf === opt.value ? accent : 'transparent', color: localTf === opt.value ? '#08080F' : '#6B7280', boxShadow: localTf === opt.value ? `0 0 12px ${accent}60` : 'none' }}>
+              style={{ background: localTf === opt.value ? accent : 'transparent', color: localTf === opt.value ? '#FFFFFF' : '#6B7280', boxShadow: localTf === opt.value ? `0 0 12px ${accent}60` : 'none' }}>
               {opt.label}
             </button>
           ))}
@@ -170,7 +170,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           { label: 'Slow Moving', value: slowCount.toString(), icon: <Package size={14} />, color: '#EF4444' },
           { label: 'Top Produk', value: stats[0]?.product || '–', icon: <Repeat size={14} />, color: '#8B5CF6' },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div key={s.label} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#4B5563' }}>{s.label}</span>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${s.color}20`, color: s.color }}>{s.icon}</div>
@@ -194,14 +194,14 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs">{cfg.icon}</span>
-                    <span className="text-sm font-medium" style={{ color: selectedProduct === s.product ? '#F0F0F5' : '#9CA3AF' }}>{s.product}</span>
+                    <span className="text-sm font-medium" style={{ color: selectedProduct === s.product ? '#111827' : '#9CA3AF' }}>{s.product}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold" style={{ color: cfg.color }}>{fmtNum(s.totalUnits)} unit</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                   </div>
                 </div>
-                <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(255,255,255,0.06)' }}>
+                <div className="rounded-full overflow-hidden" style={{ height: 6, background: '#F9FAFB' }}>
                   <div className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${pct}%`, background: cfg.color, boxShadow: `0 0 8px ${cfg.color}60` }} />
                 </div>
@@ -219,10 +219,10 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           {stats.some(s => s.uniqueCustomers > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={stats} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
                 <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
-                <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
+                <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
                   formatter={(v: unknown) => [`${v} customers`, 'Unique Customers']} />
                 <Bar dataKey="uniqueCustomers" fill={accent} radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -242,10 +242,10 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           {stats.some(s => s.avgDaysBetweenPurchases > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={stats.filter(s => s.avgDaysBetweenPurchases > 0)} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} unit=" hr" />
                 <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
-                <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }}
+                <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
                   formatter={(v: unknown) => [`${v} hari`, 'Avg. interval beli']} />
                 <Bar dataKey="avgDaysBetweenPurchases" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -272,7 +272,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                   <button key={s.product} onClick={() => setSelectedProduct(s.product)}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                     style={{
-                      background: selected.product === s.product ? SPEED_CONFIG[s.speed].bg : 'rgba(255,255,255,0.04)',
+                      background: selected.product === s.product ? SPEED_CONFIG[s.speed].bg : '#F9FAFB',
                       color: selected.product === s.product ? SPEED_CONFIG[s.speed].color : '#6B7280',
                       border: selected.product === s.product ? `1px solid ${SPEED_CONFIG[s.speed].color}40` : '1px solid transparent',
                     }}>
@@ -290,7 +290,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
               { label: 'Unique Customers', value: selected.uniqueCustomers > 0 ? fmtNum(selected.uniqueCustomers) : '–', color: '#8B5CF6' },
               { label: 'Avg. Interval Beli', value: selected.avgDaysBetweenPurchases > 0 ? `${selected.avgDaysBetweenPurchases} hari` : '–', color: '#F59E0B' },
             ].map(m => (
-              <div key={m.label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div key={m.label} className="rounded-xl p-3" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
                 <p className="text-[10px] mb-1" style={{ color: '#4B5563' }}>{m.label}</p>
                 <p className="text-lg font-bold" style={{ color: m.color }}>{m.value}</p>
               </div>
@@ -300,10 +300,10 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           {selected.trend.length > 1 && (
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={selected.trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                 <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
                 <Line type="monotone" dataKey="units" stroke={accent} strokeWidth={2} dot={false} name="Units" />
                 <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} dot={false} name="Revenue" />
               </LineChart>

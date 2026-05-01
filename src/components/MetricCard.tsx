@@ -19,9 +19,9 @@ export default function MetricCard({ label, value, icon, change, accent = '#F078
     <div
       className="relative rounded-2xl p-5 flex flex-col gap-3 overflow-hidden transition-all duration-300 group"
       style={{
-        background: `rgba(${r},${g},${b},0.05)`,
-        border: `1px solid rgba(${r},${g},${b},0.15)`,
-        boxShadow: `0 0 30px rgba(${r},${g},${b},0.05)`,
+        background: '#FFFFFF',
+        border: `1px solid rgba(${r},${g},${b},0.2)`,
+        boxShadow: `0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(${r},${g},${b},0.04)`,
       }}
     >
       {/* Glow bg */}
@@ -38,7 +38,7 @@ export default function MetricCard({ label, value, icon, change, accent = '#F078
         )}
       </div>
 
-      <p className="text-2xl font-bold tracking-tight relative z-10" style={{ color: '#F0F0F5' }}>{value}</p>
+      <p className="text-2xl font-bold tracking-tight relative z-10" style={{ color: '#111827' }}>{value}</p>
 
       {sub && <p className="text-[10px] relative z-10 truncate" style={{ color: '#4B5563' }}>{sub}</p>}
 

@@ -39,7 +39,7 @@ export default function FunnelView({ data, timeframe }: Props) {
 
       {!hasData ? (
         <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <p className="text-4xl mb-4">📊</p>
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data untuk funnel</p>
           <p className="text-sm" style={{ color: '#374151' }}>Upload data Google Ads / Meta Ads / TikTok Shop / Sales terlebih dahulu</p>
@@ -47,7 +47,7 @@ export default function FunnelView({ data, timeframe }: Props) {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Visual Funnel */}
-          <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="rounded-2xl p-6" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <p className="text-xs font-semibold tracking-widest uppercase mb-6" style={{ color: '#6B7280' }}>Funnel Visual</p>
             <div className="flex flex-col items-center gap-0">
               {stages.map((stage, i) => {
@@ -74,12 +74,12 @@ export default function FunnelView({ data, timeframe }: Props) {
                     {/* Drop-off arrow */}
                     {dropoff !== null && (
                       <div className="flex flex-col items-center py-1">
-                        <div className="w-px h-3" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                        <div className="w-px h-3" style={{ background: '#D1D5DB' }} />
                         <span className="text-[10px] px-2 py-0.5 rounded-full"
                           style={{ background: 'rgba(239,68,68,0.1)', color: '#F87171', border: '1px solid rgba(239,68,68,0.2)' }}>
                           ↓ {dropoff.toFixed(1)}% drop
                         </span>
-                        <div className="w-px h-3" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                        <div className="w-px h-3" style={{ background: '#D1D5DB' }} />
                       </div>
                     )}
                   </div>
@@ -110,7 +110,7 @@ export default function FunnelView({ data, timeframe }: Props) {
                       <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{stage.sublabel}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold" style={{ color: '#F0F0F5' }}>
+                      <p className="text-xl font-bold" style={{ color: '#111827' }}>
                         {stage.value > 0 ? fmtNum(stage.value) : '–'}
                       </p>
                       {pctOfAwareness > 0 && (
@@ -121,7 +121,7 @@ export default function FunnelView({ data, timeframe }: Props) {
                     </div>
                   </div>
                   {/* Progress bar */}
-                  <div className="rounded-full overflow-hidden" style={{ height: 4, background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-full overflow-hidden" style={{ height: 4, background: '#F9FAFB' }}>
                     <div className="h-full rounded-full transition-all duration-700"
                       style={{ width: `${Math.min(pctOfAwareness, 100)}%`, background: stage.color, boxShadow: `0 0 8px ${stage.color}` }} />
                   </div>

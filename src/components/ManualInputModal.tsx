@@ -44,13 +44,13 @@ export default function ManualInputModal({ title, subtitle, brand, fields, onSav
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+      style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden"
-        style={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+        style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
         <div className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ borderBottom: '1px solid #E5E7EB' }}>
           <div>
-            <p className="font-semibold" style={{ color: '#F0F0F5' }}>{title}</p>
+            <p className="font-semibold" style={{ color: '#111827' }}>{title}</p>
             {subtitle && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{subtitle}</p>}
           </div>
           <button onClick={onClose} style={{ color: '#6B7280' }}><X size={18} /></button>
@@ -70,7 +70,7 @@ export default function ManualInputModal({ title, subtitle, brand, fields, onSav
                       onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                       placeholder={f.placeholder ?? ''}
                       className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }}
+                      style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
                     />
                   </div>
                 ))}
@@ -81,7 +81,7 @@ export default function ManualInputModal({ title, subtitle, brand, fields, onSav
           <div className="flex justify-end gap-3 pt-6">
             <button onClick={onClose}
               className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
+              style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
               Batal
             </button>
             <button onClick={handleSave}

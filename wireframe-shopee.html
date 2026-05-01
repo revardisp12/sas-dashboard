@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wireframe — Shopee Auto Conv Rate, AOV & Ad ROAS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f0f0; color: #222; }
+
+  .page { display: flex; flex-direction: column; }
+  .section { padding: 32px 40px; border-bottom: 2px solid #ddd; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  .section-label { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .section-desc { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 20px; }
+
+  .wf-card { background: #fff; border: 2px solid #ccc; border-radius: 10px; padding: 20px; }
+  .wf-card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 14px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .metric { border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .metric.auto { border: 2px solid #22c55e; background: #f0fdf4; }
+  .metric.input { border: 2px dashed #3b82f6; background: #eff6ff; }
+  .metric-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; display: flex; align-items: center; gap: 6px; }
+  .metric.auto .metric-label { color: #16a34a; }
+  .metric.input .metric-label { color: #2563eb; }
+  .metric-value { font-size: 20px; font-weight: 800; }
+  .metric.auto .metric-value { color: #15803d; }
+  .metric.input .metric-value { color: #1d4ed8; }
+  .metric-sub { font-size: 10px; color: #aaa; line-height: 1.4; }
+
+  .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+  .badge.auto { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; }
+  .badge.manual { background: #dbeafe; color: #2563eb; border: 1px solid #93c5fd; }
+  .badge.removed { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+  .badge.new { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #555; display: flex; align-items: center; gap: 6px; }
+  .input-box { height: 38px; border-radius: 8px; padding: 0 12px; font-size: 12px; display: flex; align-items: center; }
+  .input-box.manual { border: 2px solid #93c5fd; background: #eff6ff; color: #1e40af; font-weight: 600; }
+  .input-box.auto { border: 2px solid #86efac; background: #f0fdf4; color: #15803d; font-weight: 700; cursor: not-allowed; }
+  .input-box.removed { border: 2px dashed #fca5a5; background: #fef2f2; color: #ef4444; text-decoration: line-through; opacity: 0.5; }
+  .input-box.default { border: 2px solid #e5e7eb; background: #f9fafb; color: #666; }
+
+  .formula { display: inline-flex; align-items: center; gap: 6px; background: #1e1e2e; color: #cdd6f4; font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 8px; font-family: monospace; }
+  .formula .green { color: #a6e3a1; }
+  .formula .blue { color: #89b4fa; }
+  .formula .yellow { color: #f9e2af; }
+
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+  .flow-box { padding: 9px 13px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 2px solid #ccc; background: #fff; }
+  .flow-box.input { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+  .flow-box.calc { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+  .flow-arrow { font-size: 18px; color: #999; }
+
+  .note { font-size: 12px; color: #555; background: #fff9c4; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 10px; }
+  .note.info { background: #e0f2fe; border-left-color: #0284c7; }
+  .note.danger { background: #fee2e2; border-left-color: #dc2626; }
+  .note.green { background: #f0fdf4; border-left-color: #22c55e; }
+
+  .divider { border: none; border-top: 2px dashed #e5e5e5; margin: 16px 0; }
+
+  .number-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #111; color: #fff; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+
+  .wf-header { background: #1a1a2e; color: #fff; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .wf-header h1 { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+  .wf-header p { font-size: 12px; color: #888; margin-top: 4px; }
+  .wf-header .tag { background: #EE4D2D; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 99px; letter-spacing: 1px; }
+
+  .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ba-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .ba-title.before { color: #dc2626; }
+  .ba-title.after { color: #16a34a; }
+
+  .todo-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .todo-item { display: flex; align-items: flex-start; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; }
+  .todo-num { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: 50%; background: #374151; color: #fff; font-size: 10px; font-weight: 800; margin-top: 2px; }
+  .todo-file { font-size: 11px; font-weight: 700; color: #6b7280; font-family: monospace; background: #e5e7eb; padding: 1px 6px; border-radius: 4px; }
+  .todo-text { font-size: 13px; color: #374151; line-height: 1.5; }
+
+  .bg-shopee { background: #fff5f3; }
+  .bg-white { background: #fff; }
+
+  .section-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .col-form { display: flex; flex-direction: column; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="wf-header">
+    <div>
+      <h1>SAS Dashboard — Wireframe</h1>
+      <p>Shopee · Auto Conv Rate, AOV & Ad ROAS · Remove Manual Fields</p>
+    </div>
+    <div class="tag">Shopee</div>
+  </div>
+
+  <!-- SECTION 1: OVERVIEW MASALAH -->
+  <div class="section bg-white">
+    <div class="section-title">3 Field yang Harus Auto</div>
+    <div class="section-label">Shopee: Conv Rate, AOV, dan Ad ROAS</div>
+    <div class="section-desc">
+      Shopee punya 3 field yang seharusnya dikalkulasi otomatis. Semua datanya sudah ada dari field lain yang diinput — tidak perlu input ulang.
+    </div>
+
+    <div class="grid-3">
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div style="font-size:12px;font-weight:800;color:#dc2626;margin-bottom:8px;">⚠ Conv Rate (%) — Manual</div>
+        <div style="font-size:12px;color:#555;line-height:1.6;">Denominator tidak jelas. Harus pakai <strong>Product Views</strong> dari Shopee Seller Center sebagai pembagi.</div>
+        <div class="note danger" style="margin-top:8px;">Fix: tambah field <code>Product Views</code>, hitung <code>Orders ÷ Product Views × 100%</code></div>
+      </div>
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div style="font-size:12px;font-weight:800;color:#dc2626;margin-bottom:8px;">⚠ Avg Order Value — Manual</div>
+        <div style="font-size:12px;color:#555;line-height:1.6;">Sudah ada Revenue dan Orders. AOV = Revenue ÷ Orders. Tidak ada alasan untuk diinput manual.</div>
+        <div class="note danger" style="margin-top:8px;">Fix: hapus dari form, hitung live dari <code>Revenue ÷ Orders</code></div>
+      </div>
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div style="font-size:12px;font-weight:800;color:#dc2626;margin-bottom:8px;">⚠ Ad ROAS — Manual</div>
+        <div style="font-size:12px;color:#555;line-height:1.6;">Revenue dan Ad Spend sudah diinput. Ad ROAS = Revenue ÷ Ad Spend. Sama persis dengan Google/Meta.</div>
+        <div class="note danger" style="margin-top:8px;">Fix: hapus dari form, hitung live dari <code>Revenue ÷ Ad Spend</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: FORMULA -->
+  <div class="section bg-shopee">
+    <div class="section-title">Logika Kalkulasi</div>
+    <div class="section-label">3 Formula yang dipakai</div>
+    <br/>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      <div class="formula">
+        <span class="yellow">Conv Rate</span> =
+        <span class="blue">Orders</span> /
+        <span class="green">Product Views</span>
+        × 100%
+      </div>
+      <div class="formula">
+        <span class="yellow">AOV</span> =
+        <span class="green">Revenue</span> /
+        <span class="blue">Orders</span>
+      </div>
+      <div class="formula">
+        <span class="yellow">Ad ROAS</span> =
+        <span class="green">Revenue</span> /
+        <span class="blue">Ad Spend</span>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-box input">Orders: 90</div>
+      <div class="flow-arrow">÷</div>
+      <div class="flow-box input">Product Views: 2.370</div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box calc">Conv Rate: 3.80%</div>
+    </div>
+    <div class="flow">
+      <div class="flow-box input">Revenue: Rp 17jt</div>
+      <div class="flow-arrow">÷</div>
+      <div class="flow-box input">Orders: 90</div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box calc">AOV: Rp 188.889</div>
+    </div>
+    <div class="flow">
+      <div class="flow-box input">Revenue: Rp 17jt</div>
+      <div class="flow-arrow">÷</div>
+      <div class="flow-box input">Ad Spend: Rp 1.5jt</div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box calc">Ad ROAS: 11.33x</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: BEFORE AFTER FORM -->
+  <div class="section bg-white">
+    <div class="section-title">Perubahan Form Manual Input</div>
+    <div class="section-label"><span class="number-badge">1</span> Modal Input Manual Shopee — Before vs After</div>
+    <br/>
+    <div class="before-after">
+
+      <!-- BEFORE -->
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div class="ba-title before">✕ Before (Sekarang) — 11 field</div>
+        <div class="section-forms">
+          <div class="col-form">
+            <div class="form-field"><label>Tanggal</label><div class="input-box default">01/05/2026</div></div>
+            <div class="form-field"><label>GMV (Rp)</label><div class="input-box default">18000000</div></div>
+            <div class="form-field"><label>Orders</label><div class="input-box default">90</div></div>
+            <div class="form-field"><label>Units Sold</label><div class="input-box default">110</div></div>
+            <div class="form-field"><label>Revenue (Rp)</label><div class="input-box default">17000000</div></div>
+            <div class="form-field">
+              <label>Conv. Rate (%) <span class="badge removed">Manual ⚠</span></label>
+              <div class="input-box removed">3.80</div>
+            </div>
+          </div>
+          <div class="col-form">
+            <div class="form-field">
+              <label>Avg Order Value (Rp) <span class="badge removed">Manual ⚠</span></label>
+              <div class="input-box removed">200000</div>
+            </div>
+            <div class="form-field"><label>Ad Spend (Rp)</label><div class="input-box default">1500000</div></div>
+            <div class="form-field">
+              <label>Ad ROAS <span class="badge removed">Manual ⚠</span></label>
+              <div class="input-box removed">11.3</div>
+            </div>
+            <div class="form-field"><label>Ad Clicks</label><div class="input-box default">3200</div></div>
+            <div class="form-field"><label>Ad Impressions</label><div class="input-box default">85000</div></div>
+          </div>
+        </div>
+        <div class="note danger" style="margin-top:12px;">11 field — 3 diantaranya manual padahal bisa auto</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="wf-card" style="border-color:#86efac;">
+        <div class="ba-title after">✓ After (Proposed) — 9 field manual + 3 auto</div>
+        <div class="section-forms">
+          <div class="col-form">
+            <div class="form-field"><label>Tanggal</label><div class="input-box manual">01/05/2026</div></div>
+            <div class="form-field"><label>GMV (Rp)</label><div class="input-box manual">18000000</div></div>
+            <div class="form-field"><label>Orders</label><div class="input-box manual">90</div></div>
+            <div class="form-field"><label>Units Sold</label><div class="input-box manual">110</div></div>
+            <div class="form-field"><label>Revenue (Rp)</label><div class="input-box manual">17000000</div></div>
+            <div class="form-field">
+              <label>Product Views <span class="badge new">Baru</span></label>
+              <div class="input-box manual">2370</div>
+            </div>
+          </div>
+          <div class="col-form">
+            <div class="form-field">
+              <label>Conv. Rate (%) <span class="badge auto">Auto ✓</span></label>
+              <div class="input-box auto">3.80% (90 ÷ 2370)</div>
+            </div>
+            <div class="form-field">
+              <label>Avg Order Value <span class="badge auto">Auto ✓</span></label>
+              <div class="input-box auto">Rp 188.889 (Rev ÷ Orders)</div>
+            </div>
+            <div class="form-field"><label>Ad Spend (Rp)</label><div class="input-box manual">1500000</div></div>
+            <div class="form-field">
+              <label>Ad ROAS <span class="badge auto">Auto ✓</span></label>
+              <div class="input-box auto">11.33x (Rev ÷ Spend)</div>
+            </div>
+            <div class="form-field"><label>Ad Clicks</label><div class="input-box manual">3200</div></div>
+            <div class="form-field"><label>Ad Impressions</label><div class="input-box manual">85000</div></div>
+          </div>
+        </div>
+        <div class="note green" style="margin-top:12px;">
+          9 field manual + 3 read-only auto. Conv Rate, AOV, Ad ROAS tidak bisa diedit user.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 4: KPI CARDS AFTER -->
+  <div class="section bg-shopee">
+    <div class="section-title">Perubahan KPI Cards</div>
+    <div class="section-label"><span class="number-badge">2</span> Shopee View — KPI Cards After</div>
+    <div class="section-desc">Cards yang menampilkan Conv Rate, AOV, dan Ad ROAS tetap ada — tapi nilainya selalu live-calculated, bukan dari nilai tersimpan.</div>
+
+    <div class="wf-card">
+      <div class="wf-card-title">KPI Cards — After</div>
+      <!-- Row 1: input metrics -->
+      <div class="grid-4" style="margin-bottom:10px;">
+        <div class="metric input">
+          <div class="metric-label">Total GMV <span class="badge manual">Input</span></div>
+          <div class="metric-value">Rp 18jt</div>
+          <div class="metric-sub">Manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Orders <span class="badge manual">Input</span></div>
+          <div class="metric-value">90</div>
+          <div class="metric-sub">Manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Revenue <span class="badge manual">Input</span></div>
+          <div class="metric-value">Rp 17jt</div>
+          <div class="metric-sub">Manual / CSV</div>
+        </div>
+        <div class="metric input">
+          <div class="metric-label">Ad Spend <span class="badge manual">Input</span></div>
+          <div class="metric-value">Rp 1.5jt</div>
+          <div class="metric-sub">Manual / CSV</div>
+        </div>
+      </div>
+      <!-- Row 2: auto metrics -->
+      <div class="grid-3">
+        <div class="metric auto" style="padding:16px;">
+          <div class="metric-label">Conv. Rate <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:24px;">3.80%</div>
+          <div class="metric-sub">= 90 orders ÷ 2.370 product views</div>
+        </div>
+        <div class="metric auto" style="padding:16px;">
+          <div class="metric-label">Avg AOV <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:24px;">Rp 188rb</div>
+          <div class="metric-sub">= Rp 17jt revenue ÷ 90 orders</div>
+        </div>
+        <div class="metric auto" style="padding:16px;">
+          <div class="metric-label">Ad ROAS <span class="badge auto">Auto ✓</span></div>
+          <div class="metric-value" style="font-size:24px;">11.33x</div>
+          <div class="metric-sub">= Rp 17jt revenue ÷ Rp 1.5jt spend</div>
+        </div>
+      </div>
+      <div class="note info" style="margin-top:12px;">
+        Jika <code>productViews = 0</code> → Conv Rate tampil <strong>"—"</strong>. Jika <code>adSpend = 0</code> → Ad ROAS tampil <strong>"—"</strong>. AOV selalu bisa dihitung selama orders > 0.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: CSV TEMPLATE -->
+  <div class="section bg-white">
+    <div class="section-title">Perubahan CSV Template</div>
+    <div class="section-label"><span class="number-badge">3</span> CSV Template & Parser</div>
+    <br/>
+    <div class="before-after">
+      <div class="wf-card" style="border-color:#fca5a5;">
+        <div class="ba-title before">✕ CSV Template Before</div>
+        <div style="font-family:monospace;font-size:11px;background:#f8f8f8;padding:12px;border-radius:6px;line-height:1.8;">
+          Date, GMV, Orders, Units sold, Revenue,<br/>
+          <span style="color:#dc2626;text-decoration:line-through;">Conversion rate</span>,
+          <span style="color:#dc2626;text-decoration:line-through;">Avg order value</span>,<br/>
+          Ad Spend, <span style="color:#dc2626;text-decoration:line-through;">Ad ROAS</span>,
+          Ad Clicks, Ad Impressions
+        </div>
+      </div>
+      <div class="wf-card" style="border-color:#86efac;">
+        <div class="ba-title after">✓ CSV Template After</div>
+        <div style="font-family:monospace;font-size:11px;background:#f8f8f8;padding:12px;border-radius:6px;line-height:1.8;">
+          Date, GMV, Orders, Units sold, Revenue,<br/>
+          <span style="color:#16a34a;font-weight:700;">Product views</span>,<br/>
+          Ad Spend, Ad Clicks, Ad Impressions
+        </div>
+        <div class="note green" style="margin-top:8px;">
+          Conv Rate, AOV, Ad ROAS tidak ada di CSV — dihitung saat parse. Jika kolom lama masih ada di file user, diabaikan.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: TODO LIST -->
+  <div class="section bg-white" style="border-bottom:none;">
+    <div class="section-title">Kerjaan Nanti Siang</div>
+    <div class="section-label">List perubahan Shopee</div>
+    <br/>
+    <ul class="todo-list">
+      <li class="todo-item">
+        <span class="todo-num">1</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">src/lib/types.ts</span>
+          </div>
+          <div class="todo-text">Di <code>ShopeeRow</code>: hapus <code>convRate</code>, <code>avgOrderValue</code>, dan <code>adRoas</code>. Tambah <code>productViews: number</code>.</div>
+        </div>
+      </li>
+      <li class="todo-item">
+        <span class="todo-num">2</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">src/components/platforms/ShopeeView.tsx</span>
+          </div>
+          <div class="todo-text">Di <code>SHOPEE_FIELDS</code>: hapus <code>convRate</code>, <code>avgOrderValue</code>, <code>adRoas</code>. Tambah <code>productViews</code>. Update <code>onSave</code>. Update kalkulasi KPI: <code>convRate = totalOrders / totalProductViews * 100</code>, <code>avgAov = totalRevenue / totalOrders</code>, <code>adRoas = totalRevenue / totalAdSpend</code>. Tampil "—" jika denominator = 0.</div>
+        </div>
+      </li>
+      <li class="todo-item">
+        <span class="todo-num">3</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">src/lib/csvParser.ts</span>
+          </div>
+          <div class="todo-text">Di <code>parseShopee</code>: hapus mapping <code>convRate</code>, <code>avgOrderValue</code>, <code>adRoas</code>. Tambah <code>productViews: toNum(r['Product views'] || r['product_views'])</code>. Di CSV template <code>'shopee'</code>: update headers dan example row.</div>
+        </div>
+      </li>
+      <li class="todo-item">
+        <span class="todo-num">4</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span class="todo-file">Cek side effects</span>
+          </div>
+          <div class="todo-text">Cari semua reference ke <code>convRate</code>, <code>avgOrderValue</code>, <code>adRoas</code> di context ShopeeRow: <code>OverviewView.tsx</code>, <code>FunnelView.tsx</code>. Update kalkulasi di sana pakai formula baru.</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="note" style="margin-top:20px;background:#f0fdf4;border-left-color:#22c55e;">
+      <strong>Summary semua wireframe hari ini:</strong> ROAS & Conv Rate linking (Google/Meta CS Source) · TikTok Shop Auto Conv Rate & AOV · Shopee Auto Conv Rate, AOV & Ad ROAS. Semua bisa dikerjain secara paralel per platform karena file-nya terpisah.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

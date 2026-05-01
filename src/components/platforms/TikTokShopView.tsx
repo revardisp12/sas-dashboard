@@ -25,7 +25,7 @@ function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
   return n.toLocaleString('id-ID')
 }
 
-const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
+const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 
 interface Props { data: TikTokShopRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: TikTokShopRow[]) => void }
 
@@ -84,10 +84,10 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
                       <stop offset="95%" stopColor={PLATFORM_COLOR} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
                   <Area type="monotone" dataKey="GMV" stroke={PLATFORM_COLOR} fill="url(#gmvGrad)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -96,10 +96,10 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
               <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Orders per Hari</p>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
                   <Bar dataKey="Orders" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

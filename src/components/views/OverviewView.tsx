@@ -4,7 +4,7 @@ import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users, Package, Trophy, AlertTriangle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
-const chartStyle = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }
+const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 
 function calcCrmSnapshot(crm: CRMRow[]) {
   if (crm.length === 0) return { total: 0, champions: 0, atRisk: 0 }
@@ -151,7 +151,7 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
       {/* CRM + Product Snapshot */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* CRM Snapshot */}
-        <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <div className="flex items-center gap-2 mb-4">
             <Users size={14} style={{ color: '#8B5CF6' }} />
             <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>CRM Snapshot</p>
@@ -159,20 +159,20 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
           {data.crm.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
-                <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{fmtNum(crmSnap.total)}</p>
+                <p className="text-2xl font-bold" style={{ color: '#111827' }}>{fmtNum(crmSnap.total)}</p>
                 <p className="text-[10px] mt-1 font-medium uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Total Customers</p>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <Trophy size={12} style={{ color: '#10B981' }} />
-                  <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{crmSnap.champions}</p>
+                  <p className="text-2xl font-bold" style={{ color: '#111827' }}>{crmSnap.champions}</p>
                 </div>
                 <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: '#10B981' }}>Champions</p>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
                 <div className="flex items-center justify-center gap-1.5 mb-1">
                   <AlertTriangle size={12} style={{ color: '#F87171' }} />
-                  <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{crmSnap.atRisk}</p>
+                  <p className="text-2xl font-bold" style={{ color: '#111827' }}>{crmSnap.atRisk}</p>
                 </div>
                 <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: '#F87171' }}>At Risk</p>
               </div>
@@ -186,7 +186,7 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
         </div>
 
         {/* Product Snapshot */}
-        <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <div className="flex items-center gap-2 mb-4">
             <Package size={14} style={{ color: '#00D4FF' }} />
             <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>Product Snapshot</p>
@@ -200,14 +200,14 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
                     <span className="text-[10px] font-bold w-4 text-center" style={{ color: i === 0 ? '#F59E0B' : '#4B5563' }}>{i + 1}</span>
                     <span className="text-xs truncate max-w-[160px]" style={{ color: '#9CA3AF' }}>{p.name}</span>
                   </div>
-                  <span className="text-xs font-semibold" style={{ color: '#F0F0F5' }}>{fmtCurrency(p.revenue)}</span>
+                  <span className="text-xs font-semibold" style={{ color: '#111827' }}>{fmtCurrency(p.revenue)}</span>
                 </div>
               ))}
               {brandProducts.length > 0 && (
                 <>
-                  <div className="border-t my-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+                  <div className="border-t my-3" style={{ borderColor: '#E5E7EB' }} />
                   <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4B5563' }}>Produk Terdaftar</p>
-                  <p className="text-lg font-bold" style={{ color: '#F0F0F5' }}>{brandProducts.length} <span className="text-xs font-normal" style={{ color: '#6B7280' }}>SKU</span></p>
+                  <p className="text-lg font-bold" style={{ color: '#111827' }}>{brandProducts.length} <span className="text-xs font-normal" style={{ color: '#6B7280' }}>SKU</span></p>
                 </>
               )}
             </div>
@@ -226,10 +226,10 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
           <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Ad Spend Trend</p>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={spendTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#0E0E1C', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F0F0F5', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
               <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
               <Line type="monotone" dataKey="Google Ads" stroke="#4285F4" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="Meta Ads" stroke="#1877F2" strokeWidth={2} dot={false} />
@@ -240,7 +240,7 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
 
       {spendTrend.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <Users size={40} className="mb-3" style={{ color: '#374151' }} />
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Upload data di masing-masing platform</p>
           <p className="text-sm" style={{ color: '#374151' }}>Overview akan terisi otomatis setelah ada data</p>
@@ -264,7 +264,7 @@ function KpiCard({ label, value, icon, color }: { label: string; value: string; 
         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ background: `rgba(${r},${g},${b},0.15)`, color }}>{icon}</div>
       </div>
-      <p className="text-2xl font-bold" style={{ color: '#F0F0F5' }}>{value}</p>
+      <p className="text-2xl font-bold" style={{ color: '#111827' }}>{value}</p>
     </div>
   )
 }
@@ -283,18 +283,18 @@ function PlatformCard({ icon, color, title, items, empty }: {
   items: { label: string; value: string }[]; empty: boolean
 }) {
   return (
-    <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded-lg flex items-center justify-center"
           style={{ background: `${color}20`, color }}>{icon}</div>
         <span className="text-sm font-semibold" style={{ color: '#9CA3AF' }}>{title}</span>
-        {empty && <span className="text-[9px] px-1.5 py-0.5 rounded-full ml-auto" style={{ background: 'rgba(255,255,255,0.05)', color: '#4B5563' }}>No data</span>}
+        {empty && <span className="text-[9px] px-1.5 py-0.5 rounded-full ml-auto" style={{ background: '#F9FAFB', color: '#4B5563' }}>No data</span>}
       </div>
       <div className="grid grid-cols-2 gap-2">
         {items.map(item => (
           <div key={item.label}>
             <p className="text-[10px]" style={{ color: '#4B5563' }}>{item.label}</p>
-            <p className="text-sm font-bold" style={{ color: empty ? '#374151' : '#F0F0F5' }}>{empty ? '-' : item.value}</p>
+            <p className="text-sm font-bold" style={{ color: empty ? '#9CA3AF' : '#111827' }}>{empty ? '-' : item.value}</p>
           </div>
         ))}
       </div>
@@ -304,7 +304,7 @@ function PlatformCard({ icon, color, title, items, empty }: {
 
 function MiniStat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded-xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
       <p className="text-[10px] mb-1" style={{ color: '#4B5563' }}>{label}</p>
       <p className="text-lg font-bold" style={{ color }}>{value}</p>
     </div>
