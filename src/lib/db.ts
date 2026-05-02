@@ -185,6 +185,7 @@ export async function getMetaAds(brand: Brand): Promise<MetaAdsRow[]> {
     date: r.date, campaign: r.campaign ?? '', reach: r.reach ?? 0,
     impressions: r.impressions ?? 0, clicks: r.clicks ?? 0, ctr: r.ctr ?? 0,
     spend: r.spend ?? 0, purchases: r.purchases ?? 0, roas: r.roas ?? 0, cpm: r.cpm ?? 0,
+    results: r.results ?? 0,
   }))
 }
 
@@ -197,6 +198,7 @@ export async function replaceMetaAds(rows: MetaAdsRow[], brand: Brand): Promise<
       brand, date: r.date, campaign: r.campaign, reach: r.reach,
       impressions: r.impressions, clicks: r.clicks, ctr: r.ctr,
       spend: r.spend, purchases: r.purchases, roas: r.roas, cpm: r.cpm,
+      results: r.results ?? 0,
     }))
   )
   if (error) throw error
@@ -209,6 +211,7 @@ export async function appendMetaAds(rows: MetaAdsRow[], brand: Brand): Promise<v
       brand, date: r.date, campaign: r.campaign, reach: r.reach,
       impressions: r.impressions, clicks: r.clicks, ctr: r.ctr,
       spend: r.spend, purchases: r.purchases, roas: r.roas, cpm: r.cpm,
+      results: r.results ?? 0,
     }))
   )
   if (error) throw error

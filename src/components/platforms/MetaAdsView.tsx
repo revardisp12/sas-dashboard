@@ -15,6 +15,7 @@ const META_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },
   { key: 'campaign', label: 'Campaign', type: 'text' as const, placeholder: 'Retargeting' },
   { key: 'spend', label: 'Spend (Rp)', type: 'number' as const, placeholder: '500000' },
+  { key: 'results', label: 'Results / Leads', type: 'number' as const, placeholder: '15' },
   { key: 'clicks', label: 'Link Clicks', type: 'number' as const, placeholder: '240' },
   { key: 'reach', label: 'Reach', type: 'number' as const, placeholder: '8000' },
   { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '12000' },
@@ -37,6 +38,14 @@ const META_COMPUTED = [
       return imp > 0 ? (spend / imp) * 1000 : null
     },
   },
+  {
+    label: 'Cost per Result',
+    format: 'currency' as const,
+    formula: (f: Record<string, string>) => {
+      const res = Number(f.results); const spend = Number(f.spend)
+      return res > 0 ? spend / res : null
+    },
+  },
 ]
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
@@ -55,7 +64,9 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
   const totalSpend = data.reduce((s, r) => s + r.spend, 0)
   const totalReach = data.reduce((s, r) => s + r.reach, 0)
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
+  const totalResults = data.reduce((s, r) => s + (r.results ?? 0), 0)
   const avgCtr = data.length > 0 ? data.reduce((s, r) => s + r.ctr, 0) / data.length : 0
+  const costPerResult = totalResults > 0 && totalSpend > 0 ? totalSpend / totalResults : null
 
   const csSales = salesData.filter(s => s.source === 'meta-ads')
   const csRevenue = csSales.reduce((s, r) => s + r.revenue, 0)
@@ -89,11 +100,13 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
 
       {data.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
             <MetricCard label="Total Spend" value={fmt(totalSpend, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Reach" value={fmt(totalReach)} icon={<Users size={14} />} accent={accent} />
             <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
             <MetricCard label="CTR" value={fmt(avgCtr, 'percent')} icon={<Target size={14} />} accent={PLATFORM_COLOR} />
+            <MetricCard label="Results / Leads" value={fmt(totalResults)} icon={<TrendingUp size={14} />} accent={PLATFORM_COLOR} />
+            <MetricCard label="Cost per Result" value={costPerResult !== null ? fmt(costPerResult, 'currency') : '—'} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} sub="Spend ÷ Results" />
             <MetricCard label="CS Revenue" value={csRevenue > 0 ? fmt(csRevenue, 'currency') : '—'} icon={<Link size={14} />} accent="#10B981" sub="dari CS Sales" />
             <MetricCard label="CS Purchases" value={csPurchases > 0 ? fmt(csPurchases) : '—'} icon={<ShoppingCart size={14} />} accent="#10B981" sub="dari CS Sales" />
           </div>
@@ -152,10 +165,11 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
             const impressions = Number(row.impressions) || 0
             const clicks = Number(row.clicks) || 0
             const spend = Number(row.spend) || 0
+            const results = Number(row.results) || 0
             const r: MetaAdsRow = {
               date: row.date, campaign: row.campaign,
               reach: Number(row.reach) || 0, impressions, clicks, spend,
-              purchases: 0, roas: 0,
+              purchases: 0, roas: 0, results,
               ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
               cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
             }

@@ -76,7 +76,7 @@ export interface GoogleAdsRow {
 }
 export interface MetaAdsRow {
   date: string; campaign: string; reach: number; impressions: number; clicks: number
-  ctr: number; spend: number; purchases: number; roas: number; cpm: number
+  ctr: number; spend: number; purchases: number; roas: number; cpm: number; results: number
 }
 export interface TikTokShopRow {
   date: string; gmv: number; orders: number; unitsSold: number
