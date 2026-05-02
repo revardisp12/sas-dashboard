@@ -1,9 +1,22 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Brand, ActiveView, Timeframe, DateRange, BrandData, emptyBrandData, ProductMaster, BundleMaster } from '@/lib/types'
-import { loadData, saveData, resetData, loadProducts, saveProducts, loadBundles, saveBundles } from '@/lib/storage'
 import { parseFile } from '@/lib/csvParser'
 import { filterByDays, filterByRange } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  loadBrandData,
+  getProducts, upsertProduct, deleteProduct as dbDeleteProduct,
+  getBundles, upsertBundle, deleteBundle as dbDeleteBundle,
+  appendSales, replaceSales,
+  appendCRM, replaceCRM,
+  replaceGoogleAds, appendGoogleAds,
+  replaceMetaAds, appendMetaAds,
+  replaceTikTokShop, appendTikTokShop,
+  replaceShopee, appendShopee,
+  replaceInstagram, appendInstagram,
+  replaceTikTokOrganic, appendTikTokOrganic,
+} from '@/lib/db'
 import Sidebar from '@/components/Sidebar'
 import TimeframeSelector from '@/components/TimeframeSelector'
 import OverviewView from '@/components/views/OverviewView'
@@ -19,6 +32,7 @@ import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
 import SettingsView from '@/components/views/SettingsView'
 import AIChatButton from '@/components/AIChatButton'
+import LoginPage from '@/components/LoginPage'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
   overview: 'Overview', funnel: 'Funnel Analysis', sales: 'Sales Acquisition by CS',
@@ -30,6 +44,8 @@ const VIEW_LABELS: Record<ActiveView, string> = {
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura' }
 
 export default function Dashboard() {
+  const { user, profile, loading: authLoading, canAccess, accessibleBrands } = useAuth()
+
   const [brand, setBrand] = useState<Brand>('reglow')
   const [view, setView] = useState<ActiveView>('overview')
   const [timeframe, setTimeframe] = useState<Timeframe>(30)
@@ -37,88 +53,161 @@ export default function Dashboard() {
   const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData() })
   const [products, setProducts] = useState<ProductMaster[]>([])
   const [bundles, setBundles] = useState<BundleMaster[]>([])
+  const [dataLoading, setDataLoading] = useState(false)
+
+  // Set initial brand based on profile
+  useEffect(() => {
+    if (profile) {
+      const firstBrand = accessibleBrands[0]
+      if (firstBrand) setBrand(firstBrand)
+    }
+  }, [profile])
+
+  // Load data when brand or auth changes
+  const loadData = useCallback(async (b: Brand) => {
+    if (!user) return
+    setDataLoading(true)
+    try {
+      const [brandData, prods, bunds] = await Promise.all([
+        loadBrandData(b),
+        getProducts(),
+        getBundles(),
+      ])
+      setData(prev => ({ ...prev, [b]: brandData }))
+      setProducts(prods)
+      setBundles(bunds)
+    } catch (e) {
+      console.error('Load error:', e)
+    } finally {
+      setDataLoading(false)
+    }
+  }, [user])
 
   useEffect(() => {
-    setData(loadData())
-    setProducts(loadProducts())
-    setBundles(loadBundles())
-  }, [])
+    if (user) loadData(brand)
+  }, [user, brand])
+
+  // Default view redirect based on role
+  useEffect(() => {
+    if (profile) {
+      if (!canAccess(view)) {
+        const role = profile.role
+        if (role === 'cs') setView('sales')
+        else if (role === 'crm') setView('crm')
+        else setView('overview')
+      }
+    }
+  }, [profile])
 
   async function handleUpload(file: File) {
     const uploadView = view === 'sales' ? 'sales' : view
     const parsed = await parseFile(uploadView as ActiveView, file)
-    setData(prev => {
-      const key =
-        uploadView === 'google-ads' ? 'googleAds'
-        : uploadView === 'meta-ads' ? 'metaAds'
-        : uploadView === 'tiktok-shop' ? 'tiktokShop'
-        : uploadView === 'shopee' ? 'shopee'
-        : uploadView === 'instagram' ? 'instagram'
-        : uploadView === 'tiktok-organic' ? 'tiktokOrganic'
-        : uploadView === 'crm' ? 'crm'
-        : 'sales'
-      const next = { ...prev, [brand]: { ...prev[brand], [key]: parsed } }
-      saveData(next)
-      return next
-    })
+    const key =
+      uploadView === 'google-ads' ? 'googleAds'
+      : uploadView === 'meta-ads' ? 'metaAds'
+      : uploadView === 'tiktok-shop' ? 'tiktokShop'
+      : uploadView === 'shopee' ? 'shopee'
+      : uploadView === 'instagram' ? 'instagram'
+      : uploadView === 'tiktok-organic' ? 'tiktokOrganic'
+      : uploadView === 'crm' ? 'crm'
+      : 'sales'
+
+    // Save to Supabase
+    try {
+      if (uploadView === 'google-ads') await replaceGoogleAds(parsed as import('@/lib/types').GoogleAdsRow[], brand)
+      else if (uploadView === 'meta-ads') await replaceMetaAds(parsed as import('@/lib/types').MetaAdsRow[], brand)
+      else if (uploadView === 'tiktok-shop') await replaceTikTokShop(parsed as import('@/lib/types').TikTokShopRow[], brand)
+      else if (uploadView === 'shopee') await replaceShopee(parsed as import('@/lib/types').ShopeeRow[], brand)
+      else if (uploadView === 'instagram') await replaceInstagram(parsed as import('@/lib/types').InstagramRow[], brand)
+      else if (uploadView === 'tiktok-organic') await replaceTikTokOrganic(parsed as import('@/lib/types').TikTokOrganicRow[], brand)
+      else if (uploadView === 'crm') await replaceCRM(parsed as import('@/lib/types').CRMRow[], brand)
+      else await replaceSales(parsed as import('@/lib/types').SalesRow[], brand)
+    } catch (e) { console.error('Upload save error:', e) }
+
+    setData(prev => ({ ...prev, [brand]: { ...prev[brand], [key]: parsed } }))
   }
 
-  function handleProductsChange(updated: ProductMaster[]) {
+  async function handleProductsChange(updated: ProductMaster[]) {
     setProducts(updated)
-    saveProducts(updated)
+    // Upsert all products for this brand (brute force — fine for small catalogs)
+    try {
+      const current = products.filter(p => p.brand === brand)
+      const updatedBrand = updated.filter(p => p.brand === brand)
+      // Find added/changed
+      for (const p of updatedBrand) await upsertProduct(p)
+      // Find deleted
+      const updatedIds = new Set(updatedBrand.map(p => p.id))
+      for (const p of current) {
+        if (!updatedIds.has(p.id)) await dbDeleteProduct(p.id)
+      }
+    } catch (e) { console.error('Products save error:', e) }
   }
 
-  function handleBundlesChange(updated: BundleMaster[]) {
+  async function handleBundlesChange(updated: BundleMaster[]) {
     setBundles(updated)
-    saveBundles(updated)
+    try {
+      const current = bundles.filter(b => b.brand === brand)
+      const updatedBrand = updated.filter(b => b.brand === brand)
+      for (const b of updatedBrand) await upsertBundle(b)
+      const updatedIds = new Set(updatedBrand.map(b => b.id))
+      for (const b of current) {
+        if (!updatedIds.has(b.id)) await dbDeleteBundle(b.id)
+      }
+    } catch (e) { console.error('Bundles save error:', e) }
   }
 
-  function handleManualSales(rows: import('@/lib/types').SalesRow[]) {
-    setData(prev => {
-      const next = { ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }
-      saveData(next)
-      return next
-    })
+  async function handleManualSales(rows: import('@/lib/types').SalesRow[]) {
+    try { await appendSales(rows, brand) } catch (e) { console.error(e) }
+    setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }))
   }
 
-  function handleManualCRM(rows: import('@/lib/types').CRMRow[]) {
-    setData(prev => {
-      const next = { ...prev, [brand]: { ...prev[brand], crm: [...prev[brand].crm, ...rows] } }
-      saveData(next)
-      return next
-    })
+  async function handleManualCRM(rows: import('@/lib/types').CRMRow[]) {
+    try { await appendCRM(rows, brand) } catch (e) { console.error(e) }
+    setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: [...prev[brand].crm, ...rows] } }))
   }
 
-  function handleBulkSales(rows: import('@/lib/types').SalesRow[]) {
-    setData(prev => {
-      const next = { ...prev, [brand]: { ...prev[brand], sales: rows } }
-      saveData(next)
-      return next
-    })
+  async function handleBulkSales(rows: import('@/lib/types').SalesRow[]) {
+    try { await replaceSales(rows, brand) } catch (e) { console.error(e) }
+    setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: rows } }))
   }
 
-  function handleBulkCRM(rows: import('@/lib/types').CRMRow[]) {
-    setData(prev => {
-      const next = { ...prev, [brand]: { ...prev[brand], crm: rows } }
-      saveData(next)
-      return next
-    })
+  async function handleBulkCRM(rows: import('@/lib/types').CRMRow[]) {
+    try { await replaceCRM(rows, brand) } catch (e) { console.error(e) }
+    setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: rows } }))
   }
 
   function makeManualHandler<K extends keyof import('@/lib/types').BrandData>(key: K) {
-    return (rows: import('@/lib/types').BrandData[K] extends (infer T)[] ? T[] : never) => {
+    return async (rows: import('@/lib/types').BrandData[K] extends (infer T)[] ? T[] : never) => {
+      try {
+        if (key === 'googleAds') await appendGoogleAds(rows as import('@/lib/types').GoogleAdsRow[], brand)
+        else if (key === 'metaAds') await appendMetaAds(rows as import('@/lib/types').MetaAdsRow[], brand)
+        else if (key === 'tiktokShop') await appendTikTokShop(rows as import('@/lib/types').TikTokShopRow[], brand)
+        else if (key === 'shopee') await appendShopee(rows as import('@/lib/types').ShopeeRow[], brand)
+        else if (key === 'instagram') await appendInstagram(rows as import('@/lib/types').InstagramRow[], brand)
+        else if (key === 'tiktokOrganic') await appendTikTokOrganic(rows as import('@/lib/types').TikTokOrganicRow[], brand)
+      } catch (e) { console.error(e) }
       setData(prev => {
         const existing = prev[brand][key] as unknown[]
-        const next = { ...prev, [brand]: { ...prev[brand], [key]: [...existing, ...rows] } }
-        saveData(next)
-        return next
+        return { ...prev, [brand]: { ...prev[brand], [key]: [...existing, ...rows] } }
       })
     }
   }
 
-  function handleReset() {
-    setData(resetData())
+  // ── Auth loading / login guard ────────────────────────────────────────────
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8F9FC' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: '#C9A96E', borderTopColor: 'transparent' }} />
+          <p className="text-sm" style={{ color: '#6B7280' }}>Memuat...</p>
+        </div>
+      </div>
+    )
   }
+
+  if (!user || !profile) return <LoginPage />
 
   const bd = data[brand]
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -128,7 +217,6 @@ export default function Dashboard() {
     return filterByDays(rows, timeframe)
   }
 
-  // Pre-filter data for platform views
   const filtered = {
     googleAds: applyFilter(bd.googleAds),
     metaAds: applyFilter(bd.metaAds),
@@ -141,10 +229,16 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F8F9FC' }}>
-      <Sidebar brand={brand} view={view}
+      <Sidebar
+        brand={brand}
+        view={view}
         onBrandChange={b => { setBrand(b); setView('overview') }}
-        onViewChange={setView}
-        onReset={handleReset}
+        onViewChange={v => { if (canAccess(v)) setView(v) }}
+        onReset={() => {}}
+        accessibleBrands={accessibleBrands}
+        canAccess={canAccess}
+        userName={profile.full_name ?? profile.role}
+        userRole={profile.role}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: 240 }}>
@@ -174,6 +268,13 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Data loading indicator */}
+        {dataLoading && (
+          <div className="h-0.5 w-full overflow-hidden" style={{ background: '#F3F4F6' }}>
+            <div className="h-full animate-pulse" style={{ background: '#C9A96E', width: '60%' }} />
+          </div>
+        )}
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto px-8 py-6 pb-24">

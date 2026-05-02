@@ -1,10 +1,11 @@
 'use client'
 import { useState, useRef } from 'react'
 import { Brand, ProductMaster, BundleMaster, BundleComponent } from '@/lib/types'
-import { saveProducts } from '@/lib/storage'
 import { downloadTemplate } from '@/lib/csvParser'
-import { Package, Plus, Trash2, Edit2, Check, X, Upload, Zap, ChevronRight, Layers } from 'lucide-react'
+import { Package, Plus, Trash2, Edit2, Check, X, Upload, Zap, ChevronRight, Layers, Users } from 'lucide-react'
 import Papa from 'papaparse'
+import { useAuth } from '@/contexts/AuthContext'
+import UserManagement from '@/components/UserManagement'
 
 const BRAND_COLOR = { reglow: '#C9A96E', amura: '#8FB050' }
 const BRAND_RGB = { reglow: '201,169,110', amura: '143,176,80' }
@@ -24,7 +25,9 @@ function toNum(v: string) { return parseFloat(v.replace(/[^0-9.]/g, '')) || 0 }
 function fmtRp(n: number) { return 'Rp ' + n.toLocaleString('id-ID') }
 
 export default function SettingsView({ brand, products, onProductsChange, bundles, onBundlesChange }: Props) {
-  const [tab, setTab] = useState<'product-master' | 'bundle-master' | 'api'>('product-master')
+  const { profile } = useAuth()
+  const canManageUsers = profile?.role === 'super_admin' || profile?.role === 'admin'
+  const [tab, setTab] = useState<'product-master' | 'bundle-master' | 'api' | 'users'>('product-master')
 
   // Product Master state
   const [form, setForm] = useState(EMPTY_FORM)
@@ -46,7 +49,7 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
 
   // ── Product Master helpers ────────────────────────────────────────────────
 
-  function saveP(updated: ProductMaster[]) { onProductsChange(updated); saveProducts(updated) }
+  function saveP(updated: ProductMaster[]) { onProductsChange(updated) }
 
   function addProduct() {
     const price = toNum(form.price)
@@ -231,8 +234,9 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
           ['product-master', Package, 'Product Master'],
           ['bundle-master', Layers, 'Bundle Master'],
           ['api', Zap, 'API Integration'],
+          ...(canManageUsers ? [['users', Users, 'Users'] as const] : []),
         ] as const).map(([id, Icon, label]) => (
-          <button key={id} onClick={() => setTab(id)}
+          <button key={id} onClick={() => setTab(id as typeof tab)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
               background: tab === id ? `rgba(${rgb},0.15)` : '#F9FAFB',
@@ -532,6 +536,13 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── USERS ── */}
+      {tab === 'users' && canManageUsers && (
+        <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+          <UserManagement brandColor={color} />
         </div>
       )}
     </div>
