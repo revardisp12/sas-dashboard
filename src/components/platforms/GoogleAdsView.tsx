@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { GoogleAdsRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import ManualInputModal from '@/components/ManualInputModal'
+import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { BarChart2, DollarSign, MousePointer, TrendingUp, ShoppingCart, Percent, Plus, Link } from 'lucide-react'
 import { SalesRow } from '@/lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -11,12 +11,29 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 const GA_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },
   { key: 'campaign', label: 'Campaign', type: 'text' as const, placeholder: 'Brand Campaign' },
-  { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '10000' },
-  { key: 'clicks', label: 'Clicks', type: 'number' as const, placeholder: '350' },
   { key: 'spend', label: 'Spend (Rp)', type: 'number' as const, placeholder: '875000' },
+  { key: 'clicks', label: 'Clicks', type: 'number' as const, placeholder: '350' },
+  { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '10000' },
   { key: 'conversions', label: 'Conversions', type: 'number' as const, placeholder: '42' },
-  { key: 'ctr', label: 'CTR (%)', type: 'number' as const, placeholder: '3.50' },
-  { key: 'cpc', label: 'Avg CPC (Rp)', type: 'number' as const, placeholder: '2500' },
+]
+
+const GA_COMPUTED = [
+  {
+    label: 'CTR',
+    format: 'percent' as const,
+    formula: (f: Record<string, string>) => {
+      const imp = Number(f.impressions); const clk = Number(f.clicks)
+      return imp > 0 ? (clk / imp) * 100 : null
+    },
+  },
+  {
+    label: 'Avg CPC',
+    format: 'currency' as const,
+    formula: (f: Record<string, string>) => {
+      const clk = Number(f.clicks); const spend = Number(f.spend)
+      return clk > 0 ? spend / clk : null
+    },
+  },
 ]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -128,12 +145,17 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd, sale
           subtitle="Tambah baris data Google Ads"
           brand={brand}
           fields={GA_FIELDS}
+          computed={GA_COMPUTED as ComputedField[]}
           onSave={row => {
+            const impressions = Number(row.impressions) || 0
+            const clicks = Number(row.clicks) || 0
+            const spend = Number(row.spend) || 0
             const r: GoogleAdsRow = {
               date: row.date, campaign: row.campaign,
-              impressions: Number(row.impressions) || 0, clicks: Number(row.clicks) || 0,
-              ctr: Number(row.ctr) || 0, cpc: Number(row.cpc) || 0,
-              spend: Number(row.spend) || 0, conversions: Number(row.conversions) || 0,
+              impressions, clicks, spend,
+              conversions: Number(row.conversions) || 0,
+              ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+              cpc: clicks > 0 ? spend / clicks : 0,
               convRate: 0, roas: 0,
             }
             onManualAdd?.([r]); setModal(false)

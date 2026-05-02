@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { InstagramRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import ManualInputModal from '@/components/ManualInputModal'
+import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { Camera, Users, Eye, Heart, TrendingUp, Activity, Plus } from 'lucide-react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -16,8 +16,18 @@ const IG_FIELDS = [
   { key: 'followers', label: 'Followers', type: 'number' as const, placeholder: '25000' },
   { key: 'reach', label: 'Reach', type: 'number' as const, placeholder: '8500' },
   { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '12000' },
-  { key: 'profileVisits', label: 'Profile Visits', type: 'number' as const, placeholder: '420' },
   { key: 'engagements', label: 'Engagements', type: 'number' as const, placeholder: '680' },
+]
+
+const IG_COMPUTED = [
+  {
+    label: 'Eng. Rate',
+    format: 'percent' as const,
+    formula: (f: Record<string, string>) => {
+      const reach = Number(f.reach); const eng = Number(f.engagements)
+      return reach > 0 ? (eng / reach) * 100 : null
+    },
+  },
 ]
 
 interface Props { data: InstagramRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: InstagramRow[]) => void }
@@ -117,11 +127,13 @@ export default function InstagramView({ data, brand, onUpload, onManualAdd }: Pr
           subtitle="Tambah baris data Instagram"
           brand={brand}
           fields={IG_FIELDS}
+          computed={IG_COMPUTED as ComputedField[]}
           onSave={row => {
             const r: InstagramRow = {
               date: row.date,
               followers: Number(row.followers) || 0, reach: Number(row.reach) || 0,
-              impressions: Number(row.impressions) || 0, profileVisits: Number(row.profileVisits) || 0,
+              impressions: Number(row.impressions) || 0,
+              profileVisits: 0,
               engagements: Number(row.engagements) || 0,
             }
             onManualAdd?.([r]); setModal(false)

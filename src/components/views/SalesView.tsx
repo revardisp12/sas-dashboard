@@ -282,23 +282,22 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
                     <div key={idx} className="grid gap-2 items-end" style={{ gridTemplateColumns: '2fr 80px 120px 120px 32px' }}>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Produk</label>}
-                        {brandProducts.length > 0 || brandBundles.length > 0 ? (
-                          <select value={line.selectValue} onChange={e => handleProductSelect(idx, e.target.value)} className="input-dark">
-                            <option value="">— Pilih produk —</option>
-                            {brandProducts.length > 0 && (
-                              <optgroup label="── Individual ──">
-                                {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
-                              </optgroup>
-                            )}
-                            {brandBundles.length > 0 && (
-                              <optgroup label="── Bundle ──">
-                                {brandBundles.map(b => <option key={b.id} value={`bundle:${b.id}`}>📦 {b.name}</option>)}
-                              </optgroup>
-                            )}
-                          </select>
-                        ) : (
-                          <input value={line.product} onChange={e => updateLine(idx, 'product', e.target.value)} placeholder="Nama produk" className="input-dark" />
-                        )}
+                        <select value={line.selectValue} onChange={e => handleProductSelect(idx, e.target.value)}
+                          disabled={brandProducts.length === 0 && brandBundles.length === 0}
+                          className="input-dark"
+                          style={{ color: (brandProducts.length === 0 && brandBundles.length === 0) ? '#9CA3AF' : undefined, cursor: (brandProducts.length === 0 && brandBundles.length === 0) ? 'not-allowed' : 'pointer' }}>
+                          <option value="">{(brandProducts.length === 0 && brandBundles.length === 0) ? '— Isi Product Master dulu —' : '— Pilih produk —'}</option>
+                          {brandProducts.length > 0 && (
+                            <optgroup label="── Individual ──">
+                              {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.name}</option>)}
+                            </optgroup>
+                          )}
+                          {brandBundles.length > 0 && (
+                            <optgroup label="── Bundle ──">
+                              {brandBundles.map(b => <option key={b.id} value={`bundle:${b.id}`}>📦 {b.name}</option>)}
+                            </optgroup>
+                          )}
+                        </select>
                       </div>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Qty</label>}

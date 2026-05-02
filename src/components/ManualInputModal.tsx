@@ -11,11 +11,18 @@ export interface FieldDef {
   defaultValue?: string
 }
 
+export interface ComputedField {
+  label: string
+  formula: (form: Record<string, string>) => number | null
+  format?: 'currency' | 'percent' | 'number'
+}
+
 interface Props {
   title: string
   subtitle?: string
   brand: Brand
   fields: FieldDef[]
+  computed?: ComputedField[]
   onSave: (row: Record<string, string>) => void
   onClose: () => void
 }
@@ -23,7 +30,13 @@ interface Props {
 const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80' }
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 
-export default function ManualInputModal({ title, subtitle, brand, fields, onSave, onClose }: Props) {
+function fmtComputed(val: number, format?: 'currency' | 'percent' | 'number'): string {
+  if (format === 'currency') return 'Rp ' + Math.round(val).toLocaleString('id-ID')
+  if (format === 'percent') return val.toFixed(2) + '%'
+  return val.toLocaleString('id-ID')
+}
+
+export default function ManualInputModal({ title, subtitle, brand, fields, computed, onSave, onClose }: Props) {
   const initForm = () => fields.reduce<Record<string, string>>((acc, f) => {
     acc[f.key] = f.defaultValue ?? (f.type === 'date' ? new Date().toISOString().slice(0, 10) : '')
     return acc
@@ -77,6 +90,24 @@ export default function ManualInputModal({ title, subtitle, brand, fields, onSav
               </div>
             ))}
           </div>
+
+          {computed && computed.length > 0 && (
+            <div className="mt-4 p-3 rounded-xl flex flex-wrap gap-x-5 gap-y-1.5"
+              style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+              <p className="w-full text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#9CA3AF' }}>
+                Auto-calculated
+              </p>
+              {computed.map(c => {
+                const val = c.formula(form)
+                const display = val === null || isNaN(val) || !isFinite(val) ? '—' : fmtComputed(val, c.format)
+                return (
+                  <span key={c.label} className="text-xs" style={{ color: '#6B7280' }}>
+                    {c.label}: <strong style={{ color: '#111827' }}>{display}</strong>
+                  </span>
+                )
+              })}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-6">
             <button onClick={onClose}

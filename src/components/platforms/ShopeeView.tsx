@@ -3,20 +3,54 @@ import { useState } from 'react'
 import { ShopeeRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import ManualInputModal from '@/components/ManualInputModal'
+import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Target, MousePointer, Plus } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 const SHOPEE_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },
   { key: 'gmv', label: 'GMV (Rp)', type: 'number' as const, placeholder: '18000000' },
+  { key: 'revenue', label: 'Revenue (Rp)', type: 'number' as const, placeholder: '17000000' },
   { key: 'orders', label: 'Orders', type: 'number' as const, placeholder: '90' },
   { key: 'unitsSold', label: 'Units Sold', type: 'number' as const, placeholder: '110' },
-  { key: 'revenue', label: 'Revenue (Rp)', type: 'number' as const, placeholder: '17000000' },
   { key: 'productViews', label: 'Product Views', type: 'number' as const, placeholder: '2370' },
   { key: 'adSpend', label: 'Ad Spend (Rp)', type: 'number' as const, placeholder: '1500000' },
   { key: 'adClicks', label: 'Ad Clicks', type: 'number' as const, placeholder: '3200' },
-  { key: 'adImpressions', label: 'Ad Impressions', type: 'number' as const, placeholder: '85000' },
+]
+
+const SHOPEE_COMPUTED = [
+  {
+    label: 'Conv Rate',
+    format: 'percent' as const,
+    formula: (f: Record<string, string>) => {
+      const views = Number(f.productViews); const orders = Number(f.orders)
+      return views > 0 ? (orders / views) * 100 : null
+    },
+  },
+  {
+    label: 'AOV',
+    format: 'currency' as const,
+    formula: (f: Record<string, string>) => {
+      const orders = Number(f.orders); const rev = Number(f.revenue)
+      return orders > 0 ? rev / orders : null
+    },
+  },
+  {
+    label: 'Ad ROAS',
+    format: 'number' as const,
+    formula: (f: Record<string, string>) => {
+      const spend = Number(f.adSpend); const rev = Number(f.revenue)
+      return spend > 0 ? rev / spend : null
+    },
+  },
+  {
+    label: 'Ad CPC',
+    format: 'currency' as const,
+    formula: (f: Record<string, string>) => {
+      const clicks = Number(f.adClicks); const spend = Number(f.adSpend)
+      return clicks > 0 ? spend / clicks : null
+    },
+  },
 ]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -168,6 +202,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
           subtitle="Tambah baris data Shopee"
           brand={brand}
           fields={SHOPEE_FIELDS}
+          computed={SHOPEE_COMPUTED as ComputedField[]}
           onSave={row => {
             const r: ShopeeRow = {
               date: row.date,
@@ -175,7 +210,8 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               unitsSold: Number(row.unitsSold) || 0, revenue: Number(row.revenue) || 0,
               productViews: Number(row.productViews) || 0,
               adSpend: Number(row.adSpend) || 0,
-              adClicks: Number(row.adClicks) || 0, adImpressions: Number(row.adImpressions) || 0,
+              adClicks: Number(row.adClicks) || 0,
+              adImpressions: 0,
             }
             onManualAdd?.([r]); setModal(false)
           }}

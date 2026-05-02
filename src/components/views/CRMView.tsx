@@ -758,18 +758,13 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                     <div key={idx} className="grid gap-2 items-end" style={{ gridTemplateColumns: '2fr 70px 120px 32px' }}>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Produk</label>}
-                        {brandProducts.length > 0 ? (
-                          <select value={line.sku} onChange={e => pickCrmProduct(idx, e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}>
-                            <option value="">— Pilih produk —</option>
-                            {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.sku} — {p.name}</option>)}
-                          </select>
-                        ) : (
-                          <input value={line.product} onChange={e => updateCrmLine(idx, 'product', e.target.value)} placeholder="Nama produk"
-                            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }} />
-                        )}
+                        <select value={line.sku} onChange={e => pickCrmProduct(idx, e.target.value)}
+                          disabled={brandProducts.length === 0}
+                          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                          style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: brandProducts.length === 0 ? '#9CA3AF' : '#111827', cursor: brandProducts.length === 0 ? 'not-allowed' : 'pointer' }}>
+                          <option value="">{brandProducts.length === 0 ? '— Isi Product Master dulu —' : '— Pilih produk —'}</option>
+                          {brandProducts.map(p => <option key={p.sku} value={p.sku}>{p.name}</option>)}
+                        </select>
                       </div>
                       <div>
                         {idx === 0 && <label className="text-[10px] uppercase tracking-widest block mb-1" style={{ color: '#4B5563' }}>Qty</label>}

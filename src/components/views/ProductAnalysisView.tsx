@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { SalesRow, CRMRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts'
 
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
@@ -189,6 +189,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
   const [localTf, setLocalTf] = useState<number>(globalTf || 90)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
+  const [speedFilter, setSpeedFilter] = useState<'fast' | 'medium' | 'slow'>('fast')
 
   const brandProducts = products.filter(p => p.brand === brand)
   const brandBundles = bundles.filter(b => b.brand === brand)
@@ -199,8 +200,20 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
   const selected = stats.find(s => s.product === selectedProduct) || stats[0]
 
   const fastCount = stats.filter(s => s.speed === 'fast').length
+  const mediumCount = stats.filter(s => s.speed === 'medium').length
   const slowCount = stats.filter(s => s.speed === 'slow').length
   const maxUnits = Math.max(...stats.map(s => s.totalUnits), 1)
+
+  const filteredStats = stats.filter(s => s.speed === speedFilter)
+  const maxFilteredUnits = Math.max(...filteredStats.map(s => s.totalUnits), 1)
+
+  const revenueBySegment = [
+    { name: 'Fast Moving', value: stats.filter(s => s.speed === 'fast').reduce((sum, s) => sum + s.totalRevenue, 0), color: '#10B981' },
+    { name: 'Medium', value: stats.filter(s => s.speed === 'medium').reduce((sum, s) => sum + s.totalRevenue, 0), color: '#F59E0B' },
+    { name: 'Slow Moving', value: stats.filter(s => s.speed === 'slow').reduce((sum, s) => sum + s.totalRevenue, 0), color: '#EF4444' },
+  ].filter(d => d.value > 0)
+
+  const totalRevenue = revenueBySegment.reduce((s, d) => s + d.value, 0)
 
   const getResolved = (product: string) => resolveLabel(product, brandProducts, brandBundles)
 
@@ -209,6 +222,12 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
     ...s,
     displayName: getResolved(s.product).label,
   }))
+
+  const scatterData = {
+    fast: statsWithDisplay.filter(s => s.speed === 'fast').map(s => ({ x: s.totalUnits, y: s.totalRevenue, name: s.displayName })),
+    medium: statsWithDisplay.filter(s => s.speed === 'medium').map(s => ({ x: s.totalUnits, y: s.totalRevenue, name: s.displayName })),
+    slow: statsWithDisplay.filter(s => s.speed === 'slow').map(s => ({ x: s.totalUnits, y: s.totalRevenue, name: s.displayName })),
+  }
 
   if (!hasData) {
     return (
@@ -270,13 +289,37 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
         ))}
       </div>
 
-      {/* Fast / Slow Moving Bar */}
+      {/* Fast / Slow Moving Indicator */}
       <div style={chartStyle}>
-        <p className="text-xs font-semibold tracking-widest uppercase mb-5" style={{ color: '#6B7280' }}>Fast / Slow Moving Indicator</p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>Fast / Slow Moving Indicator</p>
+          <div className="flex items-center gap-1.5">
+            {(['fast', 'medium', 'slow'] as const).map(sp => {
+              const cfg = SPEED_CONFIG[sp]
+              const count = sp === 'fast' ? fastCount : sp === 'medium' ? mediumCount : slowCount
+              return (
+                <button key={sp} onClick={() => setSpeedFilter(sp)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                  style={{
+                    background: speedFilter === sp ? cfg.bg : '#F9FAFB',
+                    color: speedFilter === sp ? cfg.color : '#9CA3AF',
+                    border: speedFilter === sp ? `1px solid ${cfg.color}40` : '1px solid transparent',
+                  }}>
+                  {cfg.icon} {cfg.label} <span className="opacity-70">({count})</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="space-y-3">
-          {stats.map(s => {
+          {filteredStats.length === 0 ? (
+            <p className="text-xs text-center py-6" style={{ color: '#9CA3AF' }}>
+              Tidak ada produk di segment ini
+            </p>
+          ) : filteredStats.map(s => {
             const cfg = SPEED_CONFIG[s.speed]
-            const pct = (s.totalUnits / maxUnits) * 100
+            const pct = (s.totalUnits / maxFilteredUnits) * 100
             const resolved = getResolved(s.product)
             const isHovered = hoveredProduct === s.product
 
@@ -298,7 +341,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                     <span className="text-xs font-bold" style={{ color: cfg.color }}>{fmtNum(s.totalUnits)} unit</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                    <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{fmtCurrency(s.totalRevenue)}</span>
                   </div>
                 </div>
                 <div className="rounded-full overflow-hidden" style={{ height: 6, background: '#F9FAFB' }}>
@@ -306,7 +349,6 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                     style={{ width: `${pct}%`, background: cfg.color, boxShadow: `0 0 8px ${cfg.color}60` }} />
                 </div>
 
-                {/* Tooltip */}
                 {isHovered && resolved.components && resolved.components.length > 0 && (
                   <div className="absolute left-0 bottom-full mb-2 z-20 rounded-xl shadow-lg pointer-events-none"
                     style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', padding: '10px 14px', minWidth: 180 }}>
@@ -323,6 +365,89 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
           })}
         </div>
         <p className="text-[10px] mt-4" style={{ color: '#374151' }}>Threshold: 🚀 Fast &gt;80 unit/bulan · 📦 Medium 30–80 · 🐢 Slow &lt;30</p>
+      </div>
+
+      {/* Revenue by Segment (Donut) + Units vs Revenue (Scatter) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Donut — Revenue Contribution */}
+        <div style={chartStyle}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>Revenue Contribution by Segment</p>
+          {revenueBySegment.length > 0 ? (
+            <div className="flex items-center gap-4">
+              <ResponsiveContainer width="60%" height={180}>
+                <PieChart>
+                  <Pie data={revenueBySegment} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
+                    dataKey="value" stroke="none">
+                    {revenueBySegment.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 11 }}
+                    formatter={(val: unknown) => [fmtCurrency(val as number), '']}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2.5 flex-1">
+                {revenueBySegment.map(d => (
+                  <div key={d.name}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                        <span className="text-xs" style={{ color: '#6B7280' }}>{d.name}</span>
+                      </div>
+                      <span className="text-xs font-bold" style={{ color: d.color }}>
+                        {totalRevenue > 0 ? ((d.value / totalRevenue) * 100).toFixed(1) : 0}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] pl-3.5" style={{ color: '#9CA3AF' }}>{fmtCurrency(d.value)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-40">
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>Belum ada data revenue</p>
+            </div>
+          )}
+        </div>
+
+        {/* Scatter — Units vs Revenue */}
+        <div style={chartStyle}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>Units vs Revenue per Produk</p>
+          {stats.length > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <ScatterChart margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                <XAxis type="number" dataKey="x" name="Units" tick={{ fontSize: 9, fill: '#4B5563' }} label={{ value: 'Units', position: 'insideBottom', offset: -2, fontSize: 9, fill: '#9CA3AF' }} />
+                <YAxis type="number" dataKey="y" name="Revenue" tick={{ fontSize: 9, fill: '#4B5563' }} tickFormatter={v => `${(v / 1000000).toFixed(0)}jt`} />
+                <ZAxis range={[40, 40]} />
+                <Tooltip
+                  contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 11 }}
+                  content={({ payload }) => {
+                    if (!payload?.length) return null
+                    const d = payload[0].payload
+                    return (
+                      <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, padding: '8px 12px' }}>
+                        <p className="font-semibold text-xs mb-1" style={{ color: '#111827' }}>{d.name}</p>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>Units: <strong>{fmtNum(d.x)}</strong></p>
+                        <p className="text-xs" style={{ color: '#6B7280' }}>Revenue: <strong>{fmtCurrency(d.y)}</strong></p>
+                      </div>
+                    )
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
+                <Scatter name="Fast" data={scatterData.fast} fill="#10B981" opacity={0.85} />
+                <Scatter name="Medium" data={scatterData.medium} fill="#F59E0B" opacity={0.85} />
+                <Scatter name="Slow" data={scatterData.slow} fill="#EF4444" opacity={0.5} />
+              </ScatterChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-40">
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>Belum ada data</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Customer per SKU + Frequency */}

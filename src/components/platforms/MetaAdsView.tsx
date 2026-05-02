@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { MetaAdsRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
-import ManualInputModal from '@/components/ManualInputModal'
+import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Plus, Link, Percent } from 'lucide-react'
 import { SalesRow } from '@/lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -14,12 +14,29 @@ const PLATFORM_COLOR = '#1877F2'
 const META_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },
   { key: 'campaign', label: 'Campaign', type: 'text' as const, placeholder: 'Retargeting' },
+  { key: 'spend', label: 'Spend (Rp)', type: 'number' as const, placeholder: '500000' },
+  { key: 'clicks', label: 'Link Clicks', type: 'number' as const, placeholder: '240' },
   { key: 'reach', label: 'Reach', type: 'number' as const, placeholder: '8000' },
   { key: 'impressions', label: 'Impressions', type: 'number' as const, placeholder: '12000' },
-  { key: 'clicks', label: 'Link Clicks', type: 'number' as const, placeholder: '240' },
-  { key: 'ctr', label: 'CTR (%)', type: 'number' as const, placeholder: '2.00' },
-  { key: 'spend', label: 'Spend (Rp)', type: 'number' as const, placeholder: '500000' },
-  { key: 'cpm', label: 'CPM (Rp)', type: 'number' as const, placeholder: '41667' },
+]
+
+const META_COMPUTED = [
+  {
+    label: 'CTR',
+    format: 'percent' as const,
+    formula: (f: Record<string, string>) => {
+      const imp = Number(f.impressions); const clk = Number(f.clicks)
+      return imp > 0 ? (clk / imp) * 100 : null
+    },
+  },
+  {
+    label: 'CPM',
+    format: 'currency' as const,
+    formula: (f: Record<string, string>) => {
+      const imp = Number(f.impressions); const spend = Number(f.spend)
+      return imp > 0 ? (spend / imp) * 1000 : null
+    },
+  },
 ]
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
@@ -130,13 +147,17 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
           subtitle="Tambah baris data Meta Ads"
           brand={brand}
           fields={META_FIELDS}
+          computed={META_COMPUTED as ComputedField[]}
           onSave={row => {
+            const impressions = Number(row.impressions) || 0
+            const clicks = Number(row.clicks) || 0
+            const spend = Number(row.spend) || 0
             const r: MetaAdsRow = {
               date: row.date, campaign: row.campaign,
-              reach: Number(row.reach) || 0, impressions: Number(row.impressions) || 0,
-              clicks: Number(row.clicks) || 0, ctr: Number(row.ctr) || 0,
-              spend: Number(row.spend) || 0, purchases: 0,
-              roas: 0, cpm: Number(row.cpm) || 0,
+              reach: Number(row.reach) || 0, impressions, clicks, spend,
+              purchases: 0, roas: 0,
+              ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+              cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
             }
             onManualAdd?.([r]); setModal(false)
           }}
