@@ -44,7 +44,7 @@ const VIEW_LABELS: Record<ActiveView, string> = {
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura' }
 
 export default function Dashboard() {
-  const { user, profile, loading: authLoading, canAccess, accessibleBrands } = useAuth()
+  const { user, profile, loading: authLoading, profileLoading, canAccess, accessibleBrands } = useAuth()
 
   const [brand, setBrand] = useState<Brand>('reglow')
   const [view, setView] = useState<ActiveView>('overview')
@@ -195,7 +195,7 @@ export default function Dashboard() {
 
   // ── Auth loading / login guard ────────────────────────────────────────────
 
-  if (authLoading) {
+  if (authLoading || (user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8F9FC' }}>
         <div className="flex flex-col items-center gap-3">
@@ -207,7 +207,7 @@ export default function Dashboard() {
     )
   }
 
-  if (!user || !profile) return <LoginPage />
+  if (!user) return <LoginPage />
 
   const bd = data[brand]
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -237,8 +237,8 @@ export default function Dashboard() {
         onReset={() => {}}
         accessibleBrands={accessibleBrands}
         canAccess={canAccess}
-        userName={profile.full_name ?? profile.role}
-        userRole={profile.role}
+        userName={profile?.full_name ?? profile?.role}
+        userRole={profile?.role}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: 240 }}>
