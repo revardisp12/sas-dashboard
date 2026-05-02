@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { SalesRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import CSVUploader from '@/components/CSVUploader'
+import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
+import { parseSales } from '@/lib/csvParser'
 import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -23,6 +25,7 @@ interface Props {
   brand: Brand
   timeframe: Timeframe
   onUpload: (file: File) => Promise<void>
+  onBulkUpload?: (rows: SalesRow[]) => void
   products: ProductMaster[]
   bundles: BundleMaster[]
   onManualAdd?: (rows: SalesRow[]) => void
@@ -30,13 +33,32 @@ interface Props {
 
 const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', price: '', cogs: '', selectValue: '' }
 
-export default function SalesView({ data, brand, timeframe, onUpload, products, bundles, onManualAdd }: Props) {
+export default function SalesView({ data, brand, timeframe, onUpload, onBulkUpload, products, bundles, onManualAdd }: Props) {
   const accent = BRAND_COLOR[brand]
   const filtered = filterByDays(data, timeframe)
   const brandProducts = products.filter(p => p.brand === brand)
   const brandBundles = bundles.filter(b => b.brand === brand)
 
   const [modal, setModal] = useState(false)
+  const [validationModal, setValidationModal] = useState<{
+    validRows: SalesRow[]
+    invalidRows: InvalidRow[]
+  } | null>(null)
+
+  async function handleCSVFile(file: File) {
+    if (brandProducts.length === 0) { await onUpload(file); return }
+    const rows = await parseSales(file)
+    const validRows: SalesRow[] = []
+    const invalidRows: InvalidRow[] = []
+    rows.forEach((row, i) => {
+      if (validateProductField(row.product, brandProducts, brandBundles)) {
+        validRows.push(row)
+      } else {
+        invalidRows.push({ rowIndex: i + 1, date: row.date, product: row.product })
+      }
+    })
+    setValidationModal({ validRows, invalidRows })
+  }
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [customerName, setCustomerName] = useState('')
   const [phone, setPhone] = useState('')
@@ -140,7 +162,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
             <Plus size={14} /> Input Manual
           </button>
           <div className="w-56 flex-shrink-0">
-            <CSVUploader platform="tiktok-organic" hasData={data.length > 0} onUpload={onUpload} accent={accent} />
+            <CSVUploader platform="sales" hasData={data.length > 0} onUpload={handleCSVFile} accent={accent} />
           </div>
         </div>
       </div>
@@ -371,6 +393,20 @@ export default function SalesView({ data, brand, timeframe, onUpload, products, 
         .input-dark:focus { border-color: #D1D5DB; }
         .input-dark option { background: #FFFFFF; color: #111827; }
       `}</style>
+
+      {validationModal && (
+        <CSVValidationModal
+          title="CS Sales"
+          brand={brand}
+          validCount={validationModal.validRows.length}
+          invalidRows={validationModal.invalidRows}
+          onConfirm={() => {
+            onBulkUpload?.(validationModal.validRows)
+            setValidationModal(null)
+          }}
+          onClose={() => setValidationModal(null)}
+        />
+      )}
     </div>
   )
 }

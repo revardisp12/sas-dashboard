@@ -1,9 +1,11 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
-import { CRMRow, Brand, CRMTimeframe, CustomerRFM, RFMSegment, FollowUpTask, ProductMaster } from '@/lib/types'
+import { CRMRow, Brand, CRMTimeframe, CustomerRFM, RFMSegment, FollowUpTask, ProductMaster, BundleMaster } from '@/lib/types'
 import { fmtCurrency, fmtNum } from '@/lib/utils'
 import { loadTasks, saveTasks } from '@/lib/storage'
 import CSVUploader from '@/components/CSVUploader'
+import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
+import { parseCRM } from '@/lib/csvParser'
 import { Users, X, Phone, Calendar, ShoppingBag, TrendingUp, Plus, ChevronRight, Trash2, Search, ChevronDown, Download } from 'lucide-react'
 
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -95,11 +97,13 @@ interface Props {
   data: CRMRow[]
   brand: Brand
   onUpload: (file: File) => Promise<void>
+  onBulkUpload?: (rows: CRMRow[]) => void
   products?: ProductMaster[]
+  bundles?: BundleMaster[]
   onManualAdd?: (rows: CRMRow[]) => void
 }
 
-export default function CRMView({ data, brand, onUpload, products = [], onManualAdd }: Props) {
+export default function CRMView({ data, brand, onUpload, onBulkUpload, products = [], bundles = [], onManualAdd }: Props) {
   const accent = BRAND_COLOR[brand]
   const [timeframe, setTimeframe] = useState<CRMTimeframe>(90)
   const [tab, setTab] = useState<Tab>('rfm')
@@ -123,6 +127,27 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
   const [crmPhone, setCrmPhone] = useState('')
   const [crmLines, setCrmLines] = useState<CRMLineItem[]>([{ ...EMPTY_CRM_LINE }])
   const brandProducts = products.filter(p => p.brand === brand)
+  const brandBundles = bundles.filter(b => b.brand === brand)
+
+  const [validationModal, setValidationModal] = useState<{
+    validRows: CRMRow[]
+    invalidRows: InvalidRow[]
+  } | null>(null)
+
+  async function handleCSVFile(file: File) {
+    if (brandProducts.length === 0) { await onUpload(file); return }
+    const rows = await parseCRM(file)
+    const validRows: CRMRow[] = []
+    const invalidRows: InvalidRow[] = []
+    rows.forEach((row, i) => {
+      if (validateProductField(row.product, brandProducts, brandBundles)) {
+        validRows.push(row)
+      } else {
+        invalidRows.push({ rowIndex: i + 1, date: row.date, product: row.product })
+      }
+    })
+    setValidationModal({ validRows, invalidRows })
+  }
 
   function pickCrmProduct(idx: number, sku: string) {
     const pm = brandProducts.find(p => p.sku === sku)
@@ -236,7 +261,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
                 <Plus size={14} /> Input Manual
               </button>
               <div className="w-56 flex-shrink-0">
-                <CSVUploader platform="crm" hasData={false} onUpload={onUpload} accent={accent} />
+                <CSVUploader platform="crm" hasData={false} onUpload={handleCSVFile} accent={accent} />
               </div>
             </div>
           </div>
@@ -280,7 +305,7 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
             <Plus size={14} /> Input Manual
           </button>
           <div className="w-44 flex-shrink-0">
-            <CSVUploader platform="crm" hasData={data.length > 0} onUpload={onUpload} accent={accent} />
+            <CSVUploader platform="crm" hasData={data.length > 0} onUpload={handleCSVFile} accent={accent} />
           </div>
         </div>
       </div>
@@ -802,6 +827,20 @@ export default function CRMView({ data, brand, onUpload, products = [], onManual
             </div>
           </div>
         </div>
+      )}
+
+      {validationModal && (
+        <CSVValidationModal
+          title="CRM"
+          brand={brand}
+          validCount={validationModal.validRows.length}
+          invalidRows={validationModal.invalidRows}
+          onConfirm={() => {
+            onBulkUpload?.(validationModal.validRows)
+            setValidationModal(null)
+          }}
+          onClose={() => setValidationModal(null)}
+        />
       )}
     </div>
   )
