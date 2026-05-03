@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Brand, ProductMaster, BundleMaster, SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FollowUpTask } from './types'
+import type { Brand, ProductMaster, BundleMaster, SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FollowUpTask, MonthlyTarget } from './types'
 
 // ── Products ─────────────────────────────────────────────────────────────────
 
@@ -356,6 +356,26 @@ export async function appendTikTokOrganic(rows: TikTokOrganicRow[], brand: Brand
       brand, date: r.date, followers: r.followers, views: r.views,
       likes: r.likes, comments: r.comments, shares: r.shares,
     }))
+  )
+  if (error) throw error
+}
+
+// ── Targets ──────────────────────────────────────────────────────────────────
+
+export async function getTarget(brand: Brand, year: number, month: number): Promise<MonthlyTarget | null> {
+  const { data, error } = await supabase.from('targets')
+    .select('*').eq('brand', brand).eq('year', year).eq('month', month).single()
+  if (error || !data) return null
+  return {
+    id: data.id, brand: data.brand, year: data.year, month: data.month,
+    monthlyTarget: data.monthly_target ?? 0, weeks: data.weeks ?? [],
+  }
+}
+
+export async function upsertTarget(t: Omit<MonthlyTarget, 'id'>): Promise<void> {
+  const { error } = await supabase.from('targets').upsert(
+    { brand: t.brand, year: t.year, month: t.month, monthly_target: t.monthlyTarget, weeks: t.weeks },
+    { onConflict: 'brand,year,month' }
   )
   if (error) throw error
 }

@@ -30,13 +30,14 @@ import InstagramView from '@/components/platforms/InstagramView'
 import TikTokOrganicView from '@/components/platforms/TikTokOrganicView'
 import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
+import PerformanceView from '@/components/views/PerformanceView'
 import SettingsView from '@/components/views/SettingsView'
 import AIChatButton from '@/components/AIChatButton'
 import LoginPage from '@/components/LoginPage'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
-  overview: 'Overview', funnel: 'Funnel Analysis', sales: 'Sales Acquisition by CS',
-  crm: 'Sales Retention by CRM', 'product-analysis': 'Product Analysis',
+  overview: 'Overview', funnel: 'Funnel Analysis', performance: 'Performance',
+  sales: 'Sales Acquisition by CS', crm: 'Sales Retention by CRM', 'product-analysis': 'Product Analysis',
   'google-ads': 'Google Ads', 'meta-ads': 'Meta Ads', 'tiktok-shop': 'TikTok Shop',
   shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic',
   settings: 'Settings',
@@ -288,6 +289,7 @@ export default function Dashboard() {
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('instagram')} />}
           {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokOrganic')} />}
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} onBulkUpload={handleBulkCRM} products={products} bundles={bundles} onManualAdd={handleManualCRM} />}
+          {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} bundles={bundles} onBundlesChange={handleBundlesChange} />}
         </main>

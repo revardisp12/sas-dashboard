@@ -1,9 +1,25 @@
 export type Brand = 'reglow' | 'amura'
 export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'shopee' | 'instagram' | 'tiktok-organic'
-export type ActiveView = Platform | 'overview' | 'funnel' | 'sales' | 'crm' | 'product-analysis' | 'settings'
+export type ActiveView = Platform | 'overview' | 'funnel' | 'performance' | 'sales' | 'crm' | 'product-analysis' | 'settings'
 export type Timeframe = 7 | 14 | 30 | 90 | 0
 export interface DateRange { from: string; to: string }
 export type CRMTimeframe = 30 | 90 | 180 | 365 | 0
+
+export interface WeekRange {
+  weekNum: number
+  startDay: number
+  endDay: number
+  target: number
+}
+
+export interface MonthlyTarget {
+  id: string
+  brand: Brand
+  year: number
+  month: number
+  monthlyTarget: number
+  weeks: WeekRange[]
+}
 
 export interface ProductMaster {
   id: string

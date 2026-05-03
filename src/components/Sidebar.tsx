@@ -5,7 +5,7 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, LogOut, Users, Package, Settings,
+  ShoppingCart, LogOut, Users, Package, Settings, Activity,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -118,6 +118,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
 
         {accessible('overview') && <NavItem icon={LayoutDashboard} label="Overview" color="#F07830" active={view === 'overview'} onClick={() => onViewChange('overview')} />}
         {accessible('funnel') && <NavItem icon={TrendingUp} label="Funnel Analysis" color="#8B5CF6" active={view === 'funnel'} onClick={() => onViewChange('funnel')} />}
+        {accessible('performance') && <NavItem icon={Activity} label="Performance" color="#10B981" active={view === 'performance'} onClick={() => onViewChange('performance')} />}
         {accessible('product-analysis') && <NavItem icon={Package} label="Product Analysis" color="#00D4FF" active={view === 'product-analysis'} onClick={() => onViewChange('product-analysis')} />}
 
         {(accessible('google-ads') || accessible('meta-ads') || accessible('tiktok-shop') || accessible('shopee')) && (
