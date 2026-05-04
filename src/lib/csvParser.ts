@@ -212,35 +212,22 @@ export async function parseShopee(file: File): Promise<ShopeeRow[]> {
 
 export async function parseCRM(file: File): Promise<CRMRow[]> {
   const rows = await parseCSV(file)
-  const result: CRMRow[] = []
-
-  for (const r of rows) {
+  // CRM: satu baris = satu transaksi/order, TIDAK di-expand per produk
+  // supaya Orders count di RFM akurat (per transaksi, bukan per SKU)
+  return rows.map(r => {
     const productRaw = r['Product'] || r['Produk'] || r['product'] || ''
-    const totalRevenue = toNum(r['Revenue'] || r['revenue'] || r['Harga'] || r['Total'])
-    const totalQtyCol = toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity'])
-
-    const baseRow = {
+    // Bersihkan prefix qty dari nama produk, simpan sebagai satu string
+    const items = parseProductItems(productRaw)
+    const productLabel = items.map(i => i.product).join(', ')
+    return {
       date: r['Date'] || r['date'] || r['Tanggal'] || '',
       customerName: r['Customer Name'] || r['Nama'] || r['nama'] || r['customer_name'] || '',
       phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
+      product: productLabel,
+      qty: toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity']),
+      revenue: toNum(r['Revenue'] || r['revenue'] || r['Harga'] || r['Total']),
     }
-
-    const items = parseProductItems(productRaw)
-    if (items.length <= 1) {
-      result.push({ ...baseRow, product: items[0]?.product ?? productRaw, qty: totalQtyCol || items[0]?.qty || 1, revenue: totalRevenue })
-    } else {
-      const totalItemQty = items.reduce((s, i) => s + i.qty, 0) || 1
-      let remaining = totalRevenue
-      items.forEach((item, idx) => {
-        const isLast = idx === items.length - 1
-        const rev = isLast ? remaining : Math.round(totalRevenue * (item.qty / totalItemQty))
-        if (!isLast) remaining -= rev
-        result.push({ ...baseRow, product: item.product, qty: item.qty, revenue: rev })
-      })
-    }
-  }
-
-  return result
+  })
 }
 
 export function parseFile(view: ActiveView, file: File) {

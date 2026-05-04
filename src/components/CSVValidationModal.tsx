@@ -20,19 +20,31 @@ interface Props {
 const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80' }
 const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
 
+function validateSingleProduct(
+  product: string,
+  brandProducts: ProductMaster[],
+  brandBundles: BundleMaster[],
+): boolean {
+  const lower = product.trim().toLowerCase()
+  if (!lower) return false
+  return (
+    brandProducts.some(p => p.sku.toLowerCase() === lower) ||
+    brandProducts.some(p => p.name.toLowerCase() === lower) ||
+    brandBundles.some(b => b.name.toLowerCase() === lower)
+  )
+}
+
 export function validateProductField(
   product: string,
   brandProducts: ProductMaster[],
   brandBundles: BundleMaster[],
 ): boolean {
   if (!product.trim()) return false
-  const lower = product.trim().toLowerCase()
-  const matchSku = brandProducts.some(p => p.sku.toLowerCase() === lower)
-  if (matchSku) return true
-  const matchName = brandProducts.some(p => p.name.toLowerCase() === lower)
-  if (matchName) return true
-  const matchBundle = brandBundles.some(b => b.name.toLowerCase() === lower)
-  return matchBundle
+  // Support multi-product strings: "AM-SS50, AM-NG-20" atau "AM-SS50;AM-NG-20"
+  const sep = product.includes(';') ? ';' : ','
+  const parts = product.split(sep).map(p => p.trim()).filter(Boolean)
+  // Valid kalau semua bagian dikenali
+  return parts.every(p => validateSingleProduct(p, brandProducts, brandBundles))
 }
 
 function downloadInvalidCSV(invalidRows: InvalidRow[]) {
