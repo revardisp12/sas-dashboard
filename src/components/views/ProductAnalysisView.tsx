@@ -502,26 +502,27 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
       {/* Product Detail */}
       {selected && (
         <div style={chartStyle}>
-          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <div>
-              <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#6B7280' }}>Detail Produk</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                {stats.map(s => {
-                  const r = getResolved(s.product)
-                  return (
-                    <button key={s.product} onClick={() => setSelectedProduct(s.product)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                      style={{
-                        background: selected.product === s.product ? SPEED_CONFIG[s.speed].bg : '#F9FAFB',
-                        color: selected.product === s.product ? SPEED_CONFIG[s.speed].color : '#6B7280',
-                        border: selected.product === s.product ? `1px solid ${SPEED_CONFIG[s.speed].color}40` : '1px solid transparent',
-                      }}>
-                      {r.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+          <div className="flex items-center justify-between mb-5 gap-4 flex-wrap">
+            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>Detail Produk</p>
+            <select
+              value={selectedProduct ?? selected.product}
+              onChange={e => setSelectedProduct(e.target.value)}
+              className="flex-1 max-w-sm px-3 py-2 rounded-xl text-sm outline-none"
+              style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827', minWidth: 200 }}>
+              {stats.map(s => {
+                const r = getResolved(s.product)
+                const cfg = SPEED_CONFIG[s.speed]
+                return (
+                  <option key={s.product} value={s.product}>
+                    {cfg.icon} {r.label} — {fmtNum(s.totalUnits)} unit
+                  </option>
+                )
+              })}
+            </select>
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
+              style={{ background: SPEED_CONFIG[selected.speed].bg, color: SPEED_CONFIG[selected.speed].color }}>
+              {SPEED_CONFIG[selected.speed].icon} {SPEED_CONFIG[selected.speed].label}
+            </span>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
