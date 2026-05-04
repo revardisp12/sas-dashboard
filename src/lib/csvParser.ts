@@ -141,7 +141,14 @@ function parseProductItems(raw: string): Array<{ product: string; qty: number }>
         result.push({ qty, product: productStr })
       }
     } else {
-      result.push({ qty: 1, product: part })
+      // Tanpa angka prefix — cek apakah space-separated SKUs, contoh "AMPDRNS AMPDRNC"
+      const subParts = part.split(' ').filter(Boolean)
+      const allAreSKUs = subParts.length > 1 && subParts.every(s => SKU_RE.test(s))
+      if (allAreSKUs) {
+        subParts.forEach(sku => result.push({ qty: 1, product: sku }))
+      } else {
+        result.push({ qty: 1, product: part })
+      }
     }
   }
 
