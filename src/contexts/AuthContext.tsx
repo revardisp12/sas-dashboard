@@ -53,10 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else { setProfile(null) }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setProfile(null)
+      } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        setUser(session?.user ?? null)
+        if (session?.user) fetchProfile(session.user.id)
+      }
+      // TOKEN_REFRESHED, USER_UPDATED, dll → skip supaya ga trigger re-fetch data
     })
 
     return () => subscription.unsubscribe()

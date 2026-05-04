@@ -86,7 +86,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) loadData(brand)
-  }, [user, brand])
+  }, [user?.id, brand])
 
   // Default view redirect based on role
   useEffect(() => {
