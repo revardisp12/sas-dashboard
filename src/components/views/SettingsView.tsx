@@ -38,6 +38,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
   const fileRef = useRef<HTMLInputElement>(null)
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [importing, setImporting] = useState(false)
+  const [dragging, setDragging] = useState(false)
 
   // Bundle Master state
   const [bundleForm, setBundleForm] = useState<{ name: string; price: string; components: { sku: string; qty: string }[] }>(EMPTY_BUNDLE_FORM)
@@ -343,17 +344,35 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
                 style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
                 Download Template CSV
               </button>
-              <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all"
-                style={{
-                  background: importing ? '#F3F4F6' : '#F9FAFB',
-                  border: '1px solid #E5E7EB',
-                  color: importing ? '#9CA3AF' : '#6B7280',
-                  pointerEvents: importing ? 'none' : 'auto',
-                }}>
-                <Upload size={14} /> {importing ? 'Mengimport...' : 'Bulk Import CSV'}
-                <input ref={fileRef} type="file" accept=".csv" className="hidden" disabled={importing}
-                  onChange={e => { if (e.target.files?.[0]) handleCSV(e.target.files[0]) }} />
-              </label>
+            </div>
+
+            {/* Drag & Drop zone */}
+            <div
+              onClick={() => !importing && fileRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); e.stopPropagation(); if (!importing) setDragging(true) }}
+              onDragLeave={e => { e.preventDefault(); e.stopPropagation(); setDragging(false) }}
+              onDrop={e => {
+                e.preventDefault(); e.stopPropagation(); setDragging(false)
+                if (importing) return
+                const file = e.dataTransfer.files?.[0]
+                if (file && file.name.endsWith('.csv')) handleCSV(file)
+                else if (file) setImportStatus({ type: 'error', msg: 'File harus berformat .csv' })
+              }}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer transition-all"
+              style={{
+                border: `2px dashed ${dragging ? color : '#D1D5DB'}`,
+                background: dragging ? `rgba(${rgb},0.05)` : '#FAFAFA',
+                padding: '20px',
+                pointerEvents: importing ? 'none' : 'auto',
+                opacity: importing ? 0.6 : 1,
+              }}>
+              <Upload size={20} style={{ color: dragging ? color : '#9CA3AF' }} />
+              <p className="text-sm font-medium" style={{ color: dragging ? color : '#6B7280' }}>
+                {importing ? 'Mengimport...' : 'Klik atau drag & drop file CSV di sini'}
+              </p>
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>Format: SKU, Product Name, Price, COGS</p>
+              <input ref={fileRef} type="file" accept=".csv" className="hidden" disabled={importing}
+                onChange={e => { if (e.target.files?.[0]) handleCSV(e.target.files[0]) }} />
             </div>
 
             {importStatus && (
