@@ -65,7 +65,9 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
   const totalReach = data.reduce((s, r) => s + r.reach, 0)
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
   const totalResults = data.reduce((s, r) => s + (r.results ?? 0), 0)
+  const totalPurchases = data.reduce((s, r) => s + (r.purchases ?? 0), 0)
   const avgCtr = data.length > 0 ? data.reduce((s, r) => s + r.ctr, 0) / data.length : 0
+  const avgRoas = data.length > 0 ? data.reduce((s, r) => s + (r.roas ?? 0), 0) / data.length : 0
   const costPerResult = totalResults > 0 && totalSpend > 0 ? totalSpend / totalResults : null
 
   const csSales = salesData.filter(s => s.source === 'meta-ads')
@@ -100,18 +102,19 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
 
       {data.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
             <MetricCard label="Total Spend" value={fmt(totalSpend, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Reach" value={fmt(totalReach)} icon={<Users size={14} />} accent={accent} />
             <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
             <MetricCard label="CTR" value={fmt(avgCtr, 'percent')} icon={<Target size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Results / Leads" value={fmt(totalResults)} icon={<TrendingUp size={14} />} accent={PLATFORM_COLOR} />
+            <MetricCard label="Avg ROAS" value={avgRoas > 0 ? avgRoas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub="dari Meta Ads" />
+            <MetricCard label="Purchases" value={totalPurchases > 0 ? fmt(totalPurchases) : '—'} icon={<ShoppingCart size={14} />} accent={PLATFORM_COLOR} sub="dari Meta Ads CSV" />
+            <MetricCard label="Results / Leads" value={totalResults > 0 ? fmt(totalResults) : '—'} icon={<TrendingUp size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Cost per Result" value={costPerResult !== null ? fmt(costPerResult, 'currency') : '—'} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} sub="Spend ÷ Results" />
             <MetricCard label="CS Revenue" value={csRevenue > 0 ? fmt(csRevenue, 'currency') : '—'} icon={<Link size={14} />} accent="#10B981" sub="dari CS Sales" />
-            <MetricCard label="CS Purchases" value={csPurchases > 0 ? fmt(csPurchases) : '—'} icon={<ShoppingCart size={14} />} accent="#10B981" sub="dari CS Sales" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <MetricCard label="ROAS" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub={roas !== null ? 'CS Rev ÷ Spend' : 'Butuh data CS (source: Meta Ads)'} />
+            <MetricCard label="ROAS (CS)" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub={roas !== null ? 'CS Rev ÷ Spend' : 'Butuh data CS (source: Meta Ads)'} />
             <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" sub={convRate !== null ? 'CS Purchases ÷ Clicks' : 'Butuh data CS (source: Meta Ads)'} />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

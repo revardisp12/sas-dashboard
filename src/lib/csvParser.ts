@@ -5,7 +5,30 @@ import {
 
 function toNum(v: unknown): number {
   if (v === null || v === undefined || v === '') return 0
-  const s = String(v).replace(/[%,Rp.\s]/g, '').replace(',', '.')
+  let s = String(v).trim().replace(/[Rp%\s]/g, '')
+
+  const hasComma = s.includes(',')
+  const hasDot = s.includes('.')
+
+  if (hasComma && hasDot) {
+    // Format Indonesia: 1.234.567,89 → hapus dot (ribuan), ganti koma jadi titik
+    s = s.replace(/\./g, '').replace(',', '.')
+  } else if (hasComma) {
+    // Hanya koma: cek apakah desimal (1,72) atau ribuan (1,000)
+    if (/,\d{1,2}$/.test(s)) {
+      s = s.replace(',', '.') // desimal
+    } else {
+      s = s.replace(/,/g, '') // ribuan
+    }
+  } else if (hasDot) {
+    // Hanya titik: kalau diikuti tepat 3 digit → ribuan (332.455 → 332455)
+    const parts = s.split('.')
+    if (parts.length > 1 && parts[parts.length - 1].length === 3) {
+      s = s.replace(/\./g, '')
+    }
+    // Kalau titik diikuti 1-2 digit → biarkan sebagai desimal (1.72 → 1.72)
+  }
+
   return parseFloat(s) || 0
 }
 
