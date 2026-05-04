@@ -115,17 +115,37 @@ export async function parseTikTokOrganic(file: File): Promise<TikTokOrganicRow[]
 // Parse product field yang mungkin berisi multi-produk
 // Format: "1 AM-SS50" atau "1 AM-RT-15;1 AM-RNP-30;1 AM-DSP-10" (semicolon)
 // atau "1 AM-RT-15,1 AM-RNP-30" (koma, hanya jika CSV sudah di-quote dengan benar)
+// SKU pattern: huruf kapital, angka, dan strip (contoh: AM-SS50, AMPDRNS, TAS)
+const SKU_RE = /^[A-Z0-9-]+$/
+
 function parseProductItems(raw: string): Array<{ product: string; qty: number }> {
   if (!raw) return [{ product: '', qty: 1 }]
   // Pilih separator: pakai semicolon kalau ada, fallback ke koma
   const sep = raw.includes(';') ? ';' : ','
   const parts = raw.split(sep).map(p => p.trim()).filter(Boolean)
-  return parts.map(part => {
-    // Match format "angka spasi nama_produk", contoh "2 AM-SS50" atau "1 Free-AM-SY-60"
+  const result: Array<{ product: string; qty: number }> = []
+
+  for (const part of parts) {
+    // Match format "angka spasi nama_produk", contoh "2 AM-SS50" atau "1 AMPDRNS AMPDRNC"
     const m = part.match(/^(\d+)\s+(.+)$/)
-    if (m) return { qty: parseInt(m[1], 10), product: m[2].trim() }
-    return { qty: 1, product: part }
-  })
+    if (m) {
+      const qty = parseInt(m[1], 10)
+      const productStr = m[2].trim()
+      // Cek apakah productStr adalah beberapa SKU dipisah spasi, contoh "AMPDRNS AMPDRNC"
+      const subParts = productStr.split(' ').filter(Boolean)
+      const allAreSKUs = subParts.length > 1 && subParts.every(s => SKU_RE.test(s))
+      if (allAreSKUs) {
+        // Pisah jadi baris terpisah, masing-masing qty 1
+        subParts.forEach(sku => result.push({ qty: 1, product: sku }))
+      } else {
+        result.push({ qty, product: productStr })
+      }
+    } else {
+      result.push({ qty: 1, product: part })
+    }
+  }
+
+  return result.length > 0 ? result : [{ qty: 1, product: raw }]
 }
 
 export async function parseSales(file: File): Promise<SalesRow[]> {
