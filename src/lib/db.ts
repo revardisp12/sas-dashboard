@@ -17,7 +17,20 @@ export async function upsertProduct(p: ProductMaster): Promise<void> {
   const { error } = await supabase.from('products').upsert({
     id: p.id, sku: p.sku, name: p.name,
     price: p.price, cogs: p.cogs, margin, brand: p.brand,
-  })
+  }, { onConflict: 'id' })
+  if (error) throw error
+}
+
+export async function bulkInsertProducts(rows: ProductMaster[]): Promise<void> {
+  if (!rows.length) return
+  const { error } = await supabase.from('products').insert(
+    rows.map(p => ({
+      id: p.id, sku: p.sku, name: p.name,
+      price: p.price, cogs: p.cogs,
+      margin: p.price > 0 ? ((p.price - p.cogs) / p.price) * 100 : 0,
+      brand: p.brand,
+    }))
+  )
   if (error) throw error
 }
 

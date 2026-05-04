@@ -14,6 +14,7 @@ interface Props {
   brand: Brand
   products: ProductMaster[]
   onProductsChange: (products: ProductMaster[]) => void
+  onBulkImportProducts: (products: ProductMaster[]) => Promise<{ imported: number; error?: string }>
   bundles: BundleMaster[]
   onBundlesChange: (bundles: BundleMaster[]) => void
 }
@@ -24,7 +25,7 @@ const EMPTY_BUNDLE_FORM = { name: '', price: '', components: [{ sku: '', qty: '1
 function toNum(v: string) { return parseFloat(v.replace(/[^0-9.]/g, '')) || 0 }
 function fmtRp(n: number) { return 'Rp ' + n.toLocaleString('id-ID') }
 
-export default function SettingsView({ brand, products, onProductsChange, bundles, onBundlesChange }: Props) {
+export default function SettingsView({ brand, products, onProductsChange, onBulkImportProducts, bundles, onBundlesChange }: Props) {
   const { profile } = useAuth()
   const canManageUsers = profile?.role === 'super_admin' || profile?.role === 'admin'
   const [tab, setTab] = useState<'product-master' | 'bundle-master' | 'api' | 'users'>('product-master')
@@ -35,6 +36,8 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
   const [editForm, setEditForm] = useState(EMPTY_FORM)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [importing, setImporting] = useState(false)
 
   // Bundle Master state
   const [bundleForm, setBundleForm] = useState<{ name: string; price: string; components: { sku: string; qty: string }[] }>(EMPTY_BUNDLE_FORM)
@@ -87,27 +90,62 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
   }
 
   function handleCSV(file: File) {
+    setImportStatus(null)
+    setImporting(true)
     Papa.parse(file, {
       header: true, skipEmptyLines: true,
-      complete: (result) => {
-        const rows = result.data as Record<string, string>[]
-        const imported: ProductMaster[] = rows.map(r => {
-          const price = toNum(r['Price'] || r['Harga Jual'] || r['price'] || '0')
-          const cogs = toNum(r['COGS'] || r['HPP'] || r['cogs'] || '0')
-          return {
-            id: crypto.randomUUID(),
-            sku: r['SKU'] || r['sku'] || '',
-            name: r['Product Name'] || r['Nama Produk'] || r['name'] || '',
-            price, cogs,
-            margin: price > 0 ? Math.round(((price - cogs) / price) * 100) : 0,
-            brand,
+      complete: async (result) => {
+        try {
+          const rows = result.data as Record<string, string>[]
+          if (rows.length === 0) {
+            setImportStatus({ type: 'error', msg: 'File CSV kosong atau format tidak dikenali.' })
+            setImporting(false)
+            return
           }
-        }).filter(p => p.sku && p.name)
-        const existingSkus = new Set(products.filter(p => p.brand === brand).map(p => p.sku))
-        const newOnes = imported.filter(p => !existingSkus.has(p.sku))
-        if (newOnes.length === 0) return
-        saveP([...products, ...newOnes])
-        if (fileRef.current) fileRef.current.value = ''
+          const parsed: ProductMaster[] = rows.map(r => {
+            const price = toNum(r['Price'] || r['Harga Jual'] || r['price'] || '0')
+            const cogs = toNum(r['COGS'] || r['HPP'] || r['cogs'] || '0')
+            return {
+              id: crypto.randomUUID(),
+              sku: r['SKU'] || r['sku'] || '',
+              name: r['Product Name'] || r['Nama Produk'] || r['name'] || '',
+              price, cogs,
+              margin: price > 0 ? Math.round(((price - cogs) / price) * 100) : 0,
+              brand,
+            }
+          }).filter(p => p.sku && p.name)
+
+          if (parsed.length === 0) {
+            setImportStatus({ type: 'error', msg: 'Tidak ada baris valid. Cek header CSV: SKU, Product Name, Price, COGS.' })
+            setImporting(false)
+            return
+          }
+
+          const existingSkus = new Set(products.filter(p => p.brand === brand).map(p => p.sku))
+          const newOnes = parsed.filter(p => !existingSkus.has(p.sku))
+
+          if (newOnes.length === 0) {
+            setImportStatus({ type: 'error', msg: `Semua ${parsed.length} SKU sudah ada di database.` })
+            setImporting(false)
+            return
+          }
+
+          const result2 = await onBulkImportProducts(newOnes)
+          if (result2.error) {
+            setImportStatus({ type: 'error', msg: `Gagal simpan: ${result2.error}` })
+          } else {
+            setImportStatus({ type: 'success', msg: `${result2.imported} produk berhasil diimport!` })
+          }
+        } catch (e) {
+          setImportStatus({ type: 'error', msg: String(e) })
+        } finally {
+          setImporting(false)
+          if (fileRef.current) fileRef.current.value = ''
+        }
+      },
+      error: (e) => {
+        setImportStatus({ type: 'error', msg: `Parse error: ${e.message}` })
+        setImporting(false)
       },
     })
   }
@@ -306,12 +344,28 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
                 Download Template CSV
               </button>
               <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-all"
-                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
-                <Upload size={14} /> Bulk Import CSV
-                <input ref={fileRef} type="file" accept=".csv" className="hidden"
+                style={{
+                  background: importing ? '#F3F4F6' : '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  color: importing ? '#9CA3AF' : '#6B7280',
+                  pointerEvents: importing ? 'none' : 'auto',
+                }}>
+                <Upload size={14} /> {importing ? 'Mengimport...' : 'Bulk Import CSV'}
+                <input ref={fileRef} type="file" accept=".csv" className="hidden" disabled={importing}
                   onChange={e => { if (e.target.files?.[0]) handleCSV(e.target.files[0]) }} />
               </label>
             </div>
+
+            {importStatus && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium"
+                style={{
+                  background: importStatus.type === 'success' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                  border: `1px solid ${importStatus.type === 'success' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                  color: importStatus.type === 'success' ? '#10B981' : '#EF4444',
+                }}>
+                {importStatus.type === 'success' ? '✓' : '✕'} {importStatus.msg}
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #E5E7EB' }}>

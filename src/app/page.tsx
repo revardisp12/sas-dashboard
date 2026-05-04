@@ -6,7 +6,7 @@ import { filterByDays, filterByRange } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   loadBrandData,
-  getProducts, upsertProduct, deleteProduct as dbDeleteProduct,
+  getProducts, upsertProduct, bulkInsertProducts, deleteProduct as dbDeleteProduct,
   getBundles, upsertBundle, deleteBundle as dbDeleteBundle,
   appendSales, replaceSales,
   appendCRM, replaceCRM,
@@ -140,6 +140,17 @@ export default function Dashboard() {
       const toDelete = current.filter(p => !updatedIds.has(p.id))
       await Promise.all(toDelete.map(p => dbDeleteProduct(p.id)))
     } catch (e) { console.error('Products save error:', e) }
+  }
+
+  async function handleBulkImportProducts(newProducts: ProductMaster[]): Promise<{ imported: number; error?: string }> {
+    try {
+      await bulkInsertProducts(newProducts)
+      setProducts(prev => [...prev, ...newProducts])
+      return { imported: newProducts.length }
+    } catch (e) {
+      console.error('Bulk import error:', e)
+      return { imported: 0, error: e instanceof Error ? e.message : String(e) }
+    }
   }
 
   async function handleBundlesChange(updated: BundleMaster[]) {
@@ -289,7 +300,7 @@ export default function Dashboard() {
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} onBulkUpload={handleBulkCRM} products={products} bundles={bundles} onManualAdd={handleManualCRM} />}
           {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
-          {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} bundles={bundles} onBundlesChange={handleBundlesChange} />}
+          {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
         </main>
       </div>
 
