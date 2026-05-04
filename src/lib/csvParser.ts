@@ -112,21 +112,60 @@ export async function parseTikTokOrganic(file: File): Promise<TikTokOrganicRow[]
   }))
 }
 
+// Parse product field yang mungkin berisi multi-produk
+// Format: "1 AM-SS50" atau "1 AM-RT-15;1 AM-RNP-30;1 AM-DSP-10" (semicolon)
+// atau "1 AM-RT-15,1 AM-RNP-30" (koma, hanya jika CSV sudah di-quote dengan benar)
+function parseProductItems(raw: string): Array<{ product: string; qty: number }> {
+  if (!raw) return [{ product: '', qty: 1 }]
+  // Pilih separator: pakai semicolon kalau ada, fallback ke koma
+  const sep = raw.includes(';') ? ';' : ','
+  const parts = raw.split(sep).map(p => p.trim()).filter(Boolean)
+  return parts.map(part => {
+    // Match format "angka spasi nama_produk", contoh "2 AM-SS50" atau "1 Free-AM-SY-60"
+    const m = part.match(/^(\d+)\s+(.+)$/)
+    if (m) return { qty: parseInt(m[1], 10), product: m[2].trim() }
+    return { qty: 1, product: part }
+  })
+}
+
 export async function parseSales(file: File): Promise<SalesRow[]> {
   const rows = await parseCSV(file)
-  return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
-    product: r['Product'] || r['product'] || r['Produk'] || '',
-    qty: toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity']),
-    revenue: toNum(r['Revenue'] || r['revenue'] || r['Pendapatan']),
-    channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
-    cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
-    grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
-    customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
-    phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
-    address: r['Address'] || r['Alamat'] || r['address'] || '',
-    source: r['Source'] || r['source'] || r['Ad Source'] || 'organic',
-  }))
+  const result: SalesRow[] = []
+
+  for (const r of rows) {
+    const productRaw = r['Product'] || r['product'] || r['Produk'] || ''
+    const totalRevenue = toNum(r['Revenue'] || r['revenue'] || r['Pendapatan'])
+    const totalQtyCol = toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity'])
+
+    const baseRow = {
+      date: r['Date'] || r['date'] || '',
+      channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
+      cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
+      grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
+      customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
+      phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
+      address: r['Address'] || r['Alamat'] || r['address'] || '',
+      source: r['Source'] || r['source'] || r['Ad Source'] || 'organic',
+    }
+
+    const items = parseProductItems(productRaw)
+    if (items.length <= 1) {
+      // Single product — pakai qty dari kolom Qty
+      result.push({ ...baseRow, product: items[0]?.product ?? productRaw, qty: totalQtyCol || items[0]?.qty || 1, revenue: totalRevenue })
+    } else {
+      // Multi-product — bagi revenue proporsional berdasarkan qty tiap item
+      const totalItemQty = items.reduce((s, i) => s + i.qty, 0) || 1
+      let remaining = totalRevenue
+      items.forEach((item, idx) => {
+        const isLast = idx === items.length - 1
+        const rev = isLast ? remaining : Math.round(totalRevenue * (item.qty / totalItemQty))
+        if (!isLast) remaining -= rev
+        result.push({ ...baseRow, product: item.product, qty: item.qty, revenue: rev })
+      })
+    }
+  }
+
+  return result
 }
 
 export async function parseShopee(file: File): Promise<ShopeeRow[]> {
@@ -198,8 +237,8 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
   },
   sales: {
     name: 'sales_template.csv',
-    headers: ['Date', 'Customer Name', 'Phone', 'Address', 'Product', 'Qty', 'Revenue', 'Channel', 'COGS', 'Gross Profit', 'Source'],
-    example: ['2024-04-01', 'Siti Rahma', '081234567890', 'Jl. Sudirman No. 1 Jakarta', 'Serum Vitamin C', '50', '7500000', 'TikTok Shop', '3000000', '4500000', 'google-ads'],
+    headers: ['Date', 'Customer Name', 'Phone', 'Product', 'Qty', 'Revenue', 'Channel', 'Source'],
+    example: ['2024-04-01', 'Siti Rahma', '081234567890', '1 AM-SS50;2 AM-NG-20', '3', '450000', 'WhatsApp', 'meta-ads'],
   },
   shopee: {
     name: 'shopee_template.csv',
