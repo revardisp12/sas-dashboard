@@ -71,7 +71,7 @@ export async function parseMetaAds(file: File): Promise<MetaAdsRow[]> {
     purchases: toNum(r['Purchases'] || r['Conversions'] || r['purchases']),
     roas: toNum(r['Purchase ROAS (return on ad spend)'] || r['ROAS'] || r['roas']),
     cpm: toNum(r['CPM (cost per 1,000 impressions)'] || r['CPM'] || r['cpm']),
-    results: toNum(r['Results'] || r['Leads'] || r['results'] || r['leads']),
+    results: toNum(r['Results'] || r['Leads'] || r['results'] || r['leads'] || r['Purchases'] || r['purchases']),
   }))
 }
 
