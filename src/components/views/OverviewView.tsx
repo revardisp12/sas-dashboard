@@ -41,7 +41,7 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
 
   const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0) + tts.reduce((s, r) => s + (r.adSpent || 0), 0)
   const totalRevenue = sales.reduce((s, r) => s + r.revenue, 0) + tts.reduce((s, r) => s + r.gmv, 0) + shopee.reduce((s, r) => s + r.gmv, 0) + crm.reduce((s, r) => s + r.revenue, 0)
-  const totalOrders = tts.reduce((s, r) => s + r.orders, 0) + shopee.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0)
+  const totalOrders = tts.reduce((s, r) => s + r.orders, 0) + shopee.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0) + crm.length
   const blendedRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0
   const totalImpressions = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
 
