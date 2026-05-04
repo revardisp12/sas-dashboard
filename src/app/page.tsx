@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Brand, ActiveView, Timeframe, DateRange, BrandData, emptyBrandData, ProductMaster, BundleMaster } from '@/lib/types'
 import { parseFile } from '@/lib/csvParser'
 import { filterByDays, filterByRange } from '@/lib/utils'
@@ -47,7 +47,13 @@ const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 
 export default function Dashboard() {
   const { user, profile, loading: authLoading, profileLoading, canAccess, accessibleBrands } = useAuth()
 
-  const [brand, setBrand] = useState<Brand>('reglow')
+  const [brand, setBrand] = useState<Brand>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sas_brand') as Brand
+      if (stored === 'reglow' || stored === 'amura') return stored
+    }
+    return 'reglow'
+  })
   const [view, setView] = useState<ActiveView>('overview')
   const [timeframe, setTimeframe] = useState<Timeframe>(30)
   const [dateRange, setDateRange] = useState<DateRange | null>(null)
@@ -55,12 +61,20 @@ export default function Dashboard() {
   const [products, setProducts] = useState<ProductMaster[]>([])
   const [bundles, setBundles] = useState<BundleMaster[]>([])
   const [dataLoading, setDataLoading] = useState(false)
+  const initialViewSet = useRef(false)
 
-  // Set initial brand based on profile
+  function handleBrandChange(b: Brand) {
+    setBrand(b)
+    localStorage.setItem('sas_brand', b)
+  }
+
+  // Set initial brand based on profile — only if stored brand is not accessible
   useEffect(() => {
-    if (profile) {
-      const firstBrand = accessibleBrands[0]
-      if (firstBrand) setBrand(firstBrand)
+    if (profile && accessibleBrands.length > 0) {
+      const stored = localStorage.getItem('sas_brand') as Brand
+      if (!accessibleBrands.includes(stored)) {
+        handleBrandChange(accessibleBrands[0])
+      }
     }
   }, [profile])
 
@@ -88,9 +102,10 @@ export default function Dashboard() {
     if (user) loadData(brand)
   }, [user?.id, brand])
 
-  // Default view redirect based on role
+  // Default view redirect based on role — once only
   useEffect(() => {
-    if (profile) {
+    if (profile && !initialViewSet.current) {
+      initialViewSet.current = true
       if (!canAccess(view)) {
         const role = profile.role
         if (role === 'cs') setView('sales')
@@ -205,7 +220,7 @@ export default function Dashboard() {
 
   // ── Auth loading / login guard ────────────────────────────────────────────
 
-  if (authLoading || (user && profileLoading)) {
+  if (authLoading || (!profile && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8F9FC' }}>
         <div className="flex flex-col items-center gap-3">
@@ -242,7 +257,7 @@ export default function Dashboard() {
       <Sidebar
         brand={brand}
         view={view}
-        onBrandChange={b => { setBrand(b); setView('overview') }}
+        onBrandChange={b => { handleBrandChange(b); setView('overview') }}
         onViewChange={v => { if (canAccess(v)) setView(v) }}
         onReset={() => {}}
         accessibleBrands={accessibleBrands}

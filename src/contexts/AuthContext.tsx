@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase, type UserProfile, type UserRole } from '@/lib/supabase'
 import type { Brand, ActiveView } from '@/lib/types'
@@ -30,8 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
+  const loadedProfileId = useRef<string | null>(null)
 
   async function fetchProfile(userId: string) {
+    // Skip if we already loaded profile for this user
+    if (loadedProfileId.current === userId) return
     setProfileLoading(true)
     try {
       const { data, error } = await supabase
@@ -41,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
       if (error) console.error('fetchProfile error:', error)
       setProfile(data ?? null)
+      loadedProfileId.current = userId
     } finally {
       setProfileLoading(false)
     }
@@ -57,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT') {
         setUser(null)
         setProfile(null)
+        loadedProfileId.current = null
       } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         setUser(session?.user ?? null)
         if (session?.user) fetchProfile(session.user.id)
