@@ -56,7 +56,7 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
     const cogs = toNum(form.cogs)
     if (!form.sku.trim() || !form.name.trim() || !price) return
     saveP([...products, {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       sku: form.sku.trim(), name: form.name.trim(),
       price, cogs, margin: price > 0 ? Math.round(((price - cogs) / price) * 100) : 0,
       brand,
@@ -95,7 +95,7 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
           const price = toNum(r['Price'] || r['Harga Jual'] || r['price'] || '0')
           const cogs = toNum(r['COGS'] || r['HPP'] || r['cogs'] || '0')
           return {
-            id: Date.now().toString() + Math.random(),
+            id: crypto.randomUUID(),
             sku: r['SKU'] || r['sku'] || '',
             name: r['Product Name'] || r['Nama Produk'] || r['name'] || '',
             price, cogs,
@@ -103,8 +103,9 @@ export default function SettingsView({ brand, products, onProductsChange, bundle
             brand,
           }
         }).filter(p => p.sku && p.name)
-        const existingIds = new Set(products.filter(p => p.brand === brand).map(p => p.sku))
-        const newOnes = imported.filter(p => !existingIds.has(p.sku))
+        const existingSkus = new Set(products.filter(p => p.brand === brand).map(p => p.sku))
+        const newOnes = imported.filter(p => !existingSkus.has(p.sku))
+        if (newOnes.length === 0) return
         saveP([...products, ...newOnes])
         if (fileRef.current) fileRef.current.value = ''
       },

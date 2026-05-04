@@ -130,17 +130,15 @@ export default function Dashboard() {
 
   async function handleProductsChange(updated: ProductMaster[]) {
     setProducts(updated)
-    // Upsert all products for this brand (brute force — fine for small catalogs)
     try {
       const current = products.filter(p => p.brand === brand)
       const updatedBrand = updated.filter(p => p.brand === brand)
-      // Find added/changed
-      for (const p of updatedBrand) await upsertProduct(p)
+      // Batch upsert all — much faster than sequential loop
+      await Promise.all(updatedBrand.map(p => upsertProduct(p)))
       // Find deleted
       const updatedIds = new Set(updatedBrand.map(p => p.id))
-      for (const p of current) {
-        if (!updatedIds.has(p.id)) await dbDeleteProduct(p.id)
-      }
+      const toDelete = current.filter(p => !updatedIds.has(p.id))
+      await Promise.all(toDelete.map(p => dbDeleteProduct(p.id)))
     } catch (e) { console.error('Products save error:', e) }
   }
 
