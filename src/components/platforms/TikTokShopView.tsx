@@ -4,7 +4,7 @@ import { TikTokShopRow, Brand } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
 import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal from '@/components/ManualInputModal'
-import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Plus } from 'lucide-react'
+import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Plus, Zap } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const TTS_FIELDS = [
@@ -14,6 +14,7 @@ const TTS_FIELDS = [
   { key: 'unitsSold', label: 'Units Sold', type: 'number' as const, placeholder: '90' },
   { key: 'revenue', label: 'Revenue (Rp)', type: 'number' as const, placeholder: '14000000' },
   { key: 'productViews', label: 'Product Views', type: 'number' as const, placeholder: '1800' },
+  { key: 'adSpent', label: 'Ad Spent (Rp)', type: 'number' as const, placeholder: '500000' },
 ]
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
@@ -37,6 +38,8 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
   const totalUnits = data.reduce((s, r) => s + r.unitsSold, 0)
   const totalRevenue = data.reduce((s, r) => s + r.revenue, 0)
   const totalProductViews = data.reduce((s, r) => s + (r.productViews || 0), 0)
+  const totalAdSpent = data.reduce((s, r) => s + (r.adSpent || 0), 0)
+  const roas = totalAdSpent > 0 ? totalRevenue / totalAdSpent : null
   const convRate = totalProductViews > 0 ? (totalOrders / totalProductViews) * 100 : null
   const avgAov = totalOrders > 0 ? totalRevenue / totalOrders : 0
   const chartData = data.slice(-30).map(r => ({ date: r.date, GMV: r.gmv, Orders: r.orders }))
@@ -65,11 +68,13 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
 
       {data.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
             <MetricCard label="Total GMV" value={fmt(totalGmv, 'currency')} icon={<TrendingUp size={14} />} accent={PLATFORM_COLOR} />
+            <MetricCard label="Revenue" value={fmt(totalRevenue, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
+            <MetricCard label="Ad Spent" value={fmt(totalAdSpent, 'currency')} icon={<Zap size={14} />} accent="#F59E0B" />
+            <MetricCard label="ROAS" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" />
             <MetricCard label="Orders" value={fmt(totalOrders)} icon={<ShoppingCart size={14} />} accent={accent} />
             <MetricCard label="Units Sold" value={fmt(totalUnits)} icon={<Package size={14} />} accent={accent} />
-            <MetricCard label="Revenue" value={fmt(totalRevenue, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" />
             <MetricCard label="Avg AOV" value={fmt(avgAov, 'currency')} icon={<ShoppingBag size={14} />} accent={accent} />
           </div>
@@ -129,6 +134,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
               gmv: Number(row.gmv) || 0, orders: Number(row.orders) || 0,
               unitsSold: Number(row.unitsSold) || 0, revenue: Number(row.revenue) || 0,
               productViews: Number(row.productViews) || 0,
+              adSpent: Number(row.adSpent) || 0,
             }
             onManualAdd?.([r]); setModal(false)
           }}

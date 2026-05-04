@@ -38,7 +38,7 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
   const tt = filterByDays(data.tiktokOrganic, timeframe)
   const sales = filterByDays(data.sales, timeframe)
 
-  const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0)
+  const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0) + tts.reduce((s, r) => s + (r.adSpent || 0), 0)
   const totalRevenue = sales.reduce((s, r) => s + r.revenue, 0) + tts.reduce((s, r) => s + r.gmv, 0) + shopee.reduce((s, r) => s + r.gmv, 0)
   const totalOrders = tts.reduce((s, r) => s + r.orders, 0) + shopee.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0)
   const blendedRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0
@@ -105,8 +105,8 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
             items={[
               { label: 'GMV', value: fmtCurrency(tts.reduce((s, r) => s + r.gmv, 0)) },
               { label: 'Orders', value: fmtNum(tts.reduce((s, r) => s + r.orders, 0)) },
-              { label: 'Units Sold', value: fmtNum(tts.reduce((s, r) => s + r.unitsSold, 0)) },
-              { label: 'Avg CVR', value: (() => { const views = tts.reduce((s, r) => s + (r.productViews || 0), 0); const orders = tts.reduce((s, r) => s + r.orders, 0); return views > 0 ? (orders / views * 100).toFixed(2) + '%' : '-' })() },
+              { label: 'Ad Spent', value: fmtCurrency(tts.reduce((s, r) => s + (r.adSpent || 0), 0)) },
+              { label: 'ROAS', value: (() => { const spent = tts.reduce((s, r) => s + (r.adSpent || 0), 0); const rev = tts.reduce((s, r) => s + r.revenue, 0); return spent > 0 ? (rev / spent).toFixed(2) + 'x' : '-' })() },
             ]} empty={tts.length === 0} />
           <PlatformCard icon={<ShoppingBag size={14} />} color="#F05536" title="Shopee"
             items={[

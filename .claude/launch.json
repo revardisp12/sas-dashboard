@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sas-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/revardisyahputra/Documents/Claude/sas-dashboard", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

@@ -61,6 +61,7 @@ export async function parseTikTokShop(file: File): Promise<TikTokShopRow[]> {
     unitsSold: toNum(r['Units sold'] || r['units_sold'] || r['Qty sold']),
     revenue: toNum(r['Revenue'] || r['revenue'] || r['Net revenue']),
     productViews: toNum(r['Product views'] || r['product_views'] || r['Views']),
+    adSpent: toNum(r['Ad Spent'] || r['ad_spent'] || r['Ad Spend'] || r['ad_spend'] || r['Iklan']),
   }))
 }
 
@@ -159,8 +160,8 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
   },
   'tiktok-shop': {
     name: 'tiktok_shop_template.csv',
-    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Product views'],
-    example: ['2024-04-01', '15000000', '75', '90', '14000000', '1800'],
+    headers: ['Date', 'GMV', 'Orders', 'Units sold', 'Revenue', 'Product views', 'Ad Spent'],
+    example: ['2024-04-01', '15000000', '75', '90', '14000000', '1800', '500000'],
   },
   instagram: {
     name: 'instagram_template.csv',

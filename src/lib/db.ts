@@ -225,6 +225,7 @@ export async function getTikTokShop(brand: Brand): Promise<TikTokShopRow[]> {
   return (data ?? []).map(r => ({
     date: r.date, gmv: r.gmv ?? 0, orders: r.orders ?? 0,
     unitsSold: r.units_sold ?? 0, revenue: r.revenue ?? 0, productViews: r.product_views ?? 0,
+    adSpent: r.ad_spent ?? 0,
   }))
 }
 
@@ -236,6 +237,7 @@ export async function replaceTikTokShop(rows: TikTokShopRow[], brand: Brand): Pr
     rows.map(r => ({
       brand, date: r.date, gmv: r.gmv, orders: r.orders,
       units_sold: r.unitsSold, revenue: r.revenue, product_views: r.productViews,
+      ad_spent: r.adSpent ?? 0,
     }))
   )
   if (error) throw error
@@ -247,6 +249,7 @@ export async function appendTikTokShop(rows: TikTokShopRow[], brand: Brand): Pro
     rows.map(r => ({
       brand, date: r.date, gmv: r.gmv, orders: r.orders,
       units_sold: r.unitsSold, revenue: r.revenue, product_views: r.productViews,
+      ad_spent: r.adSpent ?? 0,
     }))
   )
   if (error) throw error

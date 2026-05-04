@@ -96,7 +96,7 @@ export interface MetaAdsRow {
 }
 export interface TikTokShopRow {
   date: string; gmv: number; orders: number; unitsSold: number
-  revenue: number; productViews: number
+  revenue: number; productViews: number; adSpent: number
 }
 export interface InstagramRow {
   date: string; followers: number; reach: number; impressions: number
