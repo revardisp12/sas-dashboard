@@ -257,7 +257,7 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
             <div className="flex items-center gap-3">
               <button onClick={() => setCrmModal(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold flex-shrink-0"
-                style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.15)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.3)`, color: accent }}>
+                style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.15)`, border: `1px solid rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.3)`, color: accent }}>
                 <Plus size={14} /> Input Manual
               </button>
               <div className="w-56 flex-shrink-0">
@@ -301,7 +301,7 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
           </div>
           <button onClick={() => setCrmModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex-shrink-0"
-            style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.15)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.3)`, color: accent }}>
+            style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.15)`, border: `1px solid rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.3)`, color: accent }}>
             <Plus size={14} /> Input Manual
           </button>
           <div className="w-44 flex-shrink-0">
@@ -774,7 +774,7 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>Produk</p>
                   <button onClick={addCrmLine} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                    style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.1)`, color: accent }}>
+                    style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.1)`, color: accent }}>
                     <Plus size={11} /> Tambah Baris
                   </button>
                 </div>
@@ -820,7 +820,7 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
                   Batal
                 </button>
                 <button onClick={saveCrmManual} className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-                  style={{ background: `rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.2)`, border: `1px solid rgba(${brand === 'reglow' ? '201,169,110' : '143,176,80'},0.4)`, color: accent }}>
+                  style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.2)`, border: `1px solid rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.4)`, color: accent }}>
                   Simpan
                 </button>
               </div>

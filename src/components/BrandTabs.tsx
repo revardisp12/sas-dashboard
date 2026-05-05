@@ -16,6 +16,13 @@ const BRANDS: { id: Brand; label: string; color: string; bg: string; activeBg: s
     bg: 'bg-[#f0f4e8] hover:bg-[#e2ebd0]',
     activeBg: 'bg-[#6B7C3D] text-white',
   },
+  {
+    id: 'purela',
+    label: 'Purela',
+    color: 'text-[#6B4FA8]',
+    bg: 'bg-[#F3EFFE] hover:bg-[#E8DCFD]',
+    activeBg: 'bg-[#9B7FD4] text-white',
+  },
 ]
 
 interface Props {

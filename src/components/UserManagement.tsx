@@ -29,7 +29,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   crm: '#059669',
 }
 
-type BrandFilter = 'all' | 'reglow' | 'amura'
+type BrandFilter = 'all' | 'reglow' | 'amura' | 'purela'
 
 interface Props { brandColor: string }
 
@@ -66,6 +66,7 @@ export default function UserManagement({ brandColor }: Props) {
     if (brandFilter === 'all') return true
     if (brandFilter === 'reglow') return u.brand === 'reglow' || u.role === 'super_admin'
     if (brandFilter === 'amura') return u.brand === 'amura' || u.role === 'super_admin'
+    if (brandFilter === 'purela') return u.brand === 'purela' || u.role === 'super_admin'
     return true
   })
 
@@ -119,6 +120,7 @@ export default function UserManagement({ brandColor }: Props) {
           ['all', 'Semua Brand'],
           ['reglow', 'Reglow'],
           ['amura', 'Amura'],
+          ['purela', 'Purela'],
         ] as [BrandFilter, string][]).map(([val, label]) => (
           <button key={val} onClick={() => setBrandFilter(val)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
@@ -220,6 +222,7 @@ export default function UserManagement({ brandColor }: Props) {
                           <option value="">— pilih brand —</option>
                           <option value="reglow">Reglow</option>
                           <option value="amura">Amura</option>
+                          <option value="purela">Purela</option>
                         </select>
                       )
                     ) : (
