@@ -8,7 +8,7 @@ import { parseSales } from '@/lib/csvParser'
 import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
 const CHANNELS = ['TikTok Shop', 'Shopee', 'Tokopedia', 'Instagram DM', 'WhatsApp', 'Website', 'Offline', 'Lainnya']

@@ -8,7 +8,7 @@ import CSVValidationModal, { validateProductField, InvalidRow } from '@/componen
 import { parseCRM } from '@/lib/csvParser'
 import { Users, X, Phone, Calendar, ShoppingBag, TrendingUp, Plus, ChevronRight, Trash2, Search, ChevronDown, Download } from 'lucide-react'
 
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 
 const SEGMENT_CONFIG: Record<RFMSegment, { color: string; bg: string; action: string }> = {
   'Champions':          { color: '#10B981', bg: 'rgba(16,185,129,0.15)',  action: 'Minta review/testimoni, tawarkan upsell produk premium' },
