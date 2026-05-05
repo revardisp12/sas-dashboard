@@ -36,7 +36,7 @@ const GA_COMPUTED = [
   },
 ]
 
-const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const PLATFORM_COLOR = '#4285F4'
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {

@@ -42,7 +42,7 @@ const VIEW_LABELS: Record<ActiveView, string> = {
   shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic',
   settings: 'Settings',
 }
-const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura' }
+const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
 
 export default function Dashboard() {
   const { user, profile, loading: authLoading, profileLoading, canAccess, accessibleBrands } = useAuth()
@@ -57,7 +57,7 @@ export default function Dashboard() {
   const [view, setView] = useState<ActiveView>('overview')
   const [timeframe, setTimeframe] = useState<Timeframe>(30)
   const [dateRange, setDateRange] = useState<DateRange | null>(null)
-  const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData() })
+  const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() })
   const [products, setProducts] = useState<ProductMaster[]>([])
   const [bundles, setBundles] = useState<BundleMaster[]>([])
   const [dataLoading, setDataLoading] = useState(false)

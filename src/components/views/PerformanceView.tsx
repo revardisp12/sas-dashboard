@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, Legend,
 } from 'recharts'
 
-const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
 function fmt(n: number) {

@@ -8,7 +8,7 @@ import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Plus
 import { SalesRow } from '@/lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
-const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const PLATFORM_COLOR = '#1877F2'
 
 const META_FIELDS = [

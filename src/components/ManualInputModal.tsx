@@ -27,8 +27,8 @@ interface Props {
   onClose: () => void
 }
 
-const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80' }
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
+const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 
 function fmtComputed(val: number, format?: 'currency' | 'percent' | 'number'): string {
   if (format === 'currency') return 'Rp ' + Math.round(val).toLocaleString('id-ID')

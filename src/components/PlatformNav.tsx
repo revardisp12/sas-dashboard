@@ -13,6 +13,7 @@ const PLATFORMS: { id: Platform; label: string; icon: React.ReactNode; type: 'pa
 const BRAND_ACCENT: Record<Brand, string> = {
   reglow: 'border-gray-900 text-gray-900',
   amura: 'border-[#6B7C3D] text-[#6B7C3D]',
+  purela: 'border-[#9B7FD4] text-[#9B7FD4]',
 }
 
 interface Props {

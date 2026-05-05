@@ -17,7 +17,7 @@ const TTS_FIELDS = [
   { key: 'adSpent', label: 'Ad Spent (Rp)', type: 'number' as const, placeholder: '500000' },
 ]
 
-const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050' }
+const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const PLATFORM_COLOR = '#FF0050'
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {

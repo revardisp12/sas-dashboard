@@ -1,4 +1,4 @@
-export type Brand = 'reglow' | 'amura'
+export type Brand = 'reglow' | 'amura' | 'purela'
 export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'shopee' | 'instagram' | 'tiktok-organic'
 export type ActiveView = Platform | 'overview' | 'funnel' | 'performance' | 'sales' | 'crm' | 'product-analysis' | 'settings'
 export type Timeframe = 7 | 14 | 30 | 90 | 0

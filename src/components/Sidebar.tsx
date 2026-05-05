@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 const BRAND_CONFIG = {
   reglow: { label: 'Reglow Skincare', color: '#C9A96E', glow: 'rgba(201,169,110,0.3)', rgb: '201,169,110' },
   amura: { label: 'Amura', color: '#8FB050', glow: 'rgba(143,176,80,0.3)', rgb: '143,176,80' },
+  purela: { label: 'Purela', color: '#9B7FD4', glow: 'rgba(155,127,212,0.3)', rgb: '155,127,212' },
 }
 
 const PAID_PLATFORMS = [

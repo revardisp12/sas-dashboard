@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const accessibleBrands: Brand[] = profile?.role === 'super_admin'
-    ? ['reglow', 'amura']
+    ? ['reglow', 'amura', 'purela']
     : profile?.brand
       ? [profile.brand as Brand]
       : []
