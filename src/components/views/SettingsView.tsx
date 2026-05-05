@@ -7,8 +7,8 @@ import Papa from 'papaparse'
 import { useAuth } from '@/contexts/AuthContext'
 import UserManagement from '@/components/UserManagement'
 
-const BRAND_COLOR = { reglow: '#C9A96E', amura: '#8FB050' }
-const BRAND_RGB = { reglow: '201,169,110', amura: '143,176,80' }
+const BRAND_COLOR: Record<import('@/lib/types').Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
+const BRAND_RGB: Record<import('@/lib/types').Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
 
 interface Props {
   brand: Brand

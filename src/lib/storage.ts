@@ -3,13 +3,13 @@ import { Brand, BrandData, emptyBrandData, FollowUpTask, ProductMaster, BundleMa
 const KEY = 'sas-dashboard-data'
 
 export function loadData(): Record<Brand, BrandData> {
-  if (typeof window === 'undefined') return { reglow: emptyBrandData(), amura: emptyBrandData() }
+  if (typeof window === 'undefined') return { reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() }
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return { reglow: emptyBrandData(), amura: emptyBrandData() }
+    if (!raw) return { reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() }
     return JSON.parse(raw)
   } catch {
-    return { reglow: emptyBrandData(), amura: emptyBrandData() }
+    return { reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() }
   }
 }
 
@@ -19,7 +19,7 @@ export function saveData(data: Record<Brand, BrandData>) {
 }
 
 export function resetData(): Record<Brand, BrandData> {
-  const empty = { reglow: emptyBrandData(), amura: emptyBrandData() }
+  const empty = { reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() }
   if (typeof window !== 'undefined') localStorage.removeItem(KEY)
   return empty
 }
