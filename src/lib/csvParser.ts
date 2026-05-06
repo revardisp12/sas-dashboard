@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import {
-  GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, SalesRow, CRMRow, ActiveView
+  GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, SalesRow, CRMRow, ActiveView
 } from './types'
 
 function toNum(v: unknown): number {
@@ -230,6 +230,16 @@ export async function parseCRM(file: File): Promise<CRMRow[]> {
   })
 }
 
+export async function parseFacebookOrganic(file: File): Promise<FacebookOrganicRow[]> {
+  const rows = await parseCSV(file)
+  return rows.map(r => ({
+    date: r['Date'] || r['date'] || '',
+    reach: toNum(r['Reach'] || r['reach']),
+    impressions: toNum(r['Impressions'] || r['impressions']),
+    engagements: toNum(r['Engagements'] || r['engagements'] || r['Post engagements']),
+  }))
+}
+
 export function parseFile(view: ActiveView, file: File) {
   switch (view) {
     case 'google-ads': return parseGoogleAds(file)
@@ -238,6 +248,7 @@ export function parseFile(view: ActiveView, file: File) {
     case 'shopee': return parseShopee(file)
     case 'instagram': return parseInstagram(file)
     case 'tiktok-organic': return parseTikTokOrganic(file)
+    case 'facebook-organic': return parseFacebookOrganic(file)
     case 'sales': return parseSales(file)
     case 'crm': return parseCRM(file)
     default: throw new Error('Unknown view')
@@ -269,6 +280,11 @@ export const CSV_TEMPLATES: Record<string, { name: string; headers: string[]; ex
     name: 'tiktok_organic_template.csv',
     headers: ['Date', 'Followers', 'Video views', 'Likes', 'Comments', 'Shares'],
     example: ['2024-04-01', '18000', '45000', '3200', '180', '95'],
+  },
+  'facebook-organic': {
+    name: 'facebook_organic_template.csv',
+    headers: ['Date', 'Reach', 'Impressions', 'Engagements'],
+    example: ['2024-04-01', '12000', '18000', '850'],
   },
   sales: {
     name: 'sales_template.csv',

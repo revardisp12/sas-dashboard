@@ -18,9 +18,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 const ROLE_VIEWS: Record<UserRole, ActiveView[]> = {
-  super_admin: ['overview','funnel','performance','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','settings'],
-  admin:       ['overview','funnel','performance','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','settings'],
-  manager:     ['overview','funnel','performance','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','settings'],
+  super_admin: ['overview','funnel','performance','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','facebook-organic','settings'],
+  admin:       ['overview','funnel','performance','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','facebook-organic','settings'],
+  manager:     ['overview','funnel','performance','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','facebook-organic','settings'],
   cs:          ['sales'],
   crm:         ['crm'],
 }

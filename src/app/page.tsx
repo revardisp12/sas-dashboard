@@ -16,6 +16,7 @@ import {
   replaceShopee, appendShopee,
   replaceInstagram, appendInstagram,
   replaceTikTokOrganic, appendTikTokOrganic,
+  replaceFacebookOrganic, appendFacebookOrganic,
 } from '@/lib/db'
 import Sidebar from '@/components/Sidebar'
 import TimeframeSelector from '@/components/TimeframeSelector'
@@ -28,6 +29,7 @@ import TikTokShopView from '@/components/platforms/TikTokShopView'
 import ShopeeView from '@/components/platforms/ShopeeView'
 import InstagramView from '@/components/platforms/InstagramView'
 import TikTokOrganicView from '@/components/platforms/TikTokOrganicView'
+import FacebookOrganicView from '@/components/platforms/FacebookOrganicView'
 import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
 import PerformanceView from '@/components/views/PerformanceView'
@@ -39,7 +41,7 @@ const VIEW_LABELS: Record<ActiveView, string> = {
   overview: 'Overview', funnel: 'Funnel Analysis', performance: 'Performance',
   sales: 'Sales Acquisition by CS', crm: 'Sales Retention by CRM', 'product-analysis': 'Product Analysis',
   'google-ads': 'Google Ads', 'meta-ads': 'Meta Ads', 'tiktok-shop': 'TikTok Shop',
-  shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic',
+  shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic', 'facebook-organic': 'Facebook Organic',
   settings: 'Settings',
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
@@ -125,6 +127,7 @@ export default function Dashboard() {
       : uploadView === 'shopee' ? 'shopee'
       : uploadView === 'instagram' ? 'instagram'
       : uploadView === 'tiktok-organic' ? 'tiktokOrganic'
+      : uploadView === 'facebook-organic' ? 'facebookOrganic'
       : uploadView === 'crm' ? 'crm'
       : 'sales'
 
@@ -136,6 +139,7 @@ export default function Dashboard() {
       else if (uploadView === 'shopee') await replaceShopee(parsed as import('@/lib/types').ShopeeRow[], brand)
       else if (uploadView === 'instagram') await replaceInstagram(parsed as import('@/lib/types').InstagramRow[], brand)
       else if (uploadView === 'tiktok-organic') await replaceTikTokOrganic(parsed as import('@/lib/types').TikTokOrganicRow[], brand)
+      else if (uploadView === 'facebook-organic') await replaceFacebookOrganic(parsed as import('@/lib/types').FacebookOrganicRow[], brand)
       else if (uploadView === 'crm') await replaceCRM(parsed as import('@/lib/types').CRMRow[], brand)
       else await replaceSales(parsed as import('@/lib/types').SalesRow[], brand)
     } catch (e) { console.error('Upload save error:', e) }
@@ -210,6 +214,7 @@ export default function Dashboard() {
         else if (key === 'shopee') await appendShopee(rows as import('@/lib/types').ShopeeRow[], brand)
         else if (key === 'instagram') await appendInstagram(rows as import('@/lib/types').InstagramRow[], brand)
         else if (key === 'tiktokOrganic') await appendTikTokOrganic(rows as import('@/lib/types').TikTokOrganicRow[], brand)
+        else if (key === 'facebookOrganic') await appendFacebookOrganic(rows as import('@/lib/types').FacebookOrganicRow[], brand)
       } catch (e) { console.error(e) }
       setData(prev => {
         const existing = prev[brand][key] as unknown[]
@@ -249,6 +254,7 @@ export default function Dashboard() {
     shopee: applyFilter(bd.shopee ?? []),
     instagram: applyFilter(bd.instagram),
     tiktokOrganic: applyFilter(bd.tiktokOrganic),
+    facebookOrganic: applyFilter(bd.facebookOrganic ?? []),
     sales: applyFilter(bd.sales),
   }
 
@@ -312,6 +318,7 @@ export default function Dashboard() {
           {view === 'shopee' && <ShopeeView data={filtered.shopee} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('shopee')} />}
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('instagram')} />}
           {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokOrganic')} />}
+          {view === 'facebook-organic' && <FacebookOrganicView data={filtered.facebookOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('facebookOrganic')} />}
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} onBulkUpload={handleBulkCRM} products={products} bundles={bundles} onManualAdd={handleManualCRM} />}
           {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
@@ -332,6 +339,7 @@ export default function Dashboard() {
           shopee: (bd.shopee ?? []).length > 0,
           instagram: bd.instagram.length > 0,
           tiktokOrganic: bd.tiktokOrganic.length > 0,
+          facebookOrganic: (bd.facebookOrganic ?? []).length > 0,
         },
         productCount: products.filter(p => p.brand === brand).length,
         bundleCount: bundles.filter(b => b.brand === brand).length,
