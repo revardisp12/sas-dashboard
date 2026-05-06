@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Brand, ProductMaster, BundleMaster, SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FollowUpTask, MonthlyTarget } from './types'
+import type { Brand, ProductMaster, BundleMaster, SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, FollowUpTask, MonthlyTarget } from './types'
 
 // ── Products ─────────────────────────────────────────────────────────────────
 
@@ -376,6 +376,34 @@ export async function appendTikTokOrganic(rows: TikTokOrganicRow[], brand: Brand
   if (error) throw error
 }
 
+// ── Facebook Organic ─────────────────────────────────────────────────────────
+
+export async function getFacebookOrganic(brand: Brand): Promise<FacebookOrganicRow[]> {
+  const { data, error } = await supabase.from('facebook_organic').select('*').eq('brand', brand).order('date')
+  if (error) throw error
+  return (data ?? []).map(r => ({
+    date: r.date, reach: r.reach ?? 0, impressions: r.impressions ?? 0, engagements: r.engagements ?? 0,
+  }))
+}
+
+export async function replaceFacebookOrganic(rows: FacebookOrganicRow[], brand: Brand): Promise<void> {
+  const { error: delErr } = await supabase.from('facebook_organic').delete().eq('brand', brand)
+  if (delErr) throw delErr
+  if (!rows.length) return
+  const { error } = await supabase.from('facebook_organic').insert(
+    rows.map(r => ({ brand, date: r.date, reach: r.reach, impressions: r.impressions, engagements: r.engagements }))
+  )
+  if (error) throw error
+}
+
+export async function appendFacebookOrganic(rows: FacebookOrganicRow[], brand: Brand): Promise<void> {
+  if (!rows.length) return
+  const { error } = await supabase.from('facebook_organic').insert(
+    rows.map(r => ({ brand, date: r.date, reach: r.reach, impressions: r.impressions, engagements: r.engagements }))
+  )
+  if (error) throw error
+}
+
 // ── Targets ──────────────────────────────────────────────────────────────────
 
 export async function getTarget(brand: Brand, year: number, month: number): Promise<MonthlyTarget | null> {
@@ -399,10 +427,11 @@ export async function upsertTarget(t: Omit<MonthlyTarget, 'id'>): Promise<void> 
 // ── Load all brand data ──────────────────────────────────────────────────────
 
 export async function loadBrandData(brand: Brand) {
-  const [sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic] =
+  const [sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic] =
     await Promise.all([
       getSales(brand), getCRM(brand), getGoogleAds(brand), getMetaAds(brand),
       getTikTokShop(brand), getShopee(brand), getInstagram(brand), getTikTokOrganic(brand),
+      getFacebookOrganic(brand),
     ])
-  return { sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic }
+  return { sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic }
 }

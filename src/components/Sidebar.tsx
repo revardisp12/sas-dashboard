@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { Brand, ActiveView } from '@/lib/types'
 import {
-  BarChart2, Target, ShoppingBag, Camera, Music,
+  BarChart2, Target, ShoppingBag, Camera, Music, Globe,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
   ShoppingCart, LogOut, Users, Package, Settings, Activity,
 } from 'lucide-react'
@@ -24,6 +24,7 @@ const PAID_PLATFORMS = [
 const ORGANIC_PLATFORMS = [
   { id: 'instagram' as ActiveView, label: 'Instagram', icon: Camera, color: '#E1306C' },
   { id: 'tiktok-organic' as ActiveView, label: 'TikTok', icon: Music, color: '#69C9D0' },
+  { id: 'facebook-organic' as ActiveView, label: 'Facebook', icon: Globe, color: '#1877F2' },
 ]
 
 interface Props {
@@ -133,7 +134,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
           </>
         )}
 
-        {(accessible('instagram') || accessible('tiktok-organic')) && (
+        {(accessible('instagram') || accessible('tiktok-organic') || accessible('facebook-organic')) && (
           <DropSection label="Organic" open={organicOpen} onToggle={() => setOrganicOpen(p => !p)}>
             {ORGANIC_PLATFORMS.filter(p => accessible(p.id)).map(p => (
               <NavItem key={p.id} icon={p.icon} label={p.label} color={p.color} active={view === p.id} onClick={() => onViewChange(p.id)} indent />
