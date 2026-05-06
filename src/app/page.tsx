@@ -66,19 +66,22 @@ export default function Dashboard() {
   const initialViewSet = useRef(false)
 
   function handleBrandChange(b: Brand) {
+    if (accessibleBrands.length > 0 && !accessibleBrands.includes(b)) return
     setBrand(b)
     localStorage.setItem('sas_brand', b)
   }
 
-  // Set initial brand based on profile — only if stored brand is not accessible
+  // Set initial brand based on profile — enforce accessible brand
   useEffect(() => {
     if (profile && accessibleBrands.length > 0) {
       const stored = localStorage.getItem('sas_brand') as Brand
       if (!accessibleBrands.includes(stored)) {
-        handleBrandChange(accessibleBrands[0])
+        const correct = accessibleBrands[0]
+        setBrand(correct)
+        localStorage.setItem('sas_brand', correct)
       }
     }
-  }, [profile])
+  }, [profile, accessibleBrands.join(',')])
 
   // Load data when brand or auth changes
   const loadData = useCallback(async (b: Brand) => {
@@ -118,6 +121,7 @@ export default function Dashboard() {
   }, [profile])
 
   async function handleUpload(file: File) {
+    if (accessibleBrands.length > 0 && !accessibleBrands.includes(brand)) return
     const uploadView = view === 'sales' ? 'sales' : view
     const parsed = await parseFile(uploadView as ActiveView, file)
     const key =
