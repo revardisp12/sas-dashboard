@@ -427,11 +427,13 @@ export async function upsertTarget(t: Omit<MonthlyTarget, 'id'>): Promise<void> 
 // ── Load all brand data ──────────────────────────────────────────────────────
 
 export async function loadBrandData(brand: Brand) {
+  const safe = <T>(p: Promise<T>, fallback: T): Promise<T> => p.catch(e => { console.warn('loadBrandData partial error:', e); return fallback })
   const [sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic] =
     await Promise.all([
-      getSales(brand), getCRM(brand), getGoogleAds(brand), getMetaAds(brand),
-      getTikTokShop(brand), getShopee(brand), getInstagram(brand), getTikTokOrganic(brand),
-      getFacebookOrganic(brand),
+      safe(getSales(brand), []), safe(getCRM(brand), []), safe(getGoogleAds(brand), []),
+      safe(getMetaAds(brand), []), safe(getTikTokShop(brand), []), safe(getShopee(brand), []),
+      safe(getInstagram(brand), []), safe(getTikTokOrganic(brand), []),
+      safe(getFacebookOrganic(brand), []),
     ])
   return { sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic }
 }
