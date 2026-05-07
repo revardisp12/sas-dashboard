@@ -38,7 +38,7 @@ export default function MetricCard({ label, value, icon, change, accent = '#F078
         )}
       </div>
 
-      <p className="text-2xl font-bold tracking-tight relative z-10" style={{ color: '#111827' }}>{value}</p>
+      <p className="text-xl font-bold tracking-tight relative z-10 break-words" style={{ color: '#111827' }}>{value}</p>
 
       {sub && <p className="text-[10px] relative z-10 truncate" style={{ color: '#4B5563' }}>{sub}</p>}
 

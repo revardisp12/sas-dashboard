@@ -69,7 +69,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
 
       {data.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <MetricCard label="Total GMV" value={fmt(totalGmv, 'currency')} icon={<TrendingUp size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Revenue" value={fmt(totalRevenue, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Ad Spent" value={fmt(totalAdSpent, 'currency')} icon={<Zap size={14} />} accent="#F59E0B" />
