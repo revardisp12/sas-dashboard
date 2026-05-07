@@ -52,7 +52,7 @@ export default function Dashboard() {
   const [brand, setBrand] = useState<Brand>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('sas_brand') as Brand
-      if (stored === 'reglow' || stored === 'amura') return stored
+      if (stored === 'reglow' || stored === 'amura' || stored === 'purela') return stored
     }
     return 'reglow'
   })
