@@ -6,6 +6,7 @@ import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { BarChart2, DollarSign, MousePointer, TrendingUp, ShoppingCart, Percent, Plus, Link } from 'lucide-react'
 import { SalesRow } from '@/lib/types'
+import { fmtCurrency, fmtNum } from '@/lib/utils'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const GA_FIELDS = [
@@ -40,9 +41,9 @@ const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', pur
 const PLATFORM_COLOR = '#4285F4'
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
-  if (type === 'currency') return 'Rp ' + n.toLocaleString('id-ID')
+  if (type === 'currency') return fmtCurrency(n)
   if (type === 'percent') return n.toFixed(2) + '%'
-  return n.toLocaleString('id-ID')
+  return fmtNum(n)
 }
 
 const chartStyle = {
