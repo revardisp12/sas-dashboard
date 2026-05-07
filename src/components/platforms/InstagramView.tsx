@@ -6,10 +6,11 @@ import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { Camera, Users, Eye, Heart, TrendingUp, Activity, Plus } from 'lucide-react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { fmtNum } from '@/lib/utils'
 
 const PLATFORM_COLOR = '#E1306C'
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
-function fmt(n: number) { return n.toLocaleString('id-ID') }
+function fmt(n: number) { return fmtNum(n) }
 
 const IG_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },

@@ -22,8 +22,9 @@ export function fmtCurrency(n: number): string {
 }
 
 export function fmtNum(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + 'M'
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'jt'
+  if (n >= 10_000) return Math.round(n / 1_000) + 'rb'
   return n.toLocaleString('id-ID')
 }
 

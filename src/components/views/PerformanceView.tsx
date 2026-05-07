@@ -4,6 +4,7 @@ import { Brand, SalesRow, WeekRange } from '@/lib/types'
 import { getTarget, upsertTarget } from '@/lib/db'
 import MetricCard from '@/components/MetricCard'
 import { TrendingUp, Target, ChevronLeft, ChevronRight, Save, Plus, Trash2 } from 'lucide-react'
+import { fmtCurrency } from '@/lib/utils'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -12,11 +13,7 @@ import {
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
-function fmt(n: number) {
-  if (n >= 1_000_000_000) return 'Rp ' + (n / 1_000_000_000).toFixed(1) + 'M'
-  if (n >= 1_000_000) return 'Rp ' + (n / 1_000_000).toFixed(1) + 'jt'
-  return 'Rp ' + n.toLocaleString('id-ID')
-}
+function fmt(n: number) { return fmtCurrency(n) }
 function fmtFull(n: number) { return 'Rp ' + n.toLocaleString('id-ID') }
 function getDaysInMonth(year: number, month: number) { return new Date(year, month, 0).getDate() }
 

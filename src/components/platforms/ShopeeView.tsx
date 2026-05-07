@@ -6,6 +6,7 @@ import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Target, MousePointer, Plus } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { fmtCurrency, fmtNum } from '@/lib/utils'
 
 const SHOPEE_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },
@@ -57,9 +58,9 @@ const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', pur
 const PLATFORM_COLOR = '#F05536'
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
-  if (type === 'currency') return 'Rp ' + n.toLocaleString('id-ID')
+  if (type === 'currency') return fmtCurrency(n)
   if (type === 'percent') return n.toFixed(2) + '%'
-  return n.toLocaleString('id-ID')
+  return fmtNum(n)
 }
 
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }

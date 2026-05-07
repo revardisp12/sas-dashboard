@@ -6,6 +6,7 @@ import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Plus, Link, Percent } from 'lucide-react'
 import { SalesRow } from '@/lib/types'
+import { fmtCurrency, fmtNum } from '@/lib/utils'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
@@ -49,9 +50,9 @@ const META_COMPUTED = [
 ]
 
 function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
-  if (type === 'currency') return 'Rp ' + n.toLocaleString('id-ID')
+  if (type === 'currency') return fmtCurrency(n)
   if (type === 'percent') return n.toFixed(2) + '%'
-  return n.toLocaleString('id-ID')
+  return fmtNum(n)
 }
 
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
