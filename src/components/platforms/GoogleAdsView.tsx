@@ -96,7 +96,7 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd, sale
 
       {data.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <MetricCard label="Total Spend" value={fmt(totalSpend, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
             <MetricCard label="Impressions" value={fmt(totalImpressions)} icon={<BarChart2 size={14} />} accent={accent} />
             <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
