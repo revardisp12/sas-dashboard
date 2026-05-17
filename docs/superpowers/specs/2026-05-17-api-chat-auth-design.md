@@ -181,3 +181,24 @@ No automated tests exist in this repo. Manual smoke test plan:
 - **Cold start latency**: per-request Supabase client + RPC adds ~50-150 ms p50, ~300 ms p99 on Vercel cold start. Acceptable for chat UX.
 - **Spec only covers `/api/chat`**: this is the only API route today. If new routes are added later, the auth+ratelimit pattern should be extracted into a helper (out of scope here, deferred until second route exists).
 - **Limit change requires SQL migration**: because limit/window are hardcoded inside the function, raising 10/hr to 20/hr is a `CREATE OR REPLACE FUNCTION` rerun, not a code-only deploy. Accepted trade-off — it prevents the bypass-via-args attack and forces limit changes through a deliberate DB migration.
+
+## Next.js 16 API verification (Task 0)
+
+Verified against installed Next.js **16.2.4** docs bundled in `node_modules/next/dist/docs/`. All five route-handler APIs assumed in the spec match the installed version. **All five APIs unchanged from spec assumptions. Proceed.**
+
+| # | Question | Answer | Citation |
+|---|---|---|---|
+| Q1 | Is `import { NextRequest, NextResponse } from 'next/server'` still the import path? | **Yes.** `NextRequest` is imported from `next/server` (`import type { NextRequest } from 'next/server'`); `NextResponse` is imported from `next/server` (`import { NextResponse } from 'next/server'`). | `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md:67`, `:110`, `:192`; `.../04-functions/next-response.md:81`, `:89` |
+| Q2 | Is `req.headers.get('authorization')` still how you read a header? | **Yes.** `NextRequest` extends the Web `Request` API, which exposes `.headers` as a `Headers` instance with `.get(name)`. Docs show `new Headers(request.headers)` and reading via the Web API directly is supported. `next/headers`'s `headers()` is an alternative (async, returns read-only) but `req.headers.get(...)` remains valid. | `.../03-file-conventions/route.md:252-266`; `.../04-functions/next-request.md:8` ("NextRequest extends the Web Request API") |
+| Q3 | Is `await req.json()` still the body-parsing API? | **Yes.** Docs explicitly show `const res = await request.json()` for POST body parsing. | `.../03-file-conventions/route.md:487-491` |
+| Q4 | Does `NextResponse.json(body, { status, headers })` still work as expected? | **Yes.** Docs show `return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })`. Second arg is a standard `ResponseInit` so `headers` works the same. | `.../04-functions/next-response.md:80-94` |
+| Q5 | Does the route handler still default to Node runtime, or has it changed to Edge? | **Still defaults to `'nodejs'`.** `runtime` segment config explicitly lists `'nodejs'` as default; `'edge'` is opt-in (and incompatible with Cache Components). | `.../02-route-segment-config/runtime.md:18` ("`'nodejs'` (default)"); `.../03-file-conventions/route.md:649` (`export const runtime = 'nodejs'` shown as default segment config) |
+
+### Additional Next.js 16 notes (non-blocking, FYI)
+
+- **`context.params` is now a `Promise`** (changed in `v15.0.0-RC`). Not relevant to `/api/chat` because the route has no dynamic segment, but worth noting for future routes. (`route.md:668`)
+- **`GET` default caching changed from static to dynamic** in `v15.0.0-RC`. Not relevant; our handler is `POST`. (`route.md:669`)
+- **`request.ip` and `request.geo` removed in `v15.0.0`.** Not used by current/planned spec. (`next-request.md:123`)
+- Anthropic SDK calls in `/api/chat` run on Node runtime by default; no `export const runtime = ...` needed in the rewritten handler.
+
+Verified the current `src/app/api/chat/route.ts` already uses all five APIs as documented (`import { NextRequest, NextResponse } from 'next/server'`, `await req.json()`, `NextResponse.json(body, { status })`), so the Server pseudocode (spec §Architecture → Server) needs **no syntax updates**.
