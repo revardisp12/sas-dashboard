@@ -84,10 +84,12 @@ export default function UserManagement({ brandColor }: Props) {
     setSaving(true)
     setError(null)
     const brandValue = editRole === 'super_admin' ? null : editBrand
-    const { error } = await supabase
-      .from('user_profiles')
-      .update({ role: editRole, brand: brandValue, full_name: editName || null })
-      .eq('id', id)
+    const { error } = await supabase.rpc('admin_update_user_profile', {
+      target_id: id,
+      new_role: editRole,
+      new_brand: brandValue,
+      new_full_name: editName,
+    })
     if (error) setError(error.message)
     else { setEditId(null); await loadUsers() }
     setSaving(false)

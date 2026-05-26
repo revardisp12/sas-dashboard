@@ -204,8 +204,9 @@ CREATE POLICY "user_profiles_select" ON user_profiles FOR SELECT
   USING (id = auth.uid() OR get_my_role() IN ('super_admin','admin'));
 CREATE POLICY "user_profiles_insert" ON user_profiles FOR INSERT
   WITH CHECK (id = auth.uid());
-CREATE POLICY "user_profiles_update" ON user_profiles FOR UPDATE
-  USING (id = auth.uid() OR get_my_role() IN ('super_admin','admin'));
+-- No UPDATE policy: direct UPDATE on user_profiles is denied.
+-- All role/brand/full_name mutations go through admin_update_user_profile() RPC.
+-- See user_profiles_admin_rpc.sql for the function definition.
 
 -- products
 CREATE POLICY "products_select" ON products FOR SELECT
