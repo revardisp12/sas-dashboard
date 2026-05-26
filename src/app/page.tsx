@@ -45,6 +45,10 @@ const VIEW_LABELS: Record<ActiveView, string> = {
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
 
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
 export default function Dashboard() {
   const { user, profile, loading: authLoading, profileLoading, canAccess, accessibleBrands } = useAuth()
 
@@ -62,7 +66,17 @@ export default function Dashboard() {
   const [products, setProducts] = useState<ProductMaster[]>([])
   const [bundles, setBundles] = useState<BundleMaster[]>([])
   const [dataLoading, setDataLoading] = useState(false)
+  const [toast, setToast] = useState<{ kind: 'error' | 'success'; msg: string } | null>(null)
   const initialViewSet = useRef(false)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), toast.kind === 'error' ? 5000 : 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  const showError = (msg: string) => setToast({ kind: 'error', msg })
+  const showSuccess = (msg: string) => setToast({ kind: 'success', msg })
 
   function handleBrandChange(b: Brand) {
     if (accessibleBrands.length > 0 && !accessibleBrands.includes(b)) return
@@ -97,6 +111,7 @@ export default function Dashboard() {
       setBundles(bunds)
     } catch (e) {
       console.error('Load error:', e)
+      showError(`Gagal load data: ${errMsg(e)}`)
     } finally {
       setDataLoading(false)
     }
@@ -122,7 +137,15 @@ export default function Dashboard() {
   async function handleUpload(file: File) {
     if (accessibleBrands.length > 0 && !accessibleBrands.includes(brand)) return
     const uploadView = view === 'sales' ? 'sales' : view
-    const parsed = await parseFile(uploadView as ActiveView, file)
+
+    let parsed: unknown[]
+    try {
+      parsed = await parseFile(uploadView as ActiveView, file)
+    } catch (e) {
+      showError(`Parse CSV gagal: ${errMsg(e)}`)
+      return
+    }
+
     const key =
       uploadView === 'google-ads' ? 'googleAds'
       : uploadView === 'meta-ads' ? 'metaAds'
@@ -134,7 +157,6 @@ export default function Dashboard() {
       : uploadView === 'crm' ? 'crm'
       : 'sales'
 
-    // Save to Supabase
     try {
       if (uploadView === 'google-ads') await replaceGoogleAds(parsed as import('@/lib/types').GoogleAdsRow[], brand)
       else if (uploadView === 'meta-ads') await replaceMetaAds(parsed as import('@/lib/types').MetaAdsRow[], brand)
@@ -145,38 +167,41 @@ export default function Dashboard() {
       else if (uploadView === 'facebook-organic') await replaceFacebookOrganic(parsed as import('@/lib/types').FacebookOrganicRow[], brand)
       else if (uploadView === 'crm') await replaceCRM(parsed as import('@/lib/types').CRMRow[], brand)
       else await replaceSales(parsed as import('@/lib/types').SalesRow[], brand)
-    } catch (e) { console.error('Upload save error:', e) }
 
-    setData(prev => ({ ...prev, [brand]: { ...prev[brand], [key]: parsed } }))
+      setData(prev => ({ ...prev, [brand]: { ...prev[brand], [key]: parsed } }))
+      showSuccess(`Upload sukses: ${parsed.length} baris`)
+    } catch (e) {
+      showError(`Simpan gagal: ${errMsg(e)}`)
+    }
   }
 
   async function handleProductsChange(updated: ProductMaster[]) {
-    setProducts(updated)
     try {
       const current = products.filter(p => p.brand === brand)
       const updatedBrand = updated.filter(p => p.brand === brand)
-      // Batch upsert all — much faster than sequential loop
       await Promise.all(updatedBrand.map(p => upsertProduct(p)))
-      // Find deleted
       const updatedIds = new Set(updatedBrand.map(p => p.id))
       const toDelete = current.filter(p => !updatedIds.has(p.id))
       await Promise.all(toDelete.map(p => dbDeleteProduct(p.id)))
-    } catch (e) { console.error('Products save error:', e) }
+      setProducts(updated)
+    } catch (e) {
+      showError(`Simpan produk gagal: ${errMsg(e)}`)
+    }
   }
 
   async function handleBulkImportProducts(newProducts: ProductMaster[]): Promise<{ imported: number; error?: string }> {
     try {
       await bulkInsertProducts(newProducts)
       setProducts(prev => [...prev, ...newProducts])
+      showSuccess(`Import ${newProducts.length} produk sukses`)
       return { imported: newProducts.length }
     } catch (e) {
-      console.error('Bulk import error:', e)
-      return { imported: 0, error: e instanceof Error ? e.message : String(e) }
+      showError(`Import produk gagal: ${errMsg(e)}`)
+      return { imported: 0, error: errMsg(e) }
     }
   }
 
   async function handleBundlesChange(updated: BundleMaster[]) {
-    setBundles(updated)
     try {
       const current = bundles.filter(b => b.brand === brand)
       const updatedBrand = updated.filter(b => b.brand === brand)
@@ -185,27 +210,48 @@ export default function Dashboard() {
       for (const b of current) {
         if (!updatedIds.has(b.id)) await dbDeleteBundle(b.id)
       }
-    } catch (e) { console.error('Bundles save error:', e) }
+      setBundles(updated)
+    } catch (e) {
+      showError(`Simpan bundle gagal: ${errMsg(e)}`)
+    }
   }
 
   async function handleManualSales(rows: import('@/lib/types').SalesRow[]) {
-    try { await appendSales(rows, brand) } catch (e) { console.error(e) }
-    setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }))
+    try {
+      await appendSales(rows, brand)
+      setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }))
+    } catch (e) {
+      showError(`Simpan sales gagal: ${errMsg(e)}`)
+    }
   }
 
   async function handleManualCRM(rows: import('@/lib/types').CRMRow[]) {
-    try { await appendCRM(rows, brand) } catch (e) { console.error(e) }
-    setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: [...prev[brand].crm, ...rows] } }))
+    try {
+      await appendCRM(rows, brand)
+      setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: [...prev[brand].crm, ...rows] } }))
+    } catch (e) {
+      showError(`Simpan CRM gagal: ${errMsg(e)}`)
+    }
   }
 
   async function handleBulkSales(rows: import('@/lib/types').SalesRow[]) {
-    try { await replaceSales(rows, brand) } catch (e) { console.error(e) }
-    setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: rows } }))
+    try {
+      await replaceSales(rows, brand)
+      setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: rows } }))
+      showSuccess(`Replace sales sukses: ${rows.length} baris`)
+    } catch (e) {
+      showError(`Replace sales gagal: ${errMsg(e)}`)
+    }
   }
 
   async function handleBulkCRM(rows: import('@/lib/types').CRMRow[]) {
-    try { await replaceCRM(rows, brand) } catch (e) { console.error(e) }
-    setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: rows } }))
+    try {
+      await replaceCRM(rows, brand)
+      setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: rows } }))
+      showSuccess(`Replace CRM sukses: ${rows.length} baris`)
+    } catch (e) {
+      showError(`Replace CRM gagal: ${errMsg(e)}`)
+    }
   }
 
   function makeManualHandler<K extends keyof import('@/lib/types').BrandData>(key: K) {
@@ -218,11 +264,13 @@ export default function Dashboard() {
         else if (key === 'instagram') await appendInstagram(rows as import('@/lib/types').InstagramRow[], brand)
         else if (key === 'tiktokOrganic') await appendTikTokOrganic(rows as import('@/lib/types').TikTokOrganicRow[], brand)
         else if (key === 'facebookOrganic') await appendFacebookOrganic(rows as import('@/lib/types').FacebookOrganicRow[], brand)
-      } catch (e) { console.error(e) }
-      setData(prev => {
-        const existing = prev[brand][key] as unknown[]
-        return { ...prev, [brand]: { ...prev[brand], [key]: [...existing, ...rows] } }
-      })
+        setData(prev => {
+          const existing = prev[brand][key] as unknown[]
+          return { ...prev, [brand]: { ...prev[brand], [key]: [...existing, ...rows] } }
+        })
+      } catch (e) {
+        showError(`Simpan ${String(key)} gagal: ${errMsg(e)}`)
+      }
     }
   }
 
@@ -328,6 +376,22 @@ export default function Dashboard() {
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
         </main>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed top-4 right-4 z-50 max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm font-medium"
+          style={{
+            background: toast.kind === 'error' ? '#FEF2F2' : '#ECFDF5',
+            color: toast.kind === 'error' ? '#991B1B' : '#065F46',
+            border: `1px solid ${toast.kind === 'error' ? '#FECACA' : '#A7F3D0'}`,
+          }}
+          onClick={() => setToast(null)}
+          role="alert"
+        >
+          {toast.msg}
+        </div>
+      )}
     </div>
   )
 }
