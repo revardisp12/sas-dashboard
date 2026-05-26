@@ -1,6 +1,17 @@
 import { supabase } from './supabase'
 import type { Brand, ProductMaster, BundleMaster, SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, FollowUpTask, MonthlyTarget } from './types'
 
+// Atomic per-brand replace via SECURITY DEFINER RPC.
+// DELETE + INSERT happen inside one plpgsql transaction; INSERT failure rolls back DELETE.
+async function rpcReplace(table: string, brand: Brand, rows: Record<string, unknown>[]): Promise<void> {
+  const { error } = await supabase.rpc('replace_brand_table', {
+    p_table: table,
+    p_brand: brand,
+    p_rows: rows,
+  })
+  if (error) throw error
+}
+
 // ── Products ─────────────────────────────────────────────────────────────────
 
 export async function getProducts(): Promise<ProductMaster[]> {
@@ -117,9 +128,12 @@ export async function appendSales(rows: SalesRow[], brand: Brand): Promise<void>
 }
 
 export async function replaceSales(rows: SalesRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('sales').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (rows.length) await appendSales(rows, brand)
+  await rpcReplace('sales', brand, rows.map(r => ({
+    brand, date: r.date, product: r.product, qty: r.qty, revenue: r.revenue,
+    channel: r.channel, cogs: r.cogs, gross_profit: r.grossProfit,
+    customer_name: r.customerName, phone: r.phone,
+    address: r.address, source: r.source ?? 'organic',
+  })))
 }
 
 // ── CRM ──────────────────────────────────────────────────────────────────────
@@ -145,9 +159,10 @@ export async function appendCRM(rows: CRMRow[], brand: Brand): Promise<void> {
 }
 
 export async function replaceCRM(rows: CRMRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('crm').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (rows.length) await appendCRM(rows, brand)
+  await rpcReplace('crm', brand, rows.map(r => ({
+    brand, date: r.date, customer_name: r.customerName,
+    phone: r.phone, product: r.product, qty: r.qty, revenue: r.revenue,
+  })))
 }
 
 // ── Google Ads ───────────────────────────────────────────────────────────────
@@ -164,17 +179,11 @@ export async function getGoogleAds(brand: Brand): Promise<GoogleAdsRow[]> {
 }
 
 export async function replaceGoogleAds(rows: GoogleAdsRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('google_ads').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('google_ads').insert(
-    rows.map(r => ({
-      brand, date: r.date, campaign: r.campaign, impressions: r.impressions,
-      clicks: r.clicks, ctr: r.ctr, cpc: r.cpc, spend: r.spend,
-      conversions: r.conversions, conv_rate: r.convRate, roas: r.roas,
-    }))
-  )
-  if (error) throw error
+  await rpcReplace('google_ads', brand, rows.map(r => ({
+    brand, date: r.date, campaign: r.campaign, impressions: r.impressions,
+    clicks: r.clicks, ctr: r.ctr, cpc: r.cpc, spend: r.spend,
+    conversions: r.conversions, conv_rate: r.convRate, roas: r.roas,
+  })))
 }
 
 export async function appendGoogleAds(rows: GoogleAdsRow[], brand: Brand): Promise<void> {
@@ -203,18 +212,12 @@ export async function getMetaAds(brand: Brand): Promise<MetaAdsRow[]> {
 }
 
 export async function replaceMetaAds(rows: MetaAdsRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('meta_ads').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('meta_ads').insert(
-    rows.map(r => ({
-      brand, date: r.date, campaign: r.campaign, reach: r.reach,
-      impressions: r.impressions, clicks: r.clicks, ctr: r.ctr,
-      spend: r.spend, purchases: r.purchases, roas: r.roas, cpm: r.cpm,
-      results: r.results ?? 0,
-    }))
-  )
-  if (error) throw error
+  await rpcReplace('meta_ads', brand, rows.map(r => ({
+    brand, date: r.date, campaign: r.campaign, reach: r.reach,
+    impressions: r.impressions, clicks: r.clicks, ctr: r.ctr,
+    spend: r.spend, purchases: r.purchases, roas: r.roas, cpm: r.cpm,
+    results: r.results ?? 0,
+  })))
 }
 
 export async function appendMetaAds(rows: MetaAdsRow[], brand: Brand): Promise<void> {
@@ -243,17 +246,11 @@ export async function getTikTokShop(brand: Brand): Promise<TikTokShopRow[]> {
 }
 
 export async function replaceTikTokShop(rows: TikTokShopRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('tiktok_shop').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('tiktok_shop').insert(
-    rows.map(r => ({
-      brand, date: r.date, gmv: r.gmv, orders: r.orders,
-      units_sold: r.unitsSold, revenue: r.revenue, product_views: r.productViews,
-      ad_spent: r.adSpent ?? 0,
-    }))
-  )
-  if (error) throw error
+  await rpcReplace('tiktok_shop', brand, rows.map(r => ({
+    brand, date: r.date, gmv: r.gmv, orders: r.orders,
+    units_sold: r.unitsSold, revenue: r.revenue, product_views: r.productViews,
+    ad_spent: r.adSpent ?? 0,
+  })))
 }
 
 export async function appendTikTokShop(rows: TikTokShopRow[], brand: Brand): Promise<void> {
@@ -281,17 +278,11 @@ export async function getShopee(brand: Brand): Promise<ShopeeRow[]> {
 }
 
 export async function replaceShopee(rows: ShopeeRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('shopee').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('shopee').insert(
-    rows.map(r => ({
-      brand, date: r.date, gmv: r.gmv, orders: r.orders,
-      units_sold: r.unitsSold, revenue: r.revenue, product_views: r.productViews,
-      ad_spend: r.adSpend, ad_clicks: r.adClicks, ad_impressions: r.adImpressions,
-    }))
-  )
-  if (error) throw error
+  await rpcReplace('shopee', brand, rows.map(r => ({
+    brand, date: r.date, gmv: r.gmv, orders: r.orders,
+    units_sold: r.unitsSold, revenue: r.revenue, product_views: r.productViews,
+    ad_spend: r.adSpend, ad_clicks: r.adClicks, ad_impressions: r.adImpressions,
+  })))
 }
 
 export async function appendShopee(rows: ShopeeRow[], brand: Brand): Promise<void> {
@@ -318,16 +309,10 @@ export async function getInstagram(brand: Brand): Promise<InstagramRow[]> {
 }
 
 export async function replaceInstagram(rows: InstagramRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('instagram').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('instagram').insert(
-    rows.map(r => ({
-      brand, date: r.date, followers: r.followers, reach: r.reach,
-      impressions: r.impressions, profile_visits: r.profileVisits, engagements: r.engagements,
-    }))
-  )
-  if (error) throw error
+  await rpcReplace('instagram', brand, rows.map(r => ({
+    brand, date: r.date, followers: r.followers, reach: r.reach,
+    impressions: r.impressions, profile_visits: r.profileVisits, engagements: r.engagements,
+  })))
 }
 
 export async function appendInstagram(rows: InstagramRow[], brand: Brand): Promise<void> {
@@ -353,16 +338,10 @@ export async function getTikTokOrganic(brand: Brand): Promise<TikTokOrganicRow[]
 }
 
 export async function replaceTikTokOrganic(rows: TikTokOrganicRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('tiktok_organic').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('tiktok_organic').insert(
-    rows.map(r => ({
-      brand, date: r.date, followers: r.followers, views: r.views,
-      likes: r.likes, comments: r.comments, shares: r.shares,
-    }))
-  )
-  if (error) throw error
+  await rpcReplace('tiktok_organic', brand, rows.map(r => ({
+    brand, date: r.date, followers: r.followers, views: r.views,
+    likes: r.likes, comments: r.comments, shares: r.shares,
+  })))
 }
 
 export async function appendTikTokOrganic(rows: TikTokOrganicRow[], brand: Brand): Promise<void> {
@@ -387,13 +366,9 @@ export async function getFacebookOrganic(brand: Brand): Promise<FacebookOrganicR
 }
 
 export async function replaceFacebookOrganic(rows: FacebookOrganicRow[], brand: Brand): Promise<void> {
-  const { error: delErr } = await supabase.from('facebook_organic').delete().eq('brand', brand)
-  if (delErr) throw delErr
-  if (!rows.length) return
-  const { error } = await supabase.from('facebook_organic').insert(
-    rows.map(r => ({ brand, date: r.date, reach: r.reach, impressions: r.impressions, engagements: r.engagements }))
-  )
-  if (error) throw error
+  await rpcReplace('facebook_organic', brand, rows.map(r => ({
+    brand, date: r.date, reach: r.reach, impressions: r.impressions, engagements: r.engagements,
+  })))
 }
 
 export async function appendFacebookOrganic(rows: FacebookOrganicRow[], brand: Brand): Promise<void> {
