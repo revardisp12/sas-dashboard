@@ -50,7 +50,7 @@ function errMsg(e: unknown): string {
 }
 
 export default function Dashboard() {
-  const { user, profile, loading: authLoading, profileLoading, canAccess, accessibleBrands } = useAuth()
+  const { user, profile, loading: authLoading, profileLoading, profileError, canAccess, accessibleBrands } = useAuth()
 
   const [brand, setBrand] = useState<Brand>(() => {
     if (typeof window !== 'undefined') {
@@ -293,6 +293,24 @@ export default function Dashboard() {
   }
 
   if (!user) return <LoginPage />
+
+  if (!profile && profileError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8F9FC' }}>
+        <div className="max-w-md p-6 rounded-2xl border bg-white text-center" style={{ borderColor: '#FECACA' }}>
+          <h1 className="text-base font-bold mb-2" style={{ color: '#991B1B' }}>Gagal load profile</h1>
+          <p className="text-sm mb-4" style={{ color: '#4B5563' }}>{profileError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: '#DC2626', color: '#FFFFFF' }}
+          >
+            Refresh halaman
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const bd = data[brand]
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })

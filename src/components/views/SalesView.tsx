@@ -1,18 +1,17 @@
 'use client'
 import { useState } from 'react'
-import { SalesRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
+import { SalesRow, SalesSource, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import CSVUploader from '@/components/CSVUploader'
 import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
 import { parseSales } from '@/lib/csvParser'
 import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
+import { BRAND_COLORS } from '@/lib/brand'
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
 const CHANNELS = ['TikTok Shop', 'Shopee', 'Tokopedia', 'Instagram DM', 'WhatsApp', 'Website', 'Offline', 'Lainnya']
-const AD_SOURCES = [
+const AD_SOURCES: { value: SalesSource; label: string; color: string }[] = [
   { value: 'organic', label: 'Organic / Direct', color: '#6B7280' },
   { value: 'google-ads', label: 'Google Ads', color: '#4285F4' },
   { value: 'meta-ads', label: 'Meta Ads', color: '#1877F2' },
@@ -34,7 +33,7 @@ interface Props {
 const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', price: '', cogs: '', selectValue: '' }
 
 export default function SalesView({ data, brand, timeframe, onUpload, onBulkUpload, products, bundles, onManualAdd }: Props) {
-  const accent = BRAND_COLOR[brand]
+  const accent = BRAND_COLORS[brand]
   const filtered = filterByDays(data, timeframe)
   const brandProducts = products.filter(p => p.brand === brand)
   const brandBundles = bundles.filter(b => b.brand === brand)
@@ -64,7 +63,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [channel, setChannel] = useState(CHANNELS[0])
-  const [source, setSource] = useState('organic')
+  const [source, setSource] = useState<SalesSource>('organic')
   const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE }])
 
   function handleProductSelect(idx: number, value: string) {

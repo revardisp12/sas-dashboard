@@ -4,8 +4,7 @@ import { SalesRow, CRMRow, Brand, Timeframe, ProductMaster, BundleMaster } from 
 import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
 import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts'
-
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
+import { BRAND_COLORS } from '@/lib/brand'
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 
 interface ProductStat {
@@ -185,7 +184,7 @@ interface Props {
 }
 
 export default function ProductAnalysisView({ salesData, crmData, brand, timeframe: globalTf, products, bundles }: Props) {
-  const accent = BRAND_COLOR[brand]
+  const accent = BRAND_COLORS[brand]
   const [localTf, setLocalTf] = useState<number>(globalTf || 90)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)

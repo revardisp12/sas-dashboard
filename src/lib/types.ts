@@ -108,11 +108,13 @@ export interface TikTokOrganicRow {
 export interface FacebookOrganicRow {
   date: string; reach: number; impressions: number; engagements: number
 }
+export type SalesSource = 'organic' | 'google-ads' | 'meta-ads' | 'tiktok-ads'
+
 export interface SalesRow {
   date: string; product: string; qty: number; revenue: number
   channel: string; cogs: number; grossProfit: number
   customerName?: string; phone?: string; address?: string
-  source?: string
+  source?: SalesSource
 }
 
 export interface ShopeeRow {

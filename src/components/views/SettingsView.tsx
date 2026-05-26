@@ -6,8 +6,8 @@ import { Package, Plus, Trash2, Edit2, Check, X, Upload, Zap, ChevronRight, Laye
 import Papa from 'papaparse'
 import { useAuth } from '@/contexts/AuthContext'
 import UserManagement from '@/components/UserManagement'
+import { BRAND_COLORS } from '@/lib/brand'
 
-const BRAND_COLOR: Record<import('@/lib/types').Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const BRAND_RGB: Record<import('@/lib/types').Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
 
 interface Props {
@@ -46,7 +46,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
   const [editBundleForm, setEditBundleForm] = useState<{ name: string; price: string; components: { sku: string; qty: string }[] }>(EMPTY_BUNDLE_FORM)
   const [deleteBundleId, setDeleteBundleId] = useState<string | null>(null)
 
-  const color = BRAND_COLOR[brand]
+  const color = BRAND_COLORS[brand]
   const rgb = BRAND_RGB[brand]
   const brandProducts = products.filter(p => p.brand === brand)
   const brandBundles = bundles.filter(b => b.brand === brand)

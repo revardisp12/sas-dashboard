@@ -9,6 +9,7 @@ interface AuthContextValue {
   profile: UserProfile | null
   loading: boolean
   profileLoading: boolean
+  profileError: string | null
   signIn: (email: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
   canAccess: (view: ActiveView) => boolean
@@ -30,21 +31,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
   const loadedProfileId = useRef<string | null>(null)
 
   async function fetchProfile(userId: string) {
-    // Skip if we already loaded profile for this user
     if (loadedProfileId.current === userId) return
     setProfileLoading(true)
+    setProfileError(null)
     try {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single()
-      if (error) console.error('fetchProfile error:', error)
+      if (error) {
+        console.error('fetchProfile error:', error)
+        setProfileError(error.message)
+      }
       setProfile(data ?? null)
       loadedProfileId.current = userId
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('fetchProfile threw:', msg)
+      setProfileError(msg)
     } finally {
       setProfileLoading(false)
     }
@@ -93,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       : []
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, profileLoading, signIn, signOut, canAccess, accessibleBrands }}>
+    <AuthContext.Provider value={{ user, profile, loading, profileLoading, profileError, signIn, signOut, canAccess, accessibleBrands }}>
       {children}
     </AuthContext.Provider>
   )

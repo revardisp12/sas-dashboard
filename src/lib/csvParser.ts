@@ -1,7 +1,14 @@
 import Papa from 'papaparse'
 import {
-  GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, SalesRow, CRMRow, ActiveView
+  GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, SalesRow, SalesSource, CRMRow, ActiveView
 } from './types'
+
+const VALID_SALES_SOURCES: SalesSource[] = ['organic', 'google-ads', 'meta-ads', 'tiktok-ads']
+function normalizeSalesSource(s: unknown): SalesSource {
+  return typeof s === 'string' && (VALID_SALES_SOURCES as string[]).includes(s)
+    ? (s as SalesSource)
+    : 'organic'
+}
 
 function toNum(v: unknown): number {
   if (v === null || v === undefined || v === '') return 0
@@ -172,7 +179,7 @@ export async function parseSales(file: File): Promise<SalesRow[]> {
       customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
       phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
       address: r['Address'] || r['Alamat'] || r['address'] || '',
-      source: r['Source'] || r['source'] || r['Ad Source'] || 'organic',
+      source: normalizeSalesSource(r['Source'] || r['source'] || r['Ad Source']),
     }
 
     const items = parseProductItems(productRaw)

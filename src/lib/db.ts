@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
-import type { Brand, ProductMaster, BundleMaster, SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, FollowUpTask, MonthlyTarget } from './types'
+import { computeMargin } from './brand'
+import type { Brand, ProductMaster, BundleMaster, SalesRow, SalesSource, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, FollowUpTask, MonthlyTarget } from './types'
 
 // Atomic per-brand replace via SECURITY DEFINER RPC.
 // DELETE + INSERT happen inside one plpgsql transaction; INSERT failure rolls back DELETE.
@@ -28,10 +29,9 @@ export async function getProducts(brand: Brand): Promise<ProductMaster[]> {
 }
 
 export async function upsertProduct(p: ProductMaster): Promise<void> {
-  const margin = p.price > 0 ? ((p.price - p.cogs) / p.price) * 100 : 0
   const { error } = await supabase.from('products').upsert({
     id: p.id, sku: p.sku, name: p.name,
-    price: p.price, cogs: p.cogs, margin, brand: p.brand,
+    price: p.price, cogs: p.cogs, margin: computeMargin(p.price, p.cogs), brand: p.brand,
   }, { onConflict: 'id' })
   if (error) throw error
 }
@@ -42,7 +42,7 @@ export async function bulkInsertProducts(rows: ProductMaster[]): Promise<void> {
     rows.map(p => ({
       id: p.id, sku: p.sku, name: p.name,
       price: p.price, cogs: p.cogs,
-      margin: p.price > 0 ? ((p.price - p.cogs) / p.price) * 100 : 0,
+      margin: computeMargin(p.price, p.cogs),
       brand: p.brand,
     }))
   )
@@ -70,10 +70,9 @@ export async function getBundles(brand: Brand): Promise<BundleMaster[]> {
 }
 
 export async function upsertBundle(b: BundleMaster): Promise<void> {
-  const margin = b.price > 0 ? ((b.price - b.cogs) / b.price) * 100 : 0
   const { error } = await supabase.from('bundles').upsert({
     id: b.id, name: b.name, components: b.components,
-    price: b.price, cogs: b.cogs, margin, brand: b.brand,
+    price: b.price, cogs: b.cogs, margin: computeMargin(b.price, b.cogs), brand: b.brand,
   })
   if (error) throw error
 }
@@ -118,7 +117,7 @@ export async function getSales(brand: Brand): Promise<SalesRow[]> {
     date: r.date, product: r.product, qty: r.qty, revenue: r.revenue,
     channel: r.channel ?? '', cogs: r.cogs ?? 0, grossProfit: r.gross_profit ?? 0,
     customerName: r.customer_name ?? '', phone: r.phone ?? '',
-    address: r.address ?? '', source: r.source ?? 'organic',
+    address: r.address ?? '', source: (r.source ?? 'organic') as SalesSource,
   }))
 }
 

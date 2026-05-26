@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
 import { Brand } from '@/lib/types'
+import { BRAND_COLORS } from '@/lib/brand'
 
 export interface FieldDef {
   key: string
@@ -28,7 +29,6 @@ interface Props {
 }
 
 const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 
 function fmtComputed(val: number, format?: 'currency' | 'percent' | 'number'): string {
   if (format === 'currency') return 'Rp ' + Math.round(val).toLocaleString('id-ID')
@@ -44,7 +44,7 @@ export default function ManualInputModal({ title, subtitle, brand, fields, compu
 
   const [form, setForm] = useState<Record<string, string>>(initForm)
   const rgb = BRAND_RGB[brand]
-  const color = BRAND_COLOR[brand]
+  const color = BRAND_COLORS[brand]
 
   function handleSave() {
     onSave(form)

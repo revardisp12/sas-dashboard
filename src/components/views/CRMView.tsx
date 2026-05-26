@@ -7,8 +7,7 @@ import CSVUploader from '@/components/CSVUploader'
 import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
 import { parseCRM } from '@/lib/csvParser'
 import { Users, X, Phone, Calendar, ShoppingBag, TrendingUp, Plus, ChevronRight, Trash2, Search, ChevronDown, Download } from 'lucide-react'
-
-const BRAND_COLOR: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
+import { BRAND_COLORS } from '@/lib/brand'
 
 const SEGMENT_CONFIG: Record<RFMSegment, { color: string; bg: string; action: string }> = {
   'Champions':          { color: '#10B981', bg: 'rgba(16,185,129,0.15)',  action: 'Minta review/testimoni, tawarkan upsell produk premium' },
@@ -104,7 +103,7 @@ interface Props {
 }
 
 export default function CRMView({ data, brand, onUpload, onBulkUpload, products = [], bundles = [], onManualAdd }: Props) {
-  const accent = BRAND_COLOR[brand]
+  const accent = BRAND_COLORS[brand]
   const [timeframe, setTimeframe] = useState<CRMTimeframe>(90)
   const [tab, setTab] = useState<Tab>('rfm')
   const [selectedSegment, setSelectedSegment] = useState<RFMSegment | null>(null)
