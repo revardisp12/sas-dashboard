@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, Bot, Loader2, ChevronDown } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -51,18 +52,57 @@ export default function AIChatButton({ context }: Props) {
     setMessages(next)
     setLoading(true)
 
+    function pushAssistant(content: string) {
+      setMessages(prev => [...prev, { role: 'assistant', content }])
+      if (!open) setUnread(true)
+    }
+
     try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) {
+        pushAssistant('Sesi login expired. Refresh halaman dulu ya.')
+        return
+      }
+
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ messages: next, context }),
       })
-      const data = await res.json()
-      const reply = data.reply || 'Maaf, ada error. Coba lagi ya.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
-      if (!open) setUnread(true)
+
+      if (res.status === 401) {
+        pushAssistant('Sesi login expired. Refresh halaman dulu ya.')
+        return
+      }
+
+      if (res.status === 429) {
+        let resetMinutes = 60
+        try {
+          const data = await res.json() as { resetAt?: string }
+          if (data.resetAt) {
+            const diffMs = new Date(data.resetAt).getTime() - Date.now()
+            resetMinutes = Math.max(1, Math.ceil(diffMs / 60000))
+          }
+        } catch {
+          // fall back to default 60 min
+        }
+        pushAssistant(`Limit chat tercapai (10/jam). Coba lagi ${resetMinutes} menit lagi.`)
+        return
+      }
+
+      if (!res.ok) {
+        pushAssistant('Ada error di server. Coba lagi sebentar.')
+        return
+      }
+
+      const data = await res.json() as { reply?: string }
+      pushAssistant(data.reply ?? 'Maaf, balasan kosong. Coba lagi ya.')
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Koneksi error. Coba lagi.' }])
+      pushAssistant('Koneksi error. Coba lagi.')
     } finally {
       setLoading(false)
     }
