@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   full_name   TEXT,
   role        TEXT NOT NULL DEFAULT 'cs'
               CHECK (role IN ('super_admin','admin','manager','cs','crm')),
-  brand       TEXT CHECK (brand IN ('reglow','amura')), -- NULL = super_admin
+  brand       TEXT CHECK (brand IN ('reglow','amura','purela')), -- NULL = super_admin
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS products (
   price      NUMERIC NOT NULL DEFAULT 0,
   cogs       NUMERIC NOT NULL DEFAULT 0,
   margin     NUMERIC NOT NULL DEFAULT 0,
-  brand      TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand      TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS bundles (
   price      NUMERIC NOT NULL DEFAULT 0,
   cogs       NUMERIC NOT NULL DEFAULT 0,
   margin     NUMERIC NOT NULL DEFAULT 0,
-  brand      TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand      TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -47,14 +47,14 @@ CREATE TABLE IF NOT EXISTS tasks (
   due_date      TEXT,
   status        TEXT NOT NULL DEFAULT 'todo'
                 CHECK (status IN ('todo','ongoing','done')),
-  brand         TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand         TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Sales (CS)
 CREATE TABLE IF NOT EXISTS sales (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand        TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand        TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date         TEXT NOT NULL,
   product      TEXT NOT NULL DEFAULT '',
   qty          INTEGER NOT NULL DEFAULT 0,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS sales (
 -- CRM
 CREATE TABLE IF NOT EXISTS crm (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand         TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand         TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date          TEXT NOT NULL,
   customer_name TEXT DEFAULT '',
   phone         TEXT DEFAULT '',
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS crm (
 -- Google Ads
 CREATE TABLE IF NOT EXISTS google_ads (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand       TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand       TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date        TEXT NOT NULL,
   campaign    TEXT DEFAULT '',
   impressions INTEGER DEFAULT 0,
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS google_ads (
 -- Meta Ads
 CREATE TABLE IF NOT EXISTS meta_ads (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand       TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand       TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date        TEXT NOT NULL,
   campaign    TEXT DEFAULT '',
   reach       INTEGER DEFAULT 0,
@@ -113,13 +113,14 @@ CREATE TABLE IF NOT EXISTS meta_ads (
   purchases   INTEGER DEFAULT 0,
   roas        NUMERIC DEFAULT 0,
   cpm         NUMERIC DEFAULT 0,
+  results     INTEGER DEFAULT 0,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- TikTok Shop
 CREATE TABLE IF NOT EXISTS tiktok_shop (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand         TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand         TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date          TEXT NOT NULL,
   gmv           NUMERIC DEFAULT 0,
   orders        INTEGER DEFAULT 0,
@@ -132,7 +133,7 @@ CREATE TABLE IF NOT EXISTS tiktok_shop (
 -- Shopee
 CREATE TABLE IF NOT EXISTS shopee (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand          TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand          TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date           TEXT NOT NULL,
   gmv            NUMERIC DEFAULT 0,
   orders         INTEGER DEFAULT 0,
@@ -148,7 +149,7 @@ CREATE TABLE IF NOT EXISTS shopee (
 -- Instagram
 CREATE TABLE IF NOT EXISTS instagram (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand          TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand          TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date           TEXT NOT NULL,
   followers      INTEGER DEFAULT 0,
   reach          INTEGER DEFAULT 0,
@@ -161,7 +162,7 @@ CREATE TABLE IF NOT EXISTS instagram (
 -- TikTok Organic
 CREATE TABLE IF NOT EXISTS tiktok_organic (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand      TEXT NOT NULL CHECK (brand IN ('reglow','amura')),
+  brand      TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
   date       TEXT NOT NULL,
   followers  INTEGER DEFAULT 0,
   views      INTEGER DEFAULT 0,
@@ -171,22 +172,47 @@ CREATE TABLE IF NOT EXISTS tiktok_organic (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Facebook Organic
+CREATE TABLE IF NOT EXISTS facebook_organic (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand       TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
+  date        TEXT NOT NULL,
+  reach       INTEGER DEFAULT 0,
+  impressions INTEGER DEFAULT 0,
+  engagements INTEGER DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Monthly Targets (revenue goal per brand/month + weekly breakdown)
+CREATE TABLE IF NOT EXISTS targets (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand          TEXT NOT NULL CHECK (brand IN ('reglow','amura','purela')),
+  year           INTEGER NOT NULL,
+  month          INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  monthly_target NUMERIC NOT NULL DEFAULT 0,
+  weeks          JSONB NOT NULL DEFAULT '[]',
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (brand, year, month)
+);
+
 -- ============================================================
 -- RLS (Row Level Security)
 -- ============================================================
 
-ALTER TABLE user_profiles  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bundles        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tasks          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sales          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE crm            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE google_ads     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE meta_ads       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tiktok_shop    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE shopee         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE instagram      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tiktok_organic ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bundles          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE crm              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE google_ads       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meta_ads         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tiktok_shop      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shopee           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE instagram        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tiktok_organic   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE facebook_organic ENABLE ROW LEVEL SECURITY;
+ALTER TABLE targets          ENABLE ROW LEVEL SECURITY;
 
 -- Helper functions
 CREATE OR REPLACE FUNCTION get_my_role()
@@ -277,6 +303,19 @@ CREATE POLICY "instagram_write" ON instagram FOR ALL
 CREATE POLICY "tiktok_organic_select" ON tiktok_organic FOR SELECT
   USING (get_my_role() = 'super_admin' OR brand = get_my_brand());
 CREATE POLICY "tiktok_organic_write" ON tiktok_organic FOR ALL
+  USING (get_my_role() IN ('super_admin','admin','manager') AND
+         (get_my_role() = 'super_admin' OR brand = get_my_brand()));
+
+CREATE POLICY "facebook_organic_select" ON facebook_organic FOR SELECT
+  USING (get_my_role() = 'super_admin' OR brand = get_my_brand());
+CREATE POLICY "facebook_organic_write" ON facebook_organic FOR ALL
+  USING (get_my_role() IN ('super_admin','admin','manager') AND
+         (get_my_role() = 'super_admin' OR brand = get_my_brand()));
+
+-- targets (manager+ write, same brand)
+CREATE POLICY "targets_select" ON targets FOR SELECT
+  USING (get_my_role() = 'super_admin' OR brand = get_my_brand());
+CREATE POLICY "targets_write" ON targets FOR ALL
   USING (get_my_role() IN ('super_admin','admin','manager') AND
          (get_my_role() = 'super_admin' OR brand = get_my_brand()));
 

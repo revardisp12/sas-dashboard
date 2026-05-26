@@ -25,7 +25,10 @@ export default function CSVUploader({ platform, hasData, onUpload, accent = '#F0
     if (!file.name.endsWith('.csv')) { setError('File harus format .csv'); return }
     setError(''); setLoading(true)
     try { await onUpload(file) }
-    catch { setError('Gagal membaca file. Cek format CSV sesuai template.') }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setError(`Gagal upload: ${msg}`)
+    }
     finally { setLoading(false) }
   }
 
