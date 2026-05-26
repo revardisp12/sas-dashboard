@@ -1,16 +1,17 @@
 'use client'
 import { useState } from 'react'
-import { MetaAdsRow, Brand } from '@/lib/types'
+import { MetaAdsRow, Brand, SalesRow } from '@/lib/types'
 import MetricCard from '@/components/MetricCard'
-import CSVUploader from '@/components/CSVUploader'
 import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
-import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Plus, Link, Percent } from 'lucide-react'
-import { SalesRow } from '@/lib/types'
+import PlatformViewShell from '@/components/platforms/PlatformViewShell'
+import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Link, Percent } from 'lucide-react'
+import { BRAND_COLORS } from '@/lib/brand'
 import { fmtCurrency, fmtNum } from '@/lib/utils'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
-const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 const PLATFORM_COLOR = '#1877F2'
+const PLATFORM_RGB = '24,119,242'
+const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 
 const META_FIELDS = [
   { key: 'date', label: 'Tanggal', type: 'date' as const },
@@ -55,13 +56,11 @@ function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
   return fmtNum(n)
 }
 
-const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
-
 interface Props { data: MetaAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: MetaAdsRow[]) => void; salesData?: SalesRow[] }
 
 export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesData = [] }: Props) {
   const [modal, setModal] = useState(false)
-  const accent = ACCENT[brand]
+  const accent = BRAND_COLORS[brand]
   const totalSpend = data.reduce((s, r) => s + r.spend, 0)
   const totalReach = data.reduce((s, r) => s + r.reach, 0)
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
@@ -79,84 +78,18 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
   const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Reach: r.reach }))
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: PLATFORM_COLOR, boxShadow: `0 0 8px ${PLATFORM_COLOR}` }} />
-            <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#4B5563' }}>Meta Ads</span>
-          </div>
-          <p className="text-sm" style={{ color: '#4B5563' }}>{data.length > 0 ? `${data.length} baris data` : 'Upload CSV untuk mulai'}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold flex-shrink-0"
-            style={{ background: 'rgba(24,119,242,0.12)', border: '1px solid rgba(24,119,242,0.3)', color: PLATFORM_COLOR }}>
-            <Plus size={14} /> Input Manual
-          </button>
-          <div className="w-56 flex-shrink-0">
-            <CSVUploader platform="meta-ads" hasData={data.length > 0} onUpload={onUpload} accent={PLATFORM_COLOR} />
-          </div>
-        </div>
-      </div>
-
-      {data.length > 0 ? (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-            <MetricCard label="Total Spend" value={fmt(totalSpend, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Reach" value={fmt(totalReach)} icon={<Users size={14} />} accent={accent} />
-            <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
-            <MetricCard label="CTR" value={fmt(avgCtr, 'percent')} icon={<Target size={14} />} accent={PLATFORM_COLOR} />
-            <MetricCard label="Results / Leads" value={totalResults > 0 ? fmt(totalResults) : '—'} icon={<ShoppingCart size={14} />} accent={PLATFORM_COLOR} sub="Purchases + Leads dari CSV" />
-            <MetricCard label="Cost per Result" value={costPerResult !== null ? fmt(costPerResult, 'currency') : '—'} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} sub="Spend ÷ Results" />
-            <MetricCard label="Avg ROAS" value={avgRoas > 0 ? avgRoas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub="dari Meta Ads" />
-            <MetricCard label="CS Revenue" value={csRevenue > 0 ? fmt(csRevenue, 'currency') : '—'} icon={<Link size={14} />} accent="#10B981" sub="dari CS Sales" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <MetricCard label="ROAS (CS)" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub={roas !== null ? 'CS Rev ÷ Spend' : 'Butuh data CS (source: Meta Ads)'} />
-            <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" sub={convRate !== null ? 'CS Purchases ÷ Clicks' : 'Butuh data CS (source: Meta Ads)'} />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div style={chartStyle}>
-              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Spend & Reach</p>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
-                  <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
-                  <Line type="monotone" dataKey="Spend" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Reach" stroke={accent} strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={chartStyle}>
-              <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Clicks per Hari</p>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
-                  <Bar dataKey="Reach" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: 'rgba(24,119,242,0.1)', border: '1px solid rgba(24,119,242,0.2)', boxShadow: '0 0 30px rgba(24,119,242,0.1)' }}>
-            <Target size={28} style={{ color: PLATFORM_COLOR }} />
-          </div>
-          <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data Meta Ads</p>
-          <p className="text-sm" style={{ color: '#374151' }}>Upload CSV export dari Meta Ads Manager</p>
-        </div>
-      )}
-
-      {modal && (
+    <PlatformViewShell
+      platformName="Meta Ads"
+      platformKey="meta-ads"
+      accent={PLATFORM_COLOR}
+      accentRgb={PLATFORM_RGB}
+      emptyIcon={<Target size={28} style={{ color: PLATFORM_COLOR }} />}
+      emptyTitle="Belum ada data Meta Ads"
+      emptyDescription="Upload CSV export dari Meta Ads Manager"
+      rowCount={data.length}
+      onUpload={onUpload}
+      onManualClick={() => setModal(true)}
+      modal={modal && (
         <ManualInputModal
           title="Input Manual — Meta Ads"
           subtitle="Tambah baris data Meta Ads"
@@ -180,6 +113,49 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
           onClose={() => setModal(false)}
         />
       )}
-    </div>
+    >
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+        <MetricCard label="Total Spend" value={fmt(totalSpend, 'currency')} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} />
+        <MetricCard label="Reach" value={fmt(totalReach)} icon={<Users size={14} />} accent={accent} />
+        <MetricCard label="Clicks" value={fmt(totalClicks)} icon={<MousePointer size={14} />} accent={accent} />
+        <MetricCard label="CTR" value={fmt(avgCtr, 'percent')} icon={<Target size={14} />} accent={PLATFORM_COLOR} />
+        <MetricCard label="Results / Leads" value={totalResults > 0 ? fmt(totalResults) : '—'} icon={<ShoppingCart size={14} />} accent={PLATFORM_COLOR} sub="Purchases + Leads dari CSV" />
+        <MetricCard label="Cost per Result" value={costPerResult !== null ? fmt(costPerResult, 'currency') : '—'} icon={<DollarSign size={14} />} accent={PLATFORM_COLOR} sub="Spend ÷ Results" />
+        <MetricCard label="Avg ROAS" value={avgRoas > 0 ? avgRoas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub="dari Meta Ads" />
+        <MetricCard label="CS Revenue" value={csRevenue > 0 ? fmt(csRevenue, 'currency') : '—'} icon={<Link size={14} />} accent="#10B981" sub="dari CS Sales" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <MetricCard label="ROAS (CS)" value={roas !== null ? roas.toFixed(2) + 'x' : '—'} icon={<TrendingUp size={14} />} accent="#10B981" sub={roas !== null ? 'CS Rev ÷ Spend' : 'Butuh data CS (source: Meta Ads)'} />
+        <MetricCard label="Conv. Rate" value={convRate !== null ? fmt(convRate, 'percent') : '—'} icon={<Percent size={14} />} accent="#10B981" sub={convRate !== null ? 'CS Purchases ÷ Clicks' : 'Butuh data CS (source: Meta Ads)'} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div style={chartStyle}>
+          <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Spend & Reach</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+              <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
+              <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
+              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
+              <Line type="monotone" dataKey="Spend" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Reach" stroke={accent} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={chartStyle}>
+          <p className="text-xs font-semibold tracking-wider uppercase mb-4" style={{ color: '#6B7280' }}>Clicks per Hari</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+              <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
+              <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
+              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Bar dataKey="Reach" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </PlatformViewShell>
   )
 }
