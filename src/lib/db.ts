@@ -14,8 +14,12 @@ async function rpcReplace(table: string, brand: Brand, rows: Record<string, unkn
 
 // ── Products ─────────────────────────────────────────────────────────────────
 
-export async function getProducts(): Promise<ProductMaster[]> {
-  const { data, error } = await supabase.from('products').select('*').order('created_at')
+export async function getProducts(brand: Brand): Promise<ProductMaster[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('brand', brand)
+    .order('created_at')
   if (error) throw error
   return (data ?? []).map(r => ({
     id: r.id, sku: r.sku, name: r.name,
@@ -52,8 +56,12 @@ export async function deleteProduct(id: string): Promise<void> {
 
 // ── Bundles ──────────────────────────────────────────────────────────────────
 
-export async function getBundles(): Promise<BundleMaster[]> {
-  const { data, error } = await supabase.from('bundles').select('*').order('created_at')
+export async function getBundles(brand: Brand): Promise<BundleMaster[]> {
+  const { data, error } = await supabase
+    .from('bundles')
+    .select('*')
+    .eq('brand', brand)
+    .order('created_at')
   if (error) throw error
   return (data ?? []).map(r => ({
     id: r.id, name: r.name, components: r.components ?? [],
@@ -401,14 +409,44 @@ export async function upsertTarget(t: Omit<MonthlyTarget, 'id'>): Promise<void> 
 
 // ── Load all brand data ──────────────────────────────────────────────────────
 
-export async function loadBrandData(brand: Brand) {
-  const safe = <T>(p: Promise<T>, fallback: T): Promise<T> => p.catch(e => { console.warn('loadBrandData partial error:', e); return fallback })
+export interface LoadBrandDataResult {
+  data: {
+    sales: SalesRow[]
+    crm: CRMRow[]
+    googleAds: GoogleAdsRow[]
+    metaAds: MetaAdsRow[]
+    tiktokShop: TikTokShopRow[]
+    shopee: ShopeeRow[]
+    instagram: InstagramRow[]
+    tiktokOrganic: TikTokOrganicRow[]
+    facebookOrganic: FacebookOrganicRow[]
+  }
+  errors: { source: string; message: string }[]
+}
+
+export async function loadBrandData(brand: Brand): Promise<LoadBrandDataResult> {
+  const errors: { source: string; message: string }[] = []
+  const safe = <T>(p: Promise<T>, fallback: T, source: string): Promise<T> =>
+    p.catch(e => {
+      const message = e instanceof Error ? e.message : String(e)
+      console.warn(`loadBrandData[${source}]:`, message)
+      errors.push({ source, message })
+      return fallback
+    })
   const [sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic] =
     await Promise.all([
-      safe(getSales(brand), []), safe(getCRM(brand), []), safe(getGoogleAds(brand), []),
-      safe(getMetaAds(brand), []), safe(getTikTokShop(brand), []), safe(getShopee(brand), []),
-      safe(getInstagram(brand), []), safe(getTikTokOrganic(brand), []),
-      safe(getFacebookOrganic(brand), []),
+      safe(getSales(brand), [], 'sales'),
+      safe(getCRM(brand), [], 'crm'),
+      safe(getGoogleAds(brand), [], 'google_ads'),
+      safe(getMetaAds(brand), [], 'meta_ads'),
+      safe(getTikTokShop(brand), [], 'tiktok_shop'),
+      safe(getShopee(brand), [], 'shopee'),
+      safe(getInstagram(brand), [], 'instagram'),
+      safe(getTikTokOrganic(brand), [], 'tiktok_organic'),
+      safe(getFacebookOrganic(brand), [], 'facebook_organic'),
     ])
-  return { sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic }
+  return {
+    data: { sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic },
+    errors,
+  }
 }

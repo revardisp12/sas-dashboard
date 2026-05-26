@@ -101,14 +101,18 @@ export default function Dashboard() {
     if (!user) return
     setDataLoading(true)
     try {
-      const [brandData, prods, bunds] = await Promise.all([
+      const [brandResult, prods, bunds] = await Promise.all([
         loadBrandData(b),
-        getProducts(),
-        getBundles(),
+        getProducts(b),
+        getBundles(b),
       ])
-      setData(prev => ({ ...prev, [b]: brandData }))
+      setData(prev => ({ ...prev, [b]: brandResult.data }))
       setProducts(prods)
       setBundles(bunds)
+      if (brandResult.errors.length > 0) {
+        const sources = brandResult.errors.map(e => e.source).join(', ')
+        showError(`Gagal load ${brandResult.errors.length} sumber data (${sources}). Cek koneksi atau refresh halaman.`)
+      }
     } catch (e) {
       console.error('Load error:', e)
       showError(`Gagal load data: ${errMsg(e)}`)
