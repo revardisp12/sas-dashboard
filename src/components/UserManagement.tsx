@@ -87,7 +87,7 @@ export default function UserManagement({ brandColor }: Props) {
     const { error } = await supabase.rpc('admin_update_user_profile', {
       target_id: id,
       new_role: editRole,
-      new_brand: brandValue,
+      new_brand: brandValue as string,
       new_full_name: editName,
     })
     if (error) setError(error.message)

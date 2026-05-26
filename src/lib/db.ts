@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { computeMargin } from './brand'
-import type { Brand, ProductMaster, BundleMaster, SalesRow, SalesSource, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, FollowUpTask, MonthlyTarget } from './types'
+import type { Json } from './database.types'
+import type { Brand, ProductMaster, BundleMaster, BundleComponent, SalesRow, SalesSource, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow, InstagramRow, TikTokOrganicRow, FacebookOrganicRow, FollowUpTask, MonthlyTarget, WeekRange, RFMSegment } from './types'
 
 // Atomic per-brand replace via SECURITY DEFINER RPC.
 // DELETE + INSERT happen inside one plpgsql transaction; INSERT failure rolls back DELETE.
@@ -8,7 +9,7 @@ async function rpcReplace(table: string, brand: Brand, rows: Record<string, unkn
   const { error } = await supabase.rpc('replace_brand_table', {
     p_table: table,
     p_brand: brand,
-    p_rows: rows,
+    p_rows: rows as unknown as Json,
   })
   if (error) throw error
 }
@@ -24,7 +25,7 @@ export async function getProducts(brand: Brand): Promise<ProductMaster[]> {
   if (error) throw error
   return (data ?? []).map(r => ({
     id: r.id, sku: r.sku, name: r.name,
-    price: r.price, cogs: r.cogs, margin: r.margin, brand: r.brand,
+    price: r.price, cogs: r.cogs, margin: r.margin, brand: r.brand as Brand,
   }))
 }
 
@@ -64,14 +65,15 @@ export async function getBundles(brand: Brand): Promise<BundleMaster[]> {
     .order('created_at')
   if (error) throw error
   return (data ?? []).map(r => ({
-    id: r.id, name: r.name, components: r.components ?? [],
-    price: r.price, cogs: r.cogs, margin: r.margin, brand: r.brand,
+    id: r.id, name: r.name,
+    components: (r.components ?? []) as unknown as BundleComponent[],
+    price: r.price, cogs: r.cogs, margin: r.margin, brand: r.brand as Brand,
   }))
 }
 
 export async function upsertBundle(b: BundleMaster): Promise<void> {
   const { error } = await supabase.from('bundles').upsert({
-    id: b.id, name: b.name, components: b.components,
+    id: b.id, name: b.name, components: b.components as unknown as Json,
     price: b.price, cogs: b.cogs, margin: computeMargin(b.price, b.cogs), brand: b.brand,
   })
   if (error) throw error
@@ -88,9 +90,15 @@ export async function getTasks(brand: Brand): Promise<FollowUpTask[]> {
   const { data, error } = await supabase.from('tasks').select('*').eq('brand', brand).order('created_at')
   if (error) throw error
   return (data ?? []).map(r => ({
-    id: r.id, customerName: r.customer_name, phone: r.phone,
-    segment: r.segment, note: r.note, dueDate: r.due_date,
-    status: r.status, brand: r.brand, createdAt: r.created_at,
+    id: r.id,
+    customerName: r.customer_name ?? '',
+    phone: r.phone ?? '',
+    segment: (r.segment ?? '') as RFMSegment,
+    note: r.note ?? '',
+    dueDate: r.due_date ?? '',
+    status: r.status as FollowUpTask['status'],
+    brand: r.brand as Brand,
+    createdAt: r.created_at ?? '',
   }))
 }
 
@@ -368,7 +376,7 @@ export async function getFacebookOrganic(brand: Brand): Promise<FacebookOrganicR
   const { data, error } = await supabase.from('facebook_organic').select('*').eq('brand', brand).order('date')
   if (error) throw error
   return (data ?? []).map(r => ({
-    date: r.date, reach: r.reach ?? 0, impressions: r.impressions ?? 0, engagements: r.engagements ?? 0,
+    date: r.date ?? '', reach: r.reach ?? 0, impressions: r.impressions ?? 0, engagements: r.engagements ?? 0,
   }))
 }
 
@@ -393,14 +401,18 @@ export async function getTarget(brand: Brand, year: number, month: number): Prom
     .select('*').eq('brand', brand).eq('year', year).eq('month', month).single()
   if (error || !data) return null
   return {
-    id: data.id, brand: data.brand, year: data.year, month: data.month,
-    monthlyTarget: data.monthly_target ?? 0, weeks: data.weeks ?? [],
+    id: data.id,
+    brand: data.brand as Brand,
+    year: data.year,
+    month: data.month,
+    monthlyTarget: data.monthly_target ?? 0,
+    weeks: (data.weeks ?? []) as unknown as WeekRange[],
   }
 }
 
 export async function upsertTarget(t: Omit<MonthlyTarget, 'id'>): Promise<void> {
   const { error } = await supabase.from('targets').upsert(
-    { brand: t.brand, year: t.year, month: t.month, monthly_target: t.monthlyTarget, weeks: t.weeks },
+    { brand: t.brand, year: t.year, month: t.month, monthly_target: t.monthlyTarget, weeks: t.weeks as unknown as Json },
     { onConflict: 'brand,year,month' }
   )
   if (error) throw error

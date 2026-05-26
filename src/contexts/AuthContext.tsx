@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('fetchProfile error:', error)
         setProfileError(error.message)
       }
-      setProfile(data ?? null)
+      setProfile(data ? (data as unknown as UserProfile) : null)
       loadedProfileId.current = userId
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
