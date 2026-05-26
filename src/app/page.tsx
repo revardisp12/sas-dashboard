@@ -34,7 +34,6 @@ import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
 import PerformanceView from '@/components/views/PerformanceView'
 import SettingsView from '@/components/views/SettingsView'
-import AIChatButton from '@/components/AIChatButton'
 import LoginPage from '@/components/LoginPage'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
@@ -329,25 +328,6 @@ export default function Dashboard() {
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
         </main>
       </div>
-
-      <AIChatButton context={{
-        currentView: view,
-        brand,
-        timeframe: dateRange ? `${dateRange.from} – ${dateRange.to}` : `${timeframe === 0 ? 'All' : timeframe + 'H'}`,
-        hasData: {
-          sales: bd.sales.length > 0,
-          crm: bd.crm.length > 0,
-          googleAds: bd.googleAds.length > 0,
-          metaAds: bd.metaAds.length > 0,
-          tiktokShop: bd.tiktokShop.length > 0,
-          shopee: (bd.shopee ?? []).length > 0,
-          instagram: bd.instagram.length > 0,
-          tiktokOrganic: bd.tiktokOrganic.length > 0,
-          facebookOrganic: (bd.facebookOrganic ?? []).length > 0,
-        },
-        productCount: products.filter(p => p.brand === brand).length,
-        bundleCount: bundles.filter(b => b.brand === brand).length,
-      }} />
     </div>
   )
 }
