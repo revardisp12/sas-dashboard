@@ -32,10 +32,11 @@ DECLARE
   v_caller_brand TEXT;
 BEGIN
   -- Allow either an authenticated user (admin/manager doing a manual regenerate)
-  -- or the service_role key (cron). Both are required: authenticated users via
-  -- auth.uid() check, service_role via JWT role claim.
-  IF v_caller_id IS NULL
-     AND coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' THEN
+  -- or the service_role key (cron). auth.role() returns the current JWT role
+  -- claim — 'service_role' for cron, 'authenticated' for logged-in users,
+  -- 'anon' for unauthenticated. (Previously used request.jwt.claim.role GUC
+  -- which isn't set under this Supabase config.)
+  IF v_caller_id IS NULL AND coalesce(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
   END IF;
 
