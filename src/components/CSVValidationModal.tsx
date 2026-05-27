@@ -1,5 +1,6 @@
 'use client'
-import { X, CheckCircle, AlertTriangle, XCircle, Download } from 'lucide-react'
+import { useState } from 'react'
+import { X, CheckCircle, AlertTriangle, XCircle, Download, Loader2 } from 'lucide-react'
 import { Brand, ProductMaster, BundleMaster } from '@/lib/types'
 import { BRAND_COLORS } from '@/lib/brand'
 
@@ -14,7 +15,7 @@ interface Props {
   brand: Brand
   validCount: number
   invalidRows: InvalidRow[]
-  onConfirm: () => void
+  onConfirm: () => Promise<void> | void
   onClose: () => void
 }
 
@@ -64,6 +65,17 @@ export default function CSVValidationModal({ title, brand, validCount, invalidRo
   const color = BRAND_COLORS[brand]
   const allInvalid = validCount === 0
   const allValid = invalidRows.length === 0
+  const [saving, setSaving] = useState(false)
+
+  async function handleConfirm() {
+    if (saving) return
+    setSaving(true)
+    try {
+      await onConfirm()
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -172,16 +184,17 @@ export default function CSVValidationModal({ title, brand, validCount, invalidRo
         {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 flex-shrink-0"
           style={{ borderTop: '1px solid #E5E7EB' }}>
-          <button onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium"
+          <button onClick={onClose} disabled={saving}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
             {allInvalid ? 'Tutup' : 'Batal'}
           </button>
           {!allInvalid && (
-            <button onClick={onConfirm}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+            <button onClick={handleConfirm} disabled={saving}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ background: `rgba(${rgb},0.2)`, border: `1px solid rgba(${rgb},0.4)`, color }}>
-              {allValid ? `Simpan ${validCount} Baris` : `Simpan ${validCount} Baris Valid`}
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {saving ? 'Menyimpan...' : (allValid ? `Simpan ${validCount} Baris` : `Simpan ${validCount} Baris Valid`)}
             </button>
           )}
         </div>

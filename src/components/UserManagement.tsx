@@ -52,11 +52,16 @@ export default function UserManagement({ brandColor }: Props) {
 
   async function loadUsers() {
     setLoading(true)
+    setError(null)
     const { data, error } = await supabase
       .from('user_profiles_with_email')
       .select('*')
       .order('created_at')
-    if (!error) setUsers((data ?? []) as UserWithEmail[])
+    if (error) {
+      setError(`Gagal load users: ${error.message}`)
+    } else {
+      setUsers((data ?? []) as UserWithEmail[])
+    }
     setLoading(false)
   }
 

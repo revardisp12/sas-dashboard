@@ -298,8 +298,8 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
           brand={brand}
           validCount={validationModal.validRows.length}
           invalidRows={validationModal.invalidRows}
-          onConfirm={() => {
-            onBulkUpload?.(validationModal.validRows)
+          onConfirm={async () => {
+            await onBulkUpload?.(validationModal.validRows)
             setValidationModal(null)
           }}
           onClose={() => setValidationModal(null)}

@@ -399,8 +399,8 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
           brand={brand}
           validCount={validationModal.validRows.length}
           invalidRows={validationModal.invalidRows}
-          onConfirm={() => {
-            onBulkUpload?.(validationModal.validRows)
+          onConfirm={async () => {
+            await onBulkUpload?.(validationModal.validRows)
             setValidationModal(null)
           }}
           onClose={() => setValidationModal(null)}
