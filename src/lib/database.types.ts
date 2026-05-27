@@ -83,6 +83,33 @@ export type Database = {
         }
         Relationships: []
       }
+      digest_log: {
+        Row: {
+          brand: string
+          generated_at: string
+          id: string
+          payload: Json
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          brand: string
+          generated_at?: string
+          id?: string
+          payload: Json
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          brand?: string
+          generated_at?: string
+          id?: string
+          payload?: Json
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       facebook_organic: {
         Row: {
           brand: string
@@ -584,6 +611,22 @@ export type Database = {
       replace_brand_table: {
         Args: { p_brand: string; p_rows: Json; p_table: string }
         Returns: number
+      }
+      upsert_digest: {
+        Args: {
+          p_brand: string
+          p_payload: Json
+          p_week_end: string
+          p_week_start: string
+        }
+        Returns: {
+          brand: string
+          generated_at: string
+          id: string
+          payload: Json
+          week_end: string
+          week_start: string
+        }
       }
     }
     Enums: {
