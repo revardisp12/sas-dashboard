@@ -34,3 +34,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Environment variables
+
+### Local development (`.env.local`)
+
+| Key | Description | How to get |
+|-----|-------------|------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase Studio → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (publishable) key | Same as above |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — bypasses RLS, KEEP SECRET | Supabase Studio → Settings → API → "service_role" secret |
+| `CRON_SECRET` | Bearer token for Vercel Cron auth | Generate with `openssl rand -hex 32` |
+
+### Vercel project settings
+
+Add the same four keys in Vercel Dashboard → Project → Settings → Environment Variables. Mark `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` as **Sensitive**. Apply to Production + Preview + Development.
