@@ -82,3 +82,10 @@ $$;
 
 REVOKE ALL ON FUNCTION upsert_digest(TEXT, DATE, DATE, JSONB) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION upsert_digest(TEXT, DATE, DATE, JSONB) TO authenticated, service_role;
+
+-- Table-level grants for digest_log. Required because GRANT ALL ON ALL TABLES
+-- in schema.sql only applies to tables existing at that time; new tables
+-- created later (like this one) don't inherit. PostgREST returns 403 instead
+-- of empty result when the role lacks the SELECT privilege.
+GRANT SELECT ON public.digest_log TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.digest_log TO service_role;
