@@ -28,6 +28,7 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
   const [row, setRow] = useState<DigestRow | null>(null)
   const [fetching, setFetching] = useState(true)
   const [origin, setOrigin] = useState('http://localhost:3000')
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     setOrigin(window.location.origin)
@@ -51,7 +52,7 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
     }
     if (profile) load()
     return () => { cancelled = true }
-  }, [brand, profile])
+  }, [brand, profile, refreshKey])
 
   // Loading state while auth resolves
   if (authLoading || !profile) {
@@ -96,7 +97,7 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
       <div className="p-8 max-w-2xl">
         <div className="flex items-start justify-between gap-3 mb-4">
           <h1 className="text-lg font-bold capitalize" style={{ color: '#111827' }}>{brand} Weekly Digest</h1>
-          <RegenerateButton brand={brand} />
+          <RegenerateButton brand={brand} onSuccess={() => setRefreshKey(k => k + 1)} />
         </div>
         <p className="text-sm" style={{ color: '#6B7280' }}>
           Belum ada digest untuk brand ini. Klik Generate Now untuk membuat digest minggu lalu.
@@ -118,7 +119,7 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
             <span className="ml-2">· Generated {new Date(payload.generatedAt).toLocaleString('id-ID')}</span>
           </p>
         </div>
-        <RegenerateButton brand={brand} />
+        <RegenerateButton brand={brand} onSuccess={() => setRefreshKey(k => k + 1)} />
       </div>
 
       <div className="rounded-2xl p-5 mb-3" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>

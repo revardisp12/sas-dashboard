@@ -1,12 +1,15 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { RefreshCw, Loader2 } from 'lucide-react'
 import type { Brand } from '@/lib/types'
 
-export default function RegenerateButton({ brand }: { brand: Brand }) {
-  const router = useRouter()
+interface Props {
+  brand: Brand
+  onSuccess?: () => void
+}
+
+export default function RegenerateButton({ brand, onSuccess }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,7 +30,7 @@ export default function RegenerateButton({ brand }: { brand: Brand }) {
         const body = await res.json().catch(() => ({ error: 'Server error' }))
         throw new Error(body.error || `HTTP ${res.status}`)
       }
-      router.refresh()  // re-fetch the server component
+      onSuccess?.()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
