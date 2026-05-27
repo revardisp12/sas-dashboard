@@ -62,6 +62,16 @@ BEGIN
     RAISE EXCEPTION 'p_rows must be a JSON array' USING ERRCODE = '22023';
   END IF;
 
+  -- Defense in depth: reject if any row carries a brand other than p_brand.
+  -- Without this, an authenticated caller could DELETE their own brand then
+  -- INSERT rows tagged with a different brand (SECURITY DEFINER bypasses RLS).
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(p_rows) AS r
+    WHERE (r->>'brand') IS DISTINCT FROM p_brand
+  ) THEN
+    RAISE EXCEPTION 'Forbidden: row brand mismatches p_brand' USING ERRCODE = '42501';
+  END IF;
+
   EXECUTE format('DELETE FROM %I WHERE brand = %L', p_table, p_brand);
 
   IF jsonb_array_length(p_rows) > 0 THEN
