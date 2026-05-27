@@ -47,24 +47,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chat_rate_limits: {
-        Row: {
-          count: number
-          user_id: string
-          window_start: string
-        }
-        Insert: {
-          count?: number
-          user_id: string
-          window_start?: string
-        }
-        Update: {
-          count?: number
-          user_id?: string
-          window_start?: string
-        }
-        Relationships: []
-      }
       crm: {
         Row: {
           brand: string
@@ -595,14 +577,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      check_chat_rate_limit: {
-        Args: never
-        Returns: {
-          allowed: boolean
-          remaining: number
-          reset_at: string
-        }[]
       }
       get_my_brand: { Args: never; Returns: string }
       get_my_role: { Args: never; Returns: string }

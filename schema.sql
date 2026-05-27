@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS tiktok_shop (
   units_sold    INTEGER DEFAULT 0,
   revenue       NUMERIC DEFAULT 0,
   product_views INTEGER DEFAULT 0,
+  ad_spent      NUMERIC DEFAULT 0,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 

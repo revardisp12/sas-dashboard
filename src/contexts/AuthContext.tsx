@@ -47,6 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('fetchProfile error:', error)
         setProfileError(error.message)
+        setProfile(null)
+        // Intentionally NOT setting loadedProfileId here so a retry is allowed.
+        return
       }
       setProfile(data ? (data as unknown as UserProfile) : null)
       loadedProfileId.current = userId
@@ -54,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const msg = e instanceof Error ? e.message : String(e)
       console.error('fetchProfile threw:', msg)
       setProfileError(msg)
+      setProfile(null)
+      // Same as above: leave loadedProfileId untouched so we can retry.
     } finally {
       setProfileLoading(false)
     }

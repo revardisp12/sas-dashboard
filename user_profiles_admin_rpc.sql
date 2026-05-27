@@ -86,6 +86,10 @@ BEGIN
   WHERE id = target_id
   RETURNING * INTO v_updated;
 
+  IF v_updated.id IS NULL THEN
+    RAISE EXCEPTION 'Target deleted concurrently' USING ERRCODE = '42704';
+  END IF;
+
   RETURN v_updated;
 END;
 $$;

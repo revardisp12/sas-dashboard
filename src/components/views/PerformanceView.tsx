@@ -40,6 +40,7 @@ export default function PerformanceView({ salesData, brand }: Props) {
   const [weeks, setWeeks] = useState<WeekRange[]>(() => defaultWeeks(today.getFullYear(), today.getMonth() + 1))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -137,6 +138,7 @@ export default function PerformanceView({ salesData, brand }: Props) {
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       await upsertTarget({
         brand, year: selectedYear, month: selectedMonth,
@@ -145,8 +147,10 @@ export default function PerformanceView({ salesData, brand }: Props) {
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch (e) { console.error(e) }
-    finally { setSaving(false) }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setSaveError(`Gagal simpan target: ${msg}`)
+    } finally { setSaving(false) }
   }
 
   function prevMonth() {
@@ -211,6 +215,13 @@ export default function PerformanceView({ salesData, brand }: Props) {
           </button>
         </div>
       </div>
+
+      {saveError && (
+        <div className="text-xs rounded-lg px-3 py-2"
+          style={{ background: '#FEF2F2', color: '#991B1B', border: '1px solid #FECACA' }}>
+          {saveError}
+        </div>
+      )}
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
