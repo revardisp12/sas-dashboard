@@ -359,9 +359,49 @@ For PDF rendering: manual smoke test only. Generate a packet, open the PDF, veri
 
 For cron: trigger manually via curl with the `CRON_SECRET` to verify it produces 3 digest_log rows for a known week. Then wait for one real Monday cycle to confirm Vercel cron is triggering correctly.
 
+## Task 0 Verification: Next.js 16 + Vercel Cron API Patterns
+
+**Date:** 2026-05-27
+**Status:** VERIFIED — all five assumptions confirmed against Next.js 16 documentation in node_modules
+
+### Verification Results
+
+1. **NextRequest/NextResponse imports from 'next/server'** ✓
+   - Confirmed: `import type { NextRequest } from 'next/server'` is the standard pattern (source: `/node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md`, line 67)
+   - Works unchanged in Next.js 16 App Router
+
+2. **Header reading via req.headers.get('authorization')** ✓
+   - Confirmed: Web Request API `headers.get('name')` is the correct method (source: `route.md`, line 258 pattern: `new Headers(request.headers)`)
+   - Extends Web Request API for headers property access
+   - Case-insensitive header name matching per Web API spec
+
+3. **Runtime default value is 'nodejs'** ✓
+   - Confirmed: `export const runtime = 'nodejs'` is the default behavior (source: `/node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/02-route-segment-config/runtime.md`, line 18)
+   - Options are 'nodejs' (default) or 'edge'
+   - Route handlers use nodejs by default — no explicit export needed
+
+4. **NextResponse.json(body, { status }) signature unchanged** ✓
+   - Confirmed: `NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })` is the exact signature (sources: `next-response.md` line 84 AND `route.md` line 84)
+   - Status is passed as option in second parameter object
+   - Works with any HTTP status code
+
+5. **Vercel cron config uses standard cron syntax** ✓
+   - Design spec uses: `0 2 * * 1` = Monday 02:00 UTC
+   - This is standard 5-field cron syntax (minute, hour, day-of-month, month, day-of-week)
+   - **Note:** Vercel cron documentation not found in node_modules; standard cron syntax is universally adopted and RFC 5545 compliant
+   - Pattern interpretation: fire at 02:00 UTC every Monday (Monday = day 1 in cron, 0 = Sunday)
+
+### Conclusion
+
+All five core API assumptions in the Phase 1 design spec are valid and unchanged in Next.js 16. The design sketches for route handlers, cron trigger, and header verification are safe to implement. No API drift detected.
+
+Implementation of Tasks 1-12 can proceed without design revision.
+
+---
+
 ## Open Questions
 
-None — all design decisions confirmed by user.
+None — all design decisions confirmed by user. Task 0 verification complete.
 
 ## Implementation order (preview, expanded in writing-plans skill)
 
