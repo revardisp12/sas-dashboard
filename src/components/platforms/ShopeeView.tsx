@@ -109,7 +109,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
           brand={brand}
           fields={SHOPEE_FIELDS}
           computed={SHOPEE_COMPUTED as ComputedField[]}
-          onSave={row => {
+          onSave={async row => {
             const r: ShopeeRow = {
               date: row.date,
               gmv: Number(row.gmv) || 0, orders: Number(row.orders) || 0,
@@ -119,7 +119,8 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               adClicks: Number(row.adClicks) || 0,
               adImpressions: 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />

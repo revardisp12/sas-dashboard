@@ -84,7 +84,7 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd, sale
           brand={brand}
           fields={GA_FIELDS}
           computed={GA_COMPUTED as ComputedField[]}
-          onSave={row => {
+          onSave={async row => {
             const impressions = Number(row.impressions) || 0
             const clicks = Number(row.clicks) || 0
             const spend = Number(row.spend) || 0
@@ -96,7 +96,8 @@ export default function GoogleAdsView({ data, brand, onUpload, onManualAdd, sale
               cpc: clicks > 0 ? spend / clicks : 0,
               convRate: 0, roas: 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />

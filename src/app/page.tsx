@@ -45,6 +45,21 @@ const VIEW_LABELS: Record<ActiveView, string> = {
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
 
+// Map loadBrandData errors[].source (DB table name) -> BrandData key.
+// Used to keep previous data for the failed source instead of overwriting
+// it with the empty-array fallback baked into loadBrandData.
+const TABLE_TO_KEY: Record<string, keyof BrandData> = {
+  sales: 'sales',
+  crm: 'crm',
+  google_ads: 'googleAds',
+  meta_ads: 'metaAds',
+  tiktok_shop: 'tiktokShop',
+  shopee: 'shopee',
+  instagram: 'instagram',
+  tiktok_organic: 'tiktokOrganic',
+  facebook_organic: 'facebookOrganic',
+}
+
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
 }
@@ -106,12 +121,26 @@ export default function Dashboard() {
         getProducts(b),
         getBundles(b),
       ])
-      setData(prev => ({ ...prev, [b]: brandResult.data }))
+      const failedKeys = new Set(
+        brandResult.errors.map(e => TABLE_TO_KEY[e.source]).filter(Boolean) as (keyof BrandData)[]
+      )
+      // Selective merge: for sources that failed, keep prev[b][key] instead
+      // of overwriting with the empty fallback. Prevents a transient fetch
+      // failure from blanking the chart while the toast auto-dismisses.
+      setData(prev => {
+        const merged = { ...prev[b] } as unknown as Record<string, unknown>
+        for (const k of Object.keys(brandResult.data) as (keyof BrandData)[]) {
+          if (!failedKeys.has(k)) {
+            merged[k] = brandResult.data[k]
+          }
+        }
+        return { ...prev, [b]: merged as unknown as BrandData }
+      })
       setProducts(prods)
       setBundles(bunds)
       if (brandResult.errors.length > 0) {
         const sources = brandResult.errors.map(e => e.source).join(', ')
-        showError(`Gagal load ${brandResult.errors.length} sumber data (${sources}). Cek koneksi atau refresh halaman.`)
+        showError(`Gagal load ${brandResult.errors.length} sumber data (${sources}). Data sebelumnya dipertahankan. Refresh untuk coba lagi.`)
       }
     } catch (e) {
       console.error('Load error:', e)
@@ -190,6 +219,9 @@ export default function Dashboard() {
       setProducts(updated)
     } catch (e) {
       showError(`Simpan produk gagal: ${errMsg(e)}`)
+      // Partial-success risk: some upserts/deletes may have committed before
+      // the reject. Re-fetch from DB to converge local state with truth.
+      await loadData(brand)
     }
   }
 
@@ -217,6 +249,8 @@ export default function Dashboard() {
       setBundles(updated)
     } catch (e) {
       showError(`Simpan bundle gagal: ${errMsg(e)}`)
+      // Sequential loop may have committed earlier rows before reject; re-sync.
+      await loadData(brand)
     }
   }
 
@@ -224,6 +258,7 @@ export default function Dashboard() {
     try {
       await appendSales(rows, brand)
       setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }))
+      showSuccess(`Sales ditambahkan: ${rows.length} baris`)
     } catch (e) {
       showError(`Simpan sales gagal: ${errMsg(e)}`)
     }
@@ -233,6 +268,7 @@ export default function Dashboard() {
     try {
       await appendCRM(rows, brand)
       setData(prev => ({ ...prev, [brand]: { ...prev[brand], crm: [...prev[brand].crm, ...rows] } }))
+      showSuccess(`CRM ditambahkan: ${rows.length} baris`)
     } catch (e) {
       showError(`Simpan CRM gagal: ${errMsg(e)}`)
     }
@@ -272,6 +308,7 @@ export default function Dashboard() {
           const existing = prev[brand][key] as unknown[]
           return { ...prev, [brand]: { ...prev[brand], [key]: [...existing, ...rows] } }
         })
+        showSuccess(`${String(key)} ditambahkan: ${rows.length} baris`)
       } catch (e) {
         showError(`Simpan ${String(key)} gagal: ${errMsg(e)}`)
       }

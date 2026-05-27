@@ -48,14 +48,15 @@ export default function FacebookOrganicView({ data, brand, onUpload, onManualAdd
           subtitle="Tambah baris data Facebook Organic"
           brand={brand}
           fields={FB_FIELDS}
-          onSave={row => {
+          onSave={async row => {
             const r: FacebookOrganicRow = {
               date: row.date,
               reach: Number(row.reach) || 0,
               impressions: Number(row.impressions) || 0,
               engagements: Number(row.engagements) || 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />

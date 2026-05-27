@@ -53,14 +53,15 @@ export default function TikTokOrganicView({ data, brand, onUpload, onManualAdd }
           subtitle="Tambah baris data TikTok Organic"
           brand={brand}
           fields={TT_FIELDS}
-          onSave={row => {
+          onSave={async row => {
             const r: TikTokOrganicRow = {
               date: row.date,
               followers: Number(row.followers) || 0, views: Number(row.views) || 0,
               likes: Number(row.likes) || 0, comments: Number(row.comments) || 0,
               shares: Number(row.shares) || 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />

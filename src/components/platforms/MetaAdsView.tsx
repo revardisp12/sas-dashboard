@@ -96,7 +96,7 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
           brand={brand}
           fields={META_FIELDS}
           computed={META_COMPUTED as ComputedField[]}
-          onSave={row => {
+          onSave={async row => {
             const impressions = Number(row.impressions) || 0
             const clicks = Number(row.clicks) || 0
             const spend = Number(row.spend) || 0
@@ -108,7 +108,8 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
               ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
               cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />

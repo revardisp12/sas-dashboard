@@ -4,6 +4,11 @@ import { Upload, CheckCircle, Download, AlertCircle, Loader2 } from 'lucide-reac
 import { Platform } from '@/lib/types'
 import { downloadTemplate } from '@/lib/csvParser'
 
+// `onUpload` contract: implementations MAY either resolve normally and
+// surface errors themselves (page.tsx handleUpload uses toast), OR throw
+// and let this component render the inline error banner. Both paths are
+// supported — Sales/CRM views use a local handleCSVFile wrapper that
+// throws on parseSales/parseCRM failure so the catch below DOES fire.
 interface Props {
   platform: Platform | 'sales' | 'crm'
   hasData: boolean

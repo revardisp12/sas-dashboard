@@ -63,7 +63,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
           subtitle="Tambah baris data TikTok Shop"
           brand={brand}
           fields={TTS_FIELDS}
-          onSave={row => {
+          onSave={async row => {
             const r: TikTokShopRow = {
               date: row.date,
               gmv: Number(row.gmv) || 0, orders: Number(row.orders) || 0,
@@ -71,7 +71,8 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
               productViews: Number(row.productViews) || 0,
               adSpent: Number(row.adSpent) || 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />

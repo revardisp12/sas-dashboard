@@ -63,7 +63,7 @@ export default function InstagramView({ data, brand, onUpload, onManualAdd }: Pr
           brand={brand}
           fields={IG_FIELDS}
           computed={IG_COMPUTED as ComputedField[]}
-          onSave={row => {
+          onSave={async row => {
             const r: InstagramRow = {
               date: row.date,
               followers: Number(row.followers) || 0, reach: Number(row.reach) || 0,
@@ -71,7 +71,8 @@ export default function InstagramView({ data, brand, onUpload, onManualAdd }: Pr
               profileVisits: 0,
               engagements: Number(row.engagements) || 0,
             }
-            onManualAdd?.([r]); setModal(false)
+            await onManualAdd?.([r])
+            setModal(false)
           }}
           onClose={() => setModal(false)}
         />
