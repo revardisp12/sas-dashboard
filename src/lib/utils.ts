@@ -1,3 +1,18 @@
+import type { CSSProperties } from 'react'
+
+// Shared metric formatter — was copy-pasted byte-for-byte in 4 platform views.
+export function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number'): string {
+  if (type === 'currency') return fmtCurrency(n)
+  if (type === 'percent') return n.toFixed(2) + '%'
+  return fmtNum(n)
+}
+
+// Shared Recharts tooltip style — the canonical light-card variant repeated
+// ~20x across chart views.
+export const chartTooltipStyle: CSSProperties = {
+  background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11,
+}
+
 export function filterByRange<T extends { date: string }>(data: T[], from: string, to: string): T[] {
   return data.filter(r => r.date >= from && r.date <= to)
 }

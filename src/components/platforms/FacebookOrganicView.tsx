@@ -6,7 +6,7 @@ import ManualInputModal from '@/components/ManualInputModal'
 import PlatformViewShell from '@/components/platforms/PlatformViewShell'
 import { Globe, Eye, Activity, Heart, TrendingUp } from 'lucide-react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { fmtNum } from '@/lib/utils'
+import { fmtNum, chartTooltipStyle } from '@/lib/utils'
 
 const PLATFORM_COLOR = '#1877F2'
 const PLATFORM_RGB = '24,119,242'
@@ -88,7 +88,7 @@ export default function FacebookOrganicView({ data, brand, onUpload, onManualAdd
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
               <Area type="monotone" dataKey="Reach" stroke={PLATFORM_COLOR} fill="url(#fbReachGrad)" strokeWidth={2} />
               <Area type="monotone" dataKey="Impressions" stroke="#8B5CF6" fill="url(#fbImpGrad)" strokeWidth={2} />
@@ -102,7 +102,7 @@ export default function FacebookOrganicView({ data, brand, onUpload, onManualAdd
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Line type="monotone" dataKey="Engagements" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>

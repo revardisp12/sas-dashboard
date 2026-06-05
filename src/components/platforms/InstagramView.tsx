@@ -6,7 +6,7 @@ import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import PlatformViewShell from '@/components/platforms/PlatformViewShell'
 import { Camera, Users, Eye, Heart, TrendingUp, Activity } from 'lucide-react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { fmtNum } from '@/lib/utils'
+import { fmtNum, chartTooltipStyle } from '@/lib/utils'
 
 const PLATFORM_COLOR = '#E1306C'
 const PLATFORM_RGB = '225,48,108'
@@ -100,7 +100,7 @@ export default function InstagramView({ data, brand, onUpload, onManualAdd }: Pr
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Area type="monotone" dataKey="Followers" stroke={PLATFORM_COLOR} fill="url(#igGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -112,7 +112,7 @@ export default function InstagramView({ data, brand, onUpload, onManualAdd }: Pr
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
               <Line type="monotone" dataKey="Reach" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="Engagements" stroke="#8B5CF6" strokeWidth={2} dot={false} />

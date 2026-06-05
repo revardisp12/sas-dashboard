@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { SalesRow, SalesSource, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
-import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
+import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
 import CSVUploader from '@/components/CSVUploader'
 import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
 import { parseSales } from '@/lib/csvParser'
@@ -182,7 +182,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis type="category" dataKey="product" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={90} />
-                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+                  <Tooltip contentStyle={chartTooltipStyle} />
                   <Bar dataKey="revenue" fill={accent} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -196,7 +196,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
                       label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                       {channelData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
+                    <Tooltip contentStyle={chartTooltipStyle}
                       formatter={(v) => fmtCurrency(Number(v))} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -211,7 +211,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                   <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
+                  <Tooltip contentStyle={chartTooltipStyle}
                     formatter={(v) => fmtCurrency(Number(v))} />
                   <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
                   <Line type="monotone" dataKey="Revenue" stroke={accent} strokeWidth={2} dot={false} />
