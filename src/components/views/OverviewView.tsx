@@ -1,6 +1,6 @@
 'use client'
 import { BrandData, Brand, Timeframe, ProductMaster, CRMRow } from '@/lib/types'
-import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
+import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
 import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users, Package, Trophy, AlertTriangle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -230,7 +230,7 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
               <Line type="monotone" dataKey="Google Ads" stroke="#4285F4" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="Meta Ads" stroke="#1877F2" strokeWidth={2} dot={false} />

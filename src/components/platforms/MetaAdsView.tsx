@@ -6,7 +6,7 @@ import ManualInputModal, { ComputedField } from '@/components/ManualInputModal'
 import PlatformViewShell from '@/components/platforms/PlatformViewShell'
 import { Target, Users, MousePointer, TrendingUp, ShoppingCart, DollarSign, Link, Percent } from 'lucide-react'
 import { BRAND_COLORS } from '@/lib/brand'
-import { fmtCurrency, fmtNum } from '@/lib/utils'
+import { fmt, chartTooltipStyle } from '@/lib/utils'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const PLATFORM_COLOR = '#1877F2'
@@ -50,11 +50,6 @@ const META_COMPUTED = [
   },
 ]
 
-function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
-  if (type === 'currency') return fmtCurrency(n)
-  if (type === 'percent') return n.toFixed(2) + '%'
-  return fmtNum(n)
-}
 
 interface Props { data: MetaAdsRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: MetaAdsRow[]) => void; salesData?: SalesRow[] }
 
@@ -137,7 +132,7 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
               <Line type="monotone" dataKey="Spend" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="Reach" stroke={accent} strokeWidth={2} dot={false} />
@@ -151,7 +146,7 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Bar dataKey="Clicks" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

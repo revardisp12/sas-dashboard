@@ -6,7 +6,7 @@ import ManualInputModal from '@/components/ManualInputModal'
 import PlatformViewShell from '@/components/platforms/PlatformViewShell'
 import { Music, Users, Play, Heart, MessageCircle, Share2, TrendingUp } from 'lucide-react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { fmtNum } from '@/lib/utils'
+import { fmtNum, chartTooltipStyle } from '@/lib/utils'
 
 const PLATFORM_COLOR = '#69C9D0'
 const PLATFORM_RGB = '105,201,208'
@@ -90,7 +90,7 @@ export default function TikTokOrganicView({ data, brand, onUpload, onManualAdd }
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Area type="monotone" dataKey="Followers" stroke={PLATFORM_COLOR} fill="url(#ttGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -102,7 +102,7 @@ export default function TikTokOrganicView({ data, brand, onUpload, onManualAdd }
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 10, color: '#6B7280' }} />
               <Line type="monotone" dataKey="Views" stroke="#FF0050" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="Likes" stroke={PLATFORM_COLOR} strokeWidth={2} dot={false} />

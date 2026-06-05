@@ -7,7 +7,7 @@ import PlatformViewShell from '@/components/platforms/PlatformViewShell'
 import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Zap } from 'lucide-react'
 import { BRAND_COLORS } from '@/lib/brand'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { fmtCurrency, fmtNum } from '@/lib/utils'
+import { fmt, chartTooltipStyle } from '@/lib/utils'
 
 const PLATFORM_COLOR = '#FF0050'
 const PLATFORM_RGB = '255,0,80'
@@ -23,11 +23,6 @@ const TTS_FIELDS = [
   { key: 'adSpent', label: 'Ad Spent (Rp)', type: 'number' as const, placeholder: '500000' },
 ]
 
-function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
-  if (type === 'currency') return fmtCurrency(n)
-  if (type === 'percent') return n.toFixed(2) + '%'
-  return fmtNum(n)
-}
 
 interface Props { data: TikTokShopRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: TikTokShopRow[]) => void }
 
@@ -102,7 +97,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Area type="monotone" dataKey="GMV" stroke={PLATFORM_COLOR} fill="url(#gmvGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -114,7 +109,7 @@ export default function TikTokShopView({ data, brand, onUpload, onManualAdd }: P
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Bar dataKey="Orders" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

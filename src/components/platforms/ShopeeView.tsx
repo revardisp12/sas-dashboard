@@ -7,7 +7,7 @@ import PlatformViewShell from '@/components/platforms/PlatformViewShell'
 import { ShoppingBag, DollarSign, Package, TrendingUp, Percent, ShoppingCart, Target, MousePointer } from 'lucide-react'
 import { BRAND_COLORS } from '@/lib/brand'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
-import { fmtCurrency, fmtNum } from '@/lib/utils'
+import { fmt, chartTooltipStyle } from '@/lib/utils'
 
 const PLATFORM_COLOR = '#F05536'
 const PLATFORM_RGB = '240,85,54'
@@ -59,11 +59,6 @@ const SHOPEE_COMPUTED = [
   },
 ]
 
-function fmt(n: number, type: 'currency' | 'number' | 'percent' = 'number') {
-  if (type === 'currency') return fmtCurrency(n)
-  if (type === 'percent') return n.toFixed(2) + '%'
-  return fmtNum(n)
-}
 
 interface Props { data: ShopeeRow[]; brand: Brand; onUpload: (file: File) => Promise<void>; onManualAdd?: (rows: ShopeeRow[]) => void }
 
@@ -162,7 +157,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Area type="monotone" dataKey="GMV" stroke={PLATFORM_COLOR} fill="url(#shopeeGmvGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -174,7 +169,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Bar dataKey="Orders" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -187,7 +182,7 @@ export default function ShopeeView({ data, brand, onUpload, onManualAdd }: Props
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis yAxisId="spend" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis yAxisId="roas" orientation="right" tick={{ fontSize: 9, fill: '#4B5563' }} />
-              <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+              <Tooltip contentStyle={chartTooltipStyle} />
               <Line yAxisId="spend" type="monotone" dataKey="Ad Spend" stroke="#F59E0B" strokeWidth={2} dot={false} />
               <Line yAxisId="roas" type="monotone" dataKey="Ad ROAS" stroke="#10B981" strokeWidth={2} dot={false} />
             </LineChart>

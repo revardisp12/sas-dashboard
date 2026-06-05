@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { SalesRow, CRMRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
-import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
+import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
 import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts'
 import { BRAND_COLORS } from '@/lib/brand'
@@ -459,7 +459,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
                 <YAxis type="category" dataKey="displayName" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
-                <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
+                <Tooltip contentStyle={chartTooltipStyle}
                   formatter={(v: unknown) => [`${v} customers`, 'Unique Customers']} />
                 <Bar dataKey="uniqueCustomers" fill={accent} radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -482,7 +482,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} unit=" hr" />
                 <YAxis type="category" dataKey="displayName" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
-                <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }}
+                <Tooltip contentStyle={chartTooltipStyle}
                   formatter={(v: unknown) => [`${v} hari`, 'Avg. interval beli']} />
                 <Bar dataKey="avgDaysBetweenPurchases" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -544,7 +544,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
                 <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
-                <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
+                <Tooltip contentStyle={chartTooltipStyle} />
                 <Line type="monotone" dataKey="units" stroke={accent} strokeWidth={2} dot={false} name="Units" />
                 <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} dot={false} name="Revenue" />
               </LineChart>
