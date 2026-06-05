@@ -107,7 +107,10 @@ export default function TimeframeSelector({ value, onChange, dateRange, onDateRa
     return d > dateRange.from && d < dateRange.to
   }
 
-  function CalendarMonth({ year, month, showPrev, showNext }: { year: number; month: number; showPrev: boolean; showNext: boolean }) {
+  // Render helper (not a nested component): invoked as a function below so its
+  // JSX is part of this component's render. Defining it as <CalendarMonth/> made
+  // React remount the calendar on every render, dropping hover/selection state.
+  function renderMonth({ year, month, showPrev, showNext }: { year: number; month: number; showPrev: boolean; showNext: boolean }) {
     const days = getDays(year, month)
     return (
       <div className="flex-1">
@@ -218,9 +221,9 @@ export default function TimeframeSelector({ value, onChange, dateRange, onDateRa
           </div>
 
           <div className="flex gap-px p-4">
-            <CalendarMonth year={viewYear} month={viewMonth} showPrev showNext={false} />
+            {renderMonth({ year: viewYear, month: viewMonth, showPrev: true, showNext: false })}
             <div className="w-px bg-gray-100 mx-3 self-stretch" />
-            <CalendarMonth year={rightYear} month={rightMonth} showPrev={false} showNext />
+            {renderMonth({ year: rightYear, month: rightMonth, showPrev: false, showNext: true })}
           </div>
 
           <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: '1px solid #F3F4F6' }}>

@@ -229,7 +229,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
             <DollarSign size={28} style={{ color: accent }} />
           </div>
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data sales</p>
-          <p className="text-sm" style={{ color: '#374151' }}>Upload CSV atau klik "+ Input Manual" di atas</p>
+          <p className="text-sm" style={{ color: '#374151' }}>Upload CSV atau klik &quot;+ Input Manual&quot; di atas</p>
         </div>
       )}
 
