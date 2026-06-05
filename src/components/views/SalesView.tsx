@@ -7,7 +7,7 @@ import CSVValidationModal, { validateProductField, InvalidRow } from '@/componen
 import { parseSales } from '@/lib/csvParser'
 import { DollarSign, Package, TrendingUp, ShoppingCart, Plus, X, Trash2 } from 'lucide-react'
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { BRAND_COLORS } from '@/lib/brand'
+import { BRAND_COLORS, BRAND_RGB } from '@/lib/brand'
 const chartStyle = { background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }
 const PIE_COLORS = ['#F07830', '#8B5CF6', '#00D4FF', '#10B981', '#F59E0B', '#E1306C']
 const CHANNELS = ['TikTok Shop', 'Shopee', 'Tokopedia', 'Instagram DM', 'WhatsApp', 'Website', 'Offline', 'Lainnya']
@@ -157,7 +157,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
         <div className="flex items-center gap-3">
           <button onClick={() => setModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex-shrink-0"
-            style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.15)`, border: `1px solid rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.3)`, color: accent }}>
+            style={{ background: `rgba(${BRAND_RGB[brand]},0.15)`, border: `1px solid rgba(${BRAND_RGB[brand]},0.3)`, color: accent }}>
             <Plus size={14} /> Input Manual
           </button>
           <div className="w-56 flex-shrink-0">
@@ -294,7 +294,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#6B7280' }}>Produk</p>
                   <button onClick={addLine} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-                    style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.1)`, color: accent }}>
+                    style={{ background: `rgba(${BRAND_RGB[brand]},0.1)`, color: accent }}>
                     <Plus size={11} /> Tambah Baris
                   </button>
                 </div>
@@ -368,7 +368,7 @@ export default function SalesView({ data, brand, timeframe, onUpload, onBulkUplo
                   Batal
                 </button>
                 <button onClick={handleSave} className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                  style={{ background: `rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.2)`, border: `1px solid rgba(${({'reglow':'201,169,110','amura':'143,176,80','purela':'155,127,212'})[brand]},0.4)`, color: accent }}>
+                  style={{ background: `rgba(${BRAND_RGB[brand]},0.2)`, border: `1px solid rgba(${BRAND_RGB[brand]},0.4)`, color: accent }}>
                   Simpan Transaksi
                 </button>
               </div>

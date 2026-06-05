@@ -6,9 +6,7 @@ import { Package, Plus, Trash2, Edit2, Check, X, Upload, Zap, ChevronRight, Laye
 import Papa from 'papaparse'
 import { useAuth } from '@/contexts/AuthContext'
 import UserManagement from '@/components/UserManagement'
-import { BRAND_COLORS } from '@/lib/brand'
-
-const BRAND_RGB: Record<import('@/lib/types').Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
+import { BRAND_COLORS, BRAND_RGB, BRAND_LABELS } from '@/lib/brand'
 
 // Module-level temp id for new client rows (server assigns the real UUID).
 // Kept out of the component so the impure Date.now() call isn't in render scope.
@@ -450,7 +448,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
             ))}
           </div>
           {brandProducts.length > 0 && (
-            <p className="text-xs" style={{ color: '#374151' }}>{brandProducts.length} produk terdaftar untuk {brand === 'reglow' ? 'Reglow Skincare' : 'Amura'}</p>
+            <p className="text-xs" style={{ color: '#374151' }}>{brandProducts.length} produk terdaftar untuk {BRAND_LABELS[brand]}</p>
           )}
         </div>
       )}
@@ -585,7 +583,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
             ))}
           </div>
           {brandBundles.length > 0 && (
-            <p className="text-xs" style={{ color: '#374151' }}>{brandBundles.length} bundle terdaftar untuk {brand === 'reglow' ? 'Reglow Skincare' : 'Amura'}</p>
+            <p className="text-xs" style={{ color: '#374151' }}>{brandBundles.length} bundle terdaftar untuk {BRAND_LABELS[brand]}</p>
           )}
         </div>
       )}

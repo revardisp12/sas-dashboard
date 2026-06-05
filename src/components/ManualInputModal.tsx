@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
 import { Brand } from '@/lib/types'
-import { BRAND_COLORS } from '@/lib/brand'
+import { BRAND_COLORS, BRAND_RGB } from '@/lib/brand'
 
 export interface FieldDef {
   key: string
@@ -27,8 +27,6 @@ interface Props {
   onSave: (row: Record<string, string>) => void
   onClose: () => void
 }
-
-const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
 
 function fmtComputed(val: number, format?: 'currency' | 'percent' | 'number'): string {
   if (format === 'currency') return 'Rp ' + Math.round(val).toLocaleString('id-ID')

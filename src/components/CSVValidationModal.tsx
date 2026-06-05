@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { X, CheckCircle, AlertTriangle, XCircle, Download, Loader2 } from 'lucide-react'
 import { Brand, ProductMaster, BundleMaster } from '@/lib/types'
-import { BRAND_COLORS } from '@/lib/brand'
+import { BRAND_COLORS, BRAND_RGB } from '@/lib/brand'
 
 export interface InvalidRow {
   rowIndex: number
@@ -18,8 +18,6 @@ interface Props {
   onConfirm: () => Promise<void> | void
   onClose: () => void
 }
-
-const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
 
 function validateSingleProduct(
   product: string,
