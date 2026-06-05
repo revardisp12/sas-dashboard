@@ -10,6 +10,10 @@ import { BRAND_COLORS } from '@/lib/brand'
 
 const BRAND_RGB: Record<import('@/lib/types').Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
 
+// Module-level temp id for new client rows (server assigns the real UUID).
+// Kept out of the component so the impure Date.now() call isn't in render scope.
+function tempId(): string { return Date.now().toString() }
+
 interface Props {
   brand: Brand
   products: ProductMaster[]
@@ -169,7 +173,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
     const price = toNum(bundleForm.price)
     const cogs = calcBundleCogs(validComponents)
     saveB([...bundles, {
-      id: Date.now().toString(),
+      id: tempId(),
       name: bundleForm.name.trim(),
       components: validComponents.map(c => ({ sku: c.sku, qty: parseInt(c.qty) })) as BundleComponent[],
       price, cogs,
@@ -232,7 +236,11 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
 
   const marginColor = (m: number) => m >= 50 ? '#10B981' : m >= 30 ? '#F59E0B' : '#EF4444'
 
-  const BundleComponentForm = ({ components, isEdit }: { components: { sku: string; qty: string }[]; isEdit: boolean }) => (
+  // Render helper (not a nested component) — invoked as a function so the inputs
+  // aren't remounted on every SettingsView render. As <BundleComponentForm/> it
+  // remounted on each keystroke, dropping focus while typing a component qty and
+  // resetting the product dropdown.
+  const renderBundleComponents = ({ components, isEdit }: { components: { sku: string; qty: string }[]; isEdit: boolean }) => (
     <div className="space-y-2">
       {components.map((c, idx) => (
         <div key={idx} className="flex items-center gap-2">
@@ -479,7 +487,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
 
             <div>
               <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#6B7280' }}>Komponen Produk</label>
-              <BundleComponentForm components={bundleForm.components} isEdit={false} />
+              {renderBundleComponents({ components: bundleForm.components, isEdit: false })}
             </div>
 
             {/* Preview COGS & Margin */}
@@ -558,7 +566,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
                 {editBundleId === b.id ? (
                   <div className="px-5 pb-4" style={{ background: '#F9FAFB', borderBottom: i < brandBundles.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
                     <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>Edit Komponen</p>
-                    <BundleComponentForm components={editBundleForm.components} isEdit={true} />
+                    {renderBundleComponents({ components: editBundleForm.components, isEdit: true })}
                   </div>
                 ) : (
                   <div className="px-5 pb-3 flex flex-wrap gap-2" style={{ background: '#FAFAFA', borderBottom: i < brandBundles.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
