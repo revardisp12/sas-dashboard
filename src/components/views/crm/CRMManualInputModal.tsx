@@ -2,8 +2,7 @@
 import { useState } from 'react'
 import { CRMRow, Brand, ProductMaster } from '@/lib/types'
 import { Plus, Trash2, X } from 'lucide-react'
-
-const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
+import { BRAND_RGB } from '@/lib/brand'
 
 interface LineItem { product: string; sku: string; qty: string; revenue: string }
 const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', revenue: '' }

@@ -7,7 +7,7 @@ import CSVUploader from '@/components/CSVUploader'
 import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
 import { parseCRM } from '@/lib/csvParser'
 import { Users, Plus, ChevronRight } from 'lucide-react'
-import { BRAND_COLORS } from '@/lib/brand'
+import { BRAND_COLORS, BRAND_RGB } from '@/lib/brand'
 import { filterByDaysCRM, calcRFM } from '@/lib/rfm'
 import RFMMatrixTab from './crm/RFMMatrixTab'
 import PipelineTab from './crm/PipelineTab'
@@ -15,8 +15,6 @@ import ActionListTab from './crm/ActionListTab'
 import CustomerDetailModal from './crm/CustomerDetailModal'
 import AddTaskModal from './crm/AddTaskModal'
 import CRMManualInputModal from './crm/CRMManualInputModal'
-
-const BRAND_RGB: Record<Brand, string> = { reglow: '201,169,110', amura: '143,176,80', purela: '155,127,212' }
 
 const TIMEFRAME_OPTIONS: { label: string; value: CRMTimeframe }[] = [
   { label: '30H', value: 30 }, { label: '90H', value: 90 },

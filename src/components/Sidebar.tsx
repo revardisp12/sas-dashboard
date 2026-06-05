@@ -9,11 +9,12 @@ import {
   ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { BRAND_COLORS, BRAND_RGB, BRAND_LABELS } from '@/lib/brand'
 
-const BRAND_CONFIG = {
-  reglow: { label: 'Reglow Skincare', color: '#C9A96E', glow: 'rgba(201,169,110,0.3)', rgb: '201,169,110' },
-  amura: { label: 'Amura', color: '#8FB050', glow: 'rgba(143,176,80,0.3)', rgb: '143,176,80' },
-  purela: { label: 'Purela', color: '#9B7FD4', glow: 'rgba(155,127,212,0.3)', rgb: '155,127,212' },
+const BRAND_CONFIG: Record<Brand, { label: string; color: string; glow: string; rgb: string }> = {
+  reglow: { label: BRAND_LABELS.reglow, color: BRAND_COLORS.reglow, glow: `rgba(${BRAND_RGB.reglow},0.3)`, rgb: BRAND_RGB.reglow },
+  amura: { label: BRAND_LABELS.amura, color: BRAND_COLORS.amura, glow: `rgba(${BRAND_RGB.amura},0.3)`, rgb: BRAND_RGB.amura },
+  purela: { label: BRAND_LABELS.purela, color: BRAND_COLORS.purela, glow: `rgba(${BRAND_RGB.purela},0.3)`, rgb: BRAND_RGB.purela },
 }
 
 const PAID_PLATFORMS = [
