@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# real customer data exports — NEVER commit (PII). test-*.csv fixtures are fine.
+/public/*.csv
+!/public/test-*.csv
+
 # vercel
 .vercel
 
