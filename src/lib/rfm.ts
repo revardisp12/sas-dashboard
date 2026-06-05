@@ -13,21 +13,34 @@ export const SEGMENT_CONFIG: Record<RFMSegment, { color: string; bg: string; act
   'Hibernating':        { color: '#6B7280', bg: 'rgba(107,114,128,0.15)', action: 'Win-back offer dengan diskon besar atau hadiah' },
 }
 
+// RFM 2D segment matrix indexed as SEGMENT_GRID[rScore-1][fScore-1], scores 1..5.
+// Rows = Recency (5 = most recent), Columns = Frequency (5 = most frequent).
+// A flat lookup makes the mapping a proper partition: every cell is assigned
+// exactly once and all 10 segments are reachable (the previous ordered-if
+// version had three unreachable branches that broad rules shadowed).
+const SEGMENT_GRID: RFMSegment[][] = [
+  //  f=1                 f=2                   f=3                f=4                 f=5
+  ['Hibernating',     'Hibernating',        'At Risk',         "Can't Lose Them", "Can't Lose Them"], // r=1
+  ['Hibernating',     'Hibernating',        'At Risk',         'At Risk',          "Can't Lose Them"], // r=2
+  ['About to Sleep',  'About to Sleep',     'Need Attention',  'Loyal Customers',  'Loyal Customers'], // r=3
+  ['Promising',       'Potential Loyalist', 'Loyal Customers', 'Champions',        'Champions'],       // r=4
+  ['New Customers',   'Potential Loyalist', 'Potential Loyalist', 'Champions',     'Champions'],       // r=5
+]
+
 export function getSegment(r: number, f: number): RFMSegment {
-  if (r >= 4 && f >= 4) return 'Champions'
-  if (r >= 3 && f >= 3) return 'Loyal Customers'
-  if (f >= 4 && r <= 2) return "Can't Lose Them"
-  if (r <= 2 && f >= 3) return 'At Risk'
-  if (r >= 3 && f <= 2) return 'Potential Loyalist'
-  if (r === 5 && f === 1) return 'New Customers'
-  if (r === 4 && f <= 2) return 'Promising'
-  if (r === 3 && f === 3) return 'Need Attention'
-  if (r <= 2 && f <= 2) return 'About to Sleep'
-  return 'Hibernating'
+  const ri = Math.min(5, Math.max(1, Math.round(r))) - 1
+  const fi = Math.min(5, Math.max(1, Math.round(f))) - 1
+  return SEGMENT_GRID[ri][fi]
 }
 
 function scoreQuintile(value: number, sorted: number[], reverse = false): number {
   if (sorted.length === 0) return 1
+  // No spread (single customer, or every value identical) → the metric carries
+  // no ranking signal. Return a neutral score instead of collapsing everyone to
+  // the bottom, which otherwise made Champions impossible whenever all customers
+  // shared the same frequency (e.g. everyone bought exactly once). Neutral is
+  // symmetric under `reverse`, so 3 is returned directly.
+  if (sorted[0] === sorted[sorted.length - 1]) return 3
   const idx = sorted.findIndex(v => v >= value)
   const pos = idx === -1 ? sorted.length - 1 : idx
   const pct = pos / (sorted.length - 1 || 1)
