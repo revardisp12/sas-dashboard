@@ -10,7 +10,7 @@ function normalizeSalesSource(s: unknown): SalesSource {
     : 'organic'
 }
 
-function toNum(v: unknown): number {
+export function toNum(v: unknown): number {
   if (v === null || v === undefined || v === '') return 0
   let s = String(v).trim().replace(/[Rp%\s]/g, '')
 
@@ -125,7 +125,7 @@ export async function parseTikTokOrganic(file: File): Promise<TikTokOrganicRow[]
 // SKU pattern: huruf kapital, angka, dan strip (contoh: AM-SS50, AMPDRNS, TAS)
 const SKU_RE = /^[A-Z0-9-]+$/
 
-function parseProductItems(raw: string): Array<{ product: string; qty: number }> {
+export function parseProductItems(raw: string): Array<{ product: string; qty: number }> {
   if (!raw) return [{ product: '', qty: 1 }]
   // Pilih separator: pakai semicolon kalau ada, fallback ke koma
   const sep = raw.includes(';') ? ';' : ','
@@ -162,44 +162,54 @@ function parseProductItems(raw: string): Array<{ product: string; qty: number }>
   return result.length > 0 ? result : [{ qty: 1, product: raw }]
 }
 
-export async function parseSales(file: File): Promise<SalesRow[]> {
-  const rows = await parseCSV(file)
-  const result: SalesRow[] = []
+// Pure mapping of one parsed CSV record → one or more SalesRows.
+// Extracted from parseSales so the multi-product split + qty resolution can be
+// unit-tested without constructing a File.
+export function salesRowsFromRecord(r: Record<string, string>): SalesRow[] {
+  const productRaw = r['Product'] || r['product'] || r['Produk'] || ''
+  const totalRevenue = toNum(r['Revenue'] || r['revenue'] || r['Pendapatan'])
 
-  for (const r of rows) {
-    const productRaw = r['Product'] || r['product'] || r['Produk'] || ''
-    const totalRevenue = toNum(r['Revenue'] || r['revenue'] || r['Pendapatan'])
-    const totalQtyCol = toNum(r['Qty'] || r['qty'] || r['Quantity'] || r['quantity'])
+  // Distinguish a genuinely blank/absent Qty column (→ fall back to the qty
+  // embedded in the product string) from an explicit 0 (which must be kept).
+  const qtyRaw = r['Qty'] ?? r['qty'] ?? r['Quantity'] ?? r['quantity']
+  const hasQtyCol = qtyRaw !== undefined && String(qtyRaw).trim() !== ''
+  const totalQtyCol = toNum(qtyRaw)
 
-    const baseRow = {
-      date: r['Date'] || r['date'] || '',
-      channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
-      cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
-      grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
-      customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
-      phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
-      address: r['Address'] || r['Alamat'] || r['address'] || '',
-      source: normalizeSalesSource(r['Source'] || r['source'] || r['Ad Source']),
-    }
-
-    const items = parseProductItems(productRaw)
-    if (items.length <= 1) {
-      // Single product — pakai qty dari kolom Qty
-      result.push({ ...baseRow, product: items[0]?.product ?? productRaw, qty: totalQtyCol || items[0]?.qty || 1, revenue: totalRevenue })
-    } else {
-      // Multi-product — bagi revenue proporsional berdasarkan qty tiap item
-      const totalItemQty = items.reduce((s, i) => s + i.qty, 0) || 1
-      let remaining = totalRevenue
-      items.forEach((item, idx) => {
-        const isLast = idx === items.length - 1
-        const rev = isLast ? remaining : Math.round(totalRevenue * (item.qty / totalItemQty))
-        if (!isLast) remaining -= rev
-        result.push({ ...baseRow, product: item.product, qty: item.qty, revenue: rev })
-      })
-    }
+  const baseRow = {
+    date: r['Date'] || r['date'] || '',
+    channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
+    cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
+    grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
+    customerName: r['Customer Name'] || r['Nama Customer'] || r['nama_customer'] || '',
+    phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
+    address: r['Address'] || r['Alamat'] || r['address'] || '',
+    source: normalizeSalesSource(r['Source'] || r['source'] || r['Ad Source']),
   }
 
-  return result
+  const items = parseProductItems(productRaw)
+  if (items.length <= 1) {
+    // Single product — prefer the explicit Qty column (incl. 0) when present,
+    // otherwise the qty parsed from the product string, otherwise 1.
+    const qty = hasQtyCol ? totalQtyCol : (items[0]?.qty || 1)
+    return [{ ...baseRow, product: items[0]?.product ?? productRaw, qty, revenue: totalRevenue }]
+  }
+
+  // Multi-product — split revenue proportionally by each item's qty. The last
+  // item absorbs the rounding remainder so the per-row revenues sum exactly to
+  // the record total.
+  const totalItemQty = items.reduce((s, i) => s + i.qty, 0) || 1
+  let remaining = totalRevenue
+  return items.map((item, idx) => {
+    const isLast = idx === items.length - 1
+    const rev = isLast ? remaining : Math.round(totalRevenue * (item.qty / totalItemQty))
+    if (!isLast) remaining -= rev
+    return { ...baseRow, product: item.product, qty: item.qty, revenue: rev }
+  })
+}
+
+export async function parseSales(file: File): Promise<SalesRow[]> {
+  const rows = await parseCSV(file)
+  return rows.flatMap(salesRowsFromRecord)
 }
 
 export async function parseShopee(file: File): Promise<ShopeeRow[]> {
