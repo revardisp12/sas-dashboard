@@ -75,7 +75,7 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
   const roas = totalSpend > 0 && csRevenue > 0 ? csRevenue / totalSpend : null
   const convRate = totalClicks > 0 && csPurchases > 0 ? (csPurchases / totalClicks) * 100 : null
 
-  const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Reach: r.reach }))
+  const chartData = data.slice(-30).map(r => ({ date: r.date, Spend: r.spend, Reach: r.reach, Clicks: r.clicks }))
 
   return (
     <PlatformViewShell
@@ -152,7 +152,7 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
               <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#4B5563' }} />
               <YAxis tick={{ fontSize: 9, fill: '#4B5563' }} />
               <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 8, color: '#111827', fontSize: 11 }} />
-              <Bar dataKey="Reach" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Clicks" fill={PLATFORM_COLOR} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

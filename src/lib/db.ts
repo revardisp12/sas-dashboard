@@ -397,9 +397,13 @@ export async function appendFacebookOrganic(rows: FacebookOrganicRow[], brand: B
 // ── Targets ──────────────────────────────────────────────────────────────────
 
 export async function getTarget(brand: Brand, year: number, month: number): Promise<MonthlyTarget | null> {
+  // maybeSingle(): returns data=null/error=null when no target row exists, and
+  // only errors on real failures (network, 403 missing-grant, etc). The old
+  // .single() + `if (error || !data)` masked every real failure as "no target".
   const { data, error } = await supabase.from('targets')
-    .select('*').eq('brand', brand).eq('year', year).eq('month', month).single()
-  if (error || !data) return null
+    .select('*').eq('brand', brand).eq('year', year).eq('month', month).maybeSingle()
+  if (error) throw error
+  if (!data) return null
   return {
     id: data.id,
     brand: data.brand as Brand,

@@ -44,11 +44,21 @@ export default function PerformanceView({ salesData, brand }: Props) {
 
   useEffect(() => {
     async function load() {
-      const t = await getTarget(brand, selectedYear, selectedMonth)
-      if (t) {
-        setMonthlyTarget(t.monthlyTarget > 0 ? String(t.monthlyTarget) : '')
-        setWeeks(t.weeks.length > 0 ? t.weeks : defaultWeeks(selectedYear, selectedMonth))
-      } else {
+      try {
+        const t = await getTarget(brand, selectedYear, selectedMonth)
+        if (t) {
+          setMonthlyTarget(t.monthlyTarget > 0 ? String(t.monthlyTarget) : '')
+          setWeeks(t.weeks.length > 0 ? t.weeks : defaultWeeks(selectedYear, selectedMonth))
+        } else {
+          setMonthlyTarget('')
+          setWeeks(defaultWeeks(selectedYear, selectedMonth))
+        }
+        setSaveError(null)
+      } catch (e) {
+        // Surface real failures (e.g. missing GRANT → 403) instead of silently
+        // rendering an empty target as if none was set.
+        const msg = e instanceof Error ? e.message : String(e)
+        setSaveError(`Gagal load target: ${msg}`)
         setMonthlyTarget('')
         setWeeks(defaultWeeks(selectedYear, selectedMonth))
       }
