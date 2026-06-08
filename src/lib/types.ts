@@ -29,6 +29,7 @@ export interface ProductMaster {
   cogs: number
   margin: number
   brand: Brand
+  origin?: 'wms' | 'manual' | 'csv'
 }
 
 export interface BundleComponent {
@@ -58,6 +59,7 @@ export interface CRMRow {
   product: string
   qty: number
   revenue: number
+  origin?: 'wms' | 'manual' | 'csv'
 }
 
 export interface FollowUpTask {
@@ -89,10 +91,12 @@ export interface CustomerRFM {
 export interface GoogleAdsRow {
   date: string; campaign: string; impressions: number; clicks: number
   ctr: number; cpc: number; spend: number; conversions: number; convRate: number; roas: number
+  origin?: 'wms' | 'manual' | 'csv'
 }
 export interface MetaAdsRow {
   date: string; campaign: string; reach: number; impressions: number; clicks: number
   ctr: number; spend: number; purchases: number; roas: number; cpm: number; results: number
+  origin?: 'wms' | 'manual' | 'csv'
 }
 export interface TikTokShopRow {
   date: string; gmv: number; orders: number; unitsSold: number
@@ -115,6 +119,7 @@ export interface SalesRow {
   channel: string; cogs: number; grossProfit: number
   customerName?: string; phone?: string; address?: string
   source?: SalesSource
+  origin?: 'wms' | 'manual' | 'csv'
 }
 
 export interface ShopeeRow {
