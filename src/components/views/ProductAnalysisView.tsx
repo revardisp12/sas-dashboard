@@ -201,7 +201,6 @@ export default function ProductAnalysisView({ salesData, crmData, brand, timefra
   const fastCount = stats.filter(s => s.speed === 'fast').length
   const mediumCount = stats.filter(s => s.speed === 'medium').length
   const slowCount = stats.filter(s => s.speed === 'slow').length
-  const maxUnits = Math.max(...stats.map(s => s.totalUnits), 1)
 
   const filteredStats = stats.filter(s => s.speed === speedFilter)
   const maxFilteredUnits = Math.max(...filteredStats.map(s => s.totalUnits), 1)

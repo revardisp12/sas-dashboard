@@ -105,6 +105,8 @@ export default function Dashboard() {
       const stored = localStorage.getItem('sas_brand') as Brand
       if (!accessibleBrands.includes(stored)) {
         const correct = accessibleBrands[0]
+        // Correcting brand once the async profile reveals it is inaccessible.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setBrand(correct)
         localStorage.setItem('sas_brand', correct)
       }
@@ -151,6 +153,8 @@ export default function Dashboard() {
   }, [user])
 
   useEffect(() => {
+    // Fetch brand data from Supabase on auth/brand change (external system).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user) loadData(brand)
   }, [user?.id, brand])
 
@@ -160,6 +164,8 @@ export default function Dashboard() {
       initialViewSet.current = true
       if (!canAccess(view)) {
         const role = profile.role
+        // One-time default-view redirect once the async profile/role resolves.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (role === 'cs') setView('sales')
         else if (role === 'crm') setView('crm')
         else setView('overview')

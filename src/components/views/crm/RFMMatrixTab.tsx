@@ -12,12 +12,11 @@ interface Props {
   customers: CustomerRFM[]
   segmentCounts: Record<RFMSegment, number>
   matrixCount: Record<string, number>
-  todayStr: string
   onCustomerClick: (c: CustomerRFM) => void
   onAddTaskClick: (c: CustomerRFM, note: string) => void
 }
 
-export default function RFMMatrixTab({ customers, segmentCounts, matrixCount, todayStr, onCustomerClick, onAddTaskClick }: Props) {
+export default function RFMMatrixTab({ customers, segmentCounts, matrixCount, onCustomerClick, onAddTaskClick }: Props) {
   const [selectedSegment, setSelectedSegment] = useState<RFMSegment | null>(null)
   const [page, setPage] = useState(1)
 
