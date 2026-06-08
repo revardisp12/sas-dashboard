@@ -126,6 +126,7 @@ export async function getSales(brand: Brand): Promise<SalesRow[]> {
     channel: r.channel ?? '', cogs: r.cogs ?? 0, grossProfit: r.gross_profit ?? 0,
     customerName: r.customer_name ?? '', phone: r.phone ?? '',
     address: r.address ?? '', source: (r.source ?? 'organic') as SalesSource,
+    origin: ((r as { origin?: string }).origin ?? 'manual') as 'wms' | 'manual' | 'csv',
   }))
 }
 
@@ -159,6 +160,7 @@ export async function getCRM(brand: Brand): Promise<CRMRow[]> {
   return (data ?? []).map(r => ({
     date: r.date, customerName: r.customer_name ?? '',
     phone: r.phone ?? '', product: r.product, qty: r.qty, revenue: r.revenue,
+    origin: ((r as { origin?: string }).origin ?? 'manual') as 'wms' | 'manual' | 'csv',
   }))
 }
 
@@ -190,6 +192,7 @@ export async function getGoogleAds(brand: Brand): Promise<GoogleAdsRow[]> {
     clicks: r.clicks ?? 0, ctr: r.ctr ?? 0, cpc: r.cpc ?? 0,
     spend: r.spend ?? 0, conversions: r.conversions ?? 0,
     convRate: r.conv_rate ?? 0, roas: r.roas ?? 0,
+    origin: ((r as { origin?: string }).origin ?? 'manual') as 'wms' | 'manual' | 'csv',
   }))
 }
 
@@ -223,6 +226,7 @@ export async function getMetaAds(brand: Brand): Promise<MetaAdsRow[]> {
     impressions: r.impressions ?? 0, clicks: r.clicks ?? 0, ctr: r.ctr ?? 0,
     spend: r.spend ?? 0, purchases: r.purchases ?? 0, roas: r.roas ?? 0, cpm: r.cpm ?? 0,
     results: r.results ?? 0,
+    origin: ((r as { origin?: string }).origin ?? 'manual') as 'wms' | 'manual' | 'csv',
   }))
 }
 
