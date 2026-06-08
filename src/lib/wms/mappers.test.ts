@@ -26,5 +26,11 @@ describe('productToDb', () => {
     expect(rec.origin).toBe('wms')
     expect(rec.brand).toBe('amura')
     expect(rec.sku).toBe('SKU1')
+    expect(rec.margin).toBe(60)
+  })
+
+  it('returns margin 0 when price is 0', () => {
+    const rec = productToDb({ wmsId: 'p_2', id: 'p_2', sku: 'SKU2', name: 'Free', price: 0, cogs: 0, margin: 0, brand: 'reglow' }, 'reglow')
+    expect(rec.margin).toBe(0)
   })
 })
