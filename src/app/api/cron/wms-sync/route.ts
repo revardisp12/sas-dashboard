@@ -21,7 +21,7 @@ function lastNDays(n: number) {
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -29,11 +29,16 @@ export async function POST(req: NextRequest) {
   if (!url || !serviceKey) return NextResponse.json({ error: 'Missing env' }, { status: 500 })
 
   const supabase = createClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const result = await runWmsSync({
-    adapter: getWmsAdapter(),
-    db: dbPort(supabase), log: logPort(supabase),
-    opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'cron' },
-  })
-  const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
-  return NextResponse.json(result, { status: code })
+  try {
+    const result = await runWmsSync({
+      adapter: getWmsAdapter(),
+      db: dbPort(supabase), log: logPort(supabase),
+      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'cron' },
+    })
+    const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
+    return NextResponse.json(result, { status: code })
+  } catch (e) {
+    console.error('[cron/wms-sync]', e)
+    return NextResponse.json({ error: 'Sync failed', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+  }
 }

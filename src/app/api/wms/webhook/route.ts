@@ -24,11 +24,16 @@ export async function POST(req: NextRequest) {
 
   const today = new Date().toISOString().slice(0, 10)
   const supabase = createClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const result = await runWmsSync({
-    adapter: getWmsAdapter(),
-    db: dbPort(supabase), log: logPort(supabase),
-    opts: { brands: BRANDS, tables: TABLES, range: { start: today, end: today }, trigger: 'webhook' },
-  })
-  const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
-  return NextResponse.json(result, { status: code })
+  try {
+    const result = await runWmsSync({
+      adapter: getWmsAdapter(),
+      db: dbPort(supabase), log: logPort(supabase),
+      opts: { brands: BRANDS, tables: TABLES, range: { start: today, end: today }, trigger: 'webhook' },
+    })
+    const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
+    return NextResponse.json(result, { status: code })
+  } catch (e) {
+    console.error('[wms/webhook]', e)
+    return NextResponse.json({ error: 'Sync failed', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+  }
 }

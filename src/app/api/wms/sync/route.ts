@@ -42,11 +42,16 @@ export async function POST(req: NextRequest) {
   }
 
   const service = createClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const result = await runWmsSync({
-    adapter: getWmsAdapter(),
-    db: dbPort(service), log: logPort(service),
-    opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
-  })
-  const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
-  return NextResponse.json(result, { status: code })
+  try {
+    const result = await runWmsSync({
+      adapter: getWmsAdapter(),
+      db: dbPort(service), log: logPort(service),
+      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
+    })
+    const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
+    return NextResponse.json(result, { status: code })
+  } catch (e) {
+    console.error('[wms/sync]', e)
+    return NextResponse.json({ error: 'Sync failed', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+  }
 }
