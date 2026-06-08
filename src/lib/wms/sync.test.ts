@@ -68,4 +68,24 @@ describe('runWmsSync', () => {
     expect(res.tables['products'] ?? 0).toBe(0)
     expect(res.status).toBe('success')
   })
+
+  it('skips remaining tables of a brand after its first table fails', async () => {
+    const fake = new FakeSupabase()
+    const { db, log } = makePorts(fake)
+    const adapter = new MockWmsAdapter()
+    // amura's sales (first table) throws; its crm (second table) must be skipped.
+    const origSales = adapter.fetchSales.bind(adapter)
+    adapter.fetchSales = async (brand, range) => {
+      if (brand === 'amura') throw new Error('sales boom')
+      return origSales(brand, range)
+    }
+    const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow', 'amura'] as Brand[], tables: ['sales', 'crm'] }) })
+    expect(res.status).toBe('partial')
+    // amura wrote nothing (sales threw, crm skipped due to break)
+    expect((fake.store['sales'] ?? []).some(r => r.brand === 'amura')).toBe(false)
+    expect((fake.store['crm'] ?? []).some(r => r.brand === 'amura')).toBe(false)
+    // reglow wrote both tables
+    expect((fake.store['sales'] ?? []).some(r => r.brand === 'reglow')).toBe(true)
+    expect((fake.store['crm'] ?? []).some(r => r.brand === 'reglow')).toBe(true)
+  })
 })
