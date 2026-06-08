@@ -24,7 +24,7 @@ export function crmToDb(r: WithWmsId<CRMRow>, brand: Brand) {
 export function productToDb(r: WithWmsId<ProductMaster>, brand: Brand) {
   return {
     brand, wms_id: r.wmsId, origin: 'wms' as const,
-    id: r.id, sku: r.sku, name: r.name, price: r.price, cogs: r.cogs,
+    sku: r.sku, name: r.name, price: r.price, cogs: r.cogs,
     margin: margin(r.price, r.cogs),
   }
 }

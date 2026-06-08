@@ -25,5 +25,7 @@ When the WMS API token + docs arrive:
 2. Vercel env (all envs): `WMS_SYNC_ENABLED=mock`, `NEXT_PUBLIC_WMS_MODE=mock`,
    `WMS_WEBHOOK_SECRET=<generate>`. Leave `WMS_API_*` empty.
 3. Enable Supabase Realtime replication for `sales`, `crm`.
-4. Push branch → dev → verify `/wms` works on mock, hourly cron writes mock rows,
-   history populates → merge to main.
+4. Push branch → dev → verify `/wms` works on mock. During the mock phase the hourly
+   cron is a **NO-OP** (it returns `{skipped:true}` when `WMS_SYNC_ENABLED !== 'live'`),
+   so mock testing is done via the manual "Sync Sekarang" button on `/wms`. Confirm a
+   `success` row appears in the sync history after clicking it → merge to main.

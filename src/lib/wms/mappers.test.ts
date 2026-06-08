@@ -27,6 +27,7 @@ describe('productToDb', () => {
     expect(rec.brand).toBe('amura')
     expect(rec.sku).toBe('SKU1')
     expect(rec.margin).toBe(60)
+    expect('id' in rec).toBe(false)
   })
 
   it('returns margin 0 when price is 0', () => {

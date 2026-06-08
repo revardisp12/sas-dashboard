@@ -24,6 +24,14 @@ export async function POST(req: NextRequest) {
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  // The unattended hourly cron must not write mock data into production tables.
+  // It activates automatically once WMS_SYNC_ENABLED=live. Manual Sync Now + webhook
+  // still run in mock mode for on-demand testing.
+  if ((process.env.WMS_SYNC_ENABLED ?? 'mock') !== 'live') {
+    return NextResponse.json({ skipped: true, reason: 'WMS_SYNC_ENABLED is not live; cron no-op in mock mode' }, { status: 200 })
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !serviceKey) return NextResponse.json({ error: 'Missing env' }, { status: 500 })
