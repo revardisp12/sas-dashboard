@@ -65,6 +65,8 @@ export default function UserManagement({ brandColor }: Props) {
     setLoading(false)
   }
 
+  // Fetch users from Supabase on mount (external system).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadUsers() }, [])
 
   const filteredUsers = users.filter(u => {

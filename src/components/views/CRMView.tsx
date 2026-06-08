@@ -56,6 +56,9 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
   const brandProducts = products.filter(p => p.brand === brand)
   const brandBundles = bundles.filter(b => b.brand === brand)
 
+  // Reads tasks from localStorage (external system) and reloads on brand switch —
+  // a legitimate effect, not derivable during render.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setTasks(loadTasks().filter(t => t.brand === brand)) }, [brand])
 
   const filtered = useMemo(() => filterByDaysCRM(data, timeframe), [data, timeframe])
@@ -249,7 +252,6 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
           customers={customers}
           segmentCounts={segmentCounts}
           matrixCount={matrixCount}
-          todayStr={todayStr}
           onCustomerClick={setSelectedCustomer}
           onAddTaskClick={openAddTask}
         />

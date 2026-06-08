@@ -57,7 +57,6 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
   })
   const prodList = Object.entries(prodMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.revenue - a.revenue)
   const topProds = prodList.slice(0, 3)
-  const slowProds = [...prodList].sort((a, b) => a.revenue - b.revenue).slice(0, 2)
   const brandProducts = products.filter(p => p.brand === brand)
 
   const igFollowers = ig.length > 0 ? ig[ig.length - 1].followers : 0

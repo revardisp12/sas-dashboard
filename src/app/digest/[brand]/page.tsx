@@ -31,6 +31,9 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    // window.location is client-only; reading it post-mount avoids an SSR
+    // hydration mismatch on the digest text URL.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrigin(window.location.origin)
   }, [])
 

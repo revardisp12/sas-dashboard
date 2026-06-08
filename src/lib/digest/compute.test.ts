@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeDigest, ComputeInput } from './compute'
-import type { SalesRow, CRMRow, GoogleAdsRow, MetaAdsRow, TikTokShopRow, ShopeeRow } from '@/lib/types'
+import type { SalesRow, CRMRow } from '@/lib/types'
 
 function emptyInput(): ComputeInput {
   return {
