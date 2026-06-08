@@ -19,7 +19,9 @@ function datesInRange(range: WmsDateRange): string[] {
 export class MockWmsAdapter implements WmsAdapter {
   readonly mode = 'mock' as const
 
-  async fetchSales(brand: Brand, range: WmsDateRange): Promise<WithWmsId<SalesRow>[]> {
+  // Defined as class fields (own properties) so `delete instance.method`
+  // actually removes the method — enabling the "adapter doesn't expose table" test path.
+  fetchSales = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<SalesRow>[]> => {
     const rows: WithWmsId<SalesRow>[] = []
     for (const date of datesInRange(range)) {
       const n = 1 + Math.floor(seeded(`${brand}${date}count`) * 3)
@@ -40,26 +42,24 @@ export class MockWmsAdapter implements WmsAdapter {
     return rows
   }
 
-  async fetchCRM(brand: Brand, range: WmsDateRange): Promise<WithWmsId<CRMRow>[]> {
-    return datesInRange(range).map((date, i) => ({
+  fetchCRM = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<CRMRow>[]> =>
+    datesInRange(range).map((date, i) => ({
       wmsId: `${brand}-crm-${date}-${i}`, date,
       customerName: `Customer ${Math.floor(seeded(`${brand}${date}crm`) * 1000)}`,
       phone: `08${Math.floor(seeded(`${brand}${date}crmph`) * 1e9)}`,
       product: `SKU${1 + Math.floor(seeded(`${brand}${date}crmp`) * 5)}`,
       qty: 1, revenue: 50000 + Math.floor(seeded(`${brand}${date}crmr`) * 150000),
     }))
-  }
 
-  async fetchProducts(brand: Brand): Promise<WithWmsId<ProductMaster>[]> {
-    return Array.from({ length: 5 }, (_, i) => {
+  fetchProducts = async (brand: Brand): Promise<WithWmsId<ProductMaster>[]> =>
+    Array.from({ length: 5 }, (_, i) => {
       const price = 80000 + Math.floor(seeded(`${brand}prod${i}`) * 120000)
       const cogs = Math.floor(price * 0.4)
       return { wmsId: `${brand}-prod-${i}`, id: `${brand}-prod-${i}`, sku: `SKU${i + 1}`, name: `Mock Product ${i + 1}`, price, cogs, margin: 0, brand }
     })
-  }
 
-  async fetchGoogleAds(brand: Brand, range: WmsDateRange): Promise<WithWmsId<GoogleAdsRow>[]> {
-    return datesInRange(range).map((date) => {
+  fetchGoogleAds = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<GoogleAdsRow>[]> =>
+    datesInRange(range).map((date) => {
       const clicks = 50 + Math.floor(seeded(`${brand}${date}gclk`) * 500)
       const spend = 100000 + Math.floor(seeded(`${brand}${date}gsp`) * 900000)
       return {
@@ -68,10 +68,9 @@ export class MockWmsAdapter implements WmsAdapter {
         spend, conversions: Math.floor(clicks * 0.05), convRate: 5, roas: 3,
       }
     })
-  }
 
-  async fetchMetaAds(brand: Brand, range: WmsDateRange): Promise<WithWmsId<MetaAdsRow>[]> {
-    return datesInRange(range).map((date) => {
+  fetchMetaAds = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<MetaAdsRow>[]> =>
+    datesInRange(range).map((date) => {
       const clicks = 80 + Math.floor(seeded(`${brand}${date}mclk`) * 600)
       const spend = 150000 + Math.floor(seeded(`${brand}${date}msp`) * 1000000)
       return {
@@ -81,5 +80,4 @@ export class MockWmsAdapter implements WmsAdapter {
         results: Math.floor(clicks * 0.06),
       }
     })
-  }
 }

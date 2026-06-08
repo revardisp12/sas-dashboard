@@ -27,7 +27,7 @@ export interface WmsAdapter {
 
 export interface SyncOptions {
   brands: Brand[]
-  tables: WmsTable[]
+  tables: readonly WmsTable[]
   range: WmsDateRange
   trigger: 'cron' | 'webhook' | 'manual'
   triggeredBy?: string
