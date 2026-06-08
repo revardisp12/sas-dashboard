@@ -18,6 +18,7 @@ import {
   replaceTikTokOrganic, appendTikTokOrganic,
   replaceFacebookOrganic, appendFacebookOrganic,
 } from '@/lib/db'
+import { useRealtimeSync } from '@/lib/wms/useRealtimeSync'
 import Sidebar from '@/components/Sidebar'
 import TimeframeSelector from '@/components/TimeframeSelector'
 import OverviewView from '@/components/views/OverviewView'
@@ -151,6 +152,9 @@ export default function Dashboard() {
       setDataLoading(false)
     }
   }, [user])
+
+  const onRealtime = useCallback(() => { if (user) loadData(brand) }, [user, brand, loadData])
+  useRealtimeSync(brand, onRealtime)
 
   useEffect(() => {
     // Fetch brand data from Supabase on auth/brand change (external system).
