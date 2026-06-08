@@ -12,8 +12,7 @@ export default function SyncHistory({ refreshKey }: { refreshKey: number }) {
     let cancelled = false
     async function load() {
       setLoading(true)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sync_log not yet in generated types (added later task)
-      const { data } = await (supabase as any).from('sync_log').select('*').order('started_at', { ascending: false }).limit(20)
+      const { data } = await supabase.from('sync_log').select('*').order('started_at', { ascending: false }).limit(20)
       if (!cancelled) { setRows((data ?? []) as LogRow[]); setLoading(false) }
     }
     load()

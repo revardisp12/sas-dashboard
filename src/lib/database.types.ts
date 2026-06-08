@@ -54,10 +54,12 @@ export type Database = {
           customer_name: string | null
           date: string
           id: string
+          origin: string
           phone: string | null
           product: string
           qty: number
           revenue: number
+          wms_id: string | null
         }
         Insert: {
           brand: string
@@ -65,10 +67,12 @@ export type Database = {
           customer_name?: string | null
           date: string
           id?: string
+          origin?: string
           phone?: string | null
           product?: string
           qty?: number
           revenue?: number
+          wms_id?: string | null
         }
         Update: {
           brand?: string
@@ -76,10 +80,12 @@ export type Database = {
           customer_name?: string | null
           date?: string
           id?: string
+          origin?: string
           phone?: string | null
           product?: string
           qty?: number
           revenue?: number
+          wms_id?: string | null
         }
         Relationships: []
       }
@@ -153,8 +159,10 @@ export type Database = {
           date: string
           id: string
           impressions: number | null
+          origin: string
           roas: number | null
           spend: number | null
+          wms_id: string | null
         }
         Insert: {
           brand: string
@@ -168,8 +176,10 @@ export type Database = {
           date: string
           id?: string
           impressions?: number | null
+          origin?: string
           roas?: number | null
           spend?: number | null
+          wms_id?: string | null
         }
         Update: {
           brand?: string
@@ -183,8 +193,10 @@ export type Database = {
           date?: string
           id?: string
           impressions?: number | null
+          origin?: string
           roas?: number | null
           spend?: number | null
+          wms_id?: string | null
         }
         Relationships: []
       }
@@ -235,11 +247,13 @@ export type Database = {
           date: string
           id: string
           impressions: number | null
+          origin: string
           purchases: number | null
           reach: number | null
           results: number | null
           roas: number | null
           spend: number | null
+          wms_id: string | null
         }
         Insert: {
           brand: string
@@ -251,11 +265,13 @@ export type Database = {
           date: string
           id?: string
           impressions?: number | null
+          origin?: string
           purchases?: number | null
           reach?: number | null
           results?: number | null
           roas?: number | null
           spend?: number | null
+          wms_id?: string | null
         }
         Update: {
           brand?: string
@@ -267,11 +283,13 @@ export type Database = {
           date?: string
           id?: string
           impressions?: number | null
+          origin?: string
           purchases?: number | null
           reach?: number | null
           results?: number | null
           roas?: number | null
           spend?: number | null
+          wms_id?: string | null
         }
         Relationships: []
       }
@@ -283,8 +301,10 @@ export type Database = {
           id: string
           margin: number
           name: string
+          origin: string
           price: number
           sku: string
+          wms_id: string | null
         }
         Insert: {
           brand: string
@@ -293,8 +313,10 @@ export type Database = {
           id?: string
           margin?: number
           name: string
+          origin?: string
           price?: number
           sku: string
+          wms_id?: string | null
         }
         Update: {
           brand?: string
@@ -303,8 +325,10 @@ export type Database = {
           id?: string
           margin?: number
           name?: string
+          origin?: string
           price?: number
           sku?: string
+          wms_id?: string | null
         }
         Relationships: []
       }
@@ -319,11 +343,13 @@ export type Database = {
           date: string
           gross_profit: number | null
           id: string
+          origin: string
           phone: string | null
           product: string
           qty: number
           revenue: number
           source: string | null
+          wms_id: string | null
         }
         Insert: {
           address?: string | null
@@ -335,11 +361,13 @@ export type Database = {
           date: string
           gross_profit?: number | null
           id?: string
+          origin?: string
           phone?: string | null
           product?: string
           qty?: number
           revenue?: number
           source?: string | null
+          wms_id?: string | null
         }
         Update: {
           address?: string | null
@@ -351,11 +379,46 @@ export type Database = {
           date?: string
           gross_profit?: number | null
           id?: string
+          origin?: string
           phone?: string | null
           product?: string
           qty?: number
           revenue?: number
           source?: string | null
+          wms_id?: string | null
+        }
+        Relationships: []
+      }
+      sync_log: {
+        Row: {
+          error: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          tables: Json | null
+          trigger: string
+          triggered_by: string | null
+        }
+        Insert: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status: string
+          tables?: Json | null
+          trigger: string
+          triggered_by?: string | null
+        }
+        Update: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          tables?: Json | null
+          trigger?: string
+          triggered_by?: string | null
         }
         Relationships: []
       }
