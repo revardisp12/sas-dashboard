@@ -15,8 +15,8 @@ const eslintConfig = defineConfig([
   ]),
   {
     rules: {
-      // Allow underscore-prefixed parameters as intentional no-ops (e.g. throwing stubs).
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // Underscore-prefixed params/vars are intentionally unused (e.g. throwing stubs, Phase 3 placeholders).
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 ]);

@@ -35,6 +35,7 @@ import CRMView from '@/components/views/CRMView'
 import ProductAnalysisView from '@/components/views/ProductAnalysisView'
 import PerformanceView from '@/components/views/PerformanceView'
 import SettingsView from '@/components/views/SettingsView'
+import KolView from '@/components/kol/KolView'
 import LoginPage from '@/components/LoginPage'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
@@ -42,7 +43,7 @@ const VIEW_LABELS: Record<ActiveView, string> = {
   sales: 'Sales Acquisition by CS', crm: 'Sales Retention by CRM', 'product-analysis': 'Product Analysis',
   'google-ads': 'Google Ads', 'meta-ads': 'Meta Ads', 'tiktok-shop': 'TikTok Shop',
   shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic', 'facebook-organic': 'Facebook Organic',
-  settings: 'Settings',
+  settings: 'Settings', kol: 'KOL Management',
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
 
@@ -172,6 +173,7 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         if (role === 'cs') setView('sales')
         else if (role === 'crm') setView('crm')
+        else if (role === 'kol_specialist') setView('kol')
         else setView('overview')
       }
     }
@@ -443,6 +445,7 @@ export default function Dashboard() {
           {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
+          {view === 'kol' && <KolView brand={brand} />}
         </main>
       </div>
 

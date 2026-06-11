@@ -125,6 +125,10 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
         {accessible('performance') && <NavItem icon={Activity} label="Performance" color="#10B981" active={view === 'performance'} onClick={() => onViewChange('performance')} />}
         {accessible('product-analysis') && <NavItem icon={Package} label="Product Analysis" color="#00D4FF" active={view === 'product-analysis'} onClick={() => onViewChange('product-analysis')} />}
 
+        {accessible('kol') && (userRole === 'super_admin' || userRole === 'admin' || userRole === 'kol_specialist') && (
+          <NavItem icon={Users} label="KOL Management" color="#8B5CF6" active={view === 'kol'} onClick={() => onViewChange('kol')} />
+        )}
+
         {(accessible('google-ads') || accessible('meta-ads') || accessible('tiktok-shop') || accessible('shopee')) && (
           <>
             <div className="py-1" />

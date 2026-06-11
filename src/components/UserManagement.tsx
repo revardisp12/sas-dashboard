@@ -19,6 +19,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   manager: 'Manager',
   cs: 'CS',
   crm: 'CRM',
+  kol_specialist: 'KOL Specialist',
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -27,6 +28,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   manager: '#D97706',
   cs: '#2563EB',
   crm: '#059669',
+  kol_specialist: '#0891B2',
 }
 
 type BrandFilter = 'all' | 'reglow' | 'amura' | 'purela'
@@ -47,7 +49,7 @@ export default function UserManagement({ brandColor }: Props) {
 
   const isSuper = myProfile?.role === 'super_admin'
   const availableRoles: UserRole[] = isSuper
-    ? ['super_admin', 'admin', 'manager', 'cs', 'crm']
+    ? ['super_admin', 'admin', 'manager', 'cs', 'crm', 'kol_specialist']
     : ['manager', 'cs', 'crm']
 
   async function loadUsers() {
