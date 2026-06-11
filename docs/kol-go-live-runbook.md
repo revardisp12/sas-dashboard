@@ -12,3 +12,5 @@ Plan ≥ 1000 req/mo (~800 content × 2 refresh/wk).
 2. Assign a kol_specialist user a `brand` in `user_profiles` (or via Settings → Users as super_admin).
 3. Vercel env: `KOL_METRICS_ENABLED=manual` (cron is a NO-OP in manual mode). Metrics entered by hand.
 4. Push feature → dev → verify preview (`npx next start` after build; NOT `next dev`) → merge main.
+
+> **Note — bulk-link import partial-failure risk:** The bulk-link import currently uses `Promise.all` for per-link metric pulls — if one pull rejects in live mode the whole batch aborts (no partial save). Before heavy live use, consider inserting rows first (`metrics_source='manual'`) and letting the refresh cron backfill.

@@ -169,6 +169,7 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         if (role === 'cs') setView('sales')
         else if (role === 'crm') setView('crm')
+        else if (role === 'kol_specialist') setView('kol')
         else setView('overview')
       }
     }
