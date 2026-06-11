@@ -545,6 +545,174 @@ export type Database = {
         }
         Relationships: []
       }
+      kol_budgets: {
+        Row: {
+          brand: string
+          created_at: string | null
+          id: string
+          name: string
+          nominal: number
+        }
+        Insert: {
+          brand: string
+          created_at?: string | null
+          id?: string
+          name: string
+          nominal?: number
+        }
+        Update: {
+          brand?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          nominal?: number
+        }
+        Relationships: []
+      }
+      kol_campaigns: {
+        Row: {
+          brand: string
+          budget_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          period_end: string | null
+          period_start: string | null
+          status: string
+        }
+        Insert: {
+          brand: string
+          budget_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+        }
+        Update: {
+          brand?: string
+          budget_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      kol_contents: {
+        Row: {
+          brand: string
+          campaign_id: string | null
+          comments: number
+          content_url: string | null
+          created_at: string | null
+          fee: number
+          funnel_objective: string
+          id: string
+          influencer_id: string | null
+          likes: number
+          metrics_fetched_at: string | null
+          metrics_source: string
+          platform: string | null
+          posted_at: string | null
+          product: string | null
+          saved: number
+          shares: number
+          status: string
+          task: string | null
+          video_views: number
+        }
+        Insert: {
+          brand: string
+          campaign_id?: string | null
+          comments?: number
+          content_url?: string | null
+          created_at?: string | null
+          fee?: number
+          funnel_objective?: string
+          id?: string
+          influencer_id?: string | null
+          likes?: number
+          metrics_fetched_at?: string | null
+          metrics_source?: string
+          platform?: string | null
+          posted_at?: string | null
+          product?: string | null
+          saved?: number
+          shares?: number
+          status?: string
+          task?: string | null
+          video_views?: number
+        }
+        Update: {
+          brand?: string
+          campaign_id?: string | null
+          comments?: number
+          content_url?: string | null
+          created_at?: string | null
+          fee?: number
+          funnel_objective?: string
+          id?: string
+          influencer_id?: string | null
+          likes?: number
+          metrics_fetched_at?: string | null
+          metrics_source?: string
+          platform?: string | null
+          posted_at?: string | null
+          product?: string | null
+          saved?: number
+          shares?: number
+          status?: string
+          task?: string | null
+          video_views?: number
+        }
+        Relationships: []
+      }
+      kol_influencers: {
+        Row: {
+          brand: string
+          contact: string | null
+          created_at: string | null
+          followers: number
+          id: string
+          name: string
+          niche: string | null
+          notes: string | null
+          platform: string | null
+          username: string | null
+        }
+        Insert: {
+          brand: string
+          contact?: string | null
+          created_at?: string | null
+          followers?: number
+          id?: string
+          name: string
+          niche?: string | null
+          notes?: string | null
+          platform?: string | null
+          username?: string | null
+        }
+        Update: {
+          brand?: string
+          contact?: string | null
+          created_at?: string | null
+          followers?: number
+          id?: string
+          name?: string
+          niche?: string | null
+          notes?: string | null
+          platform?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           brand: string | null
