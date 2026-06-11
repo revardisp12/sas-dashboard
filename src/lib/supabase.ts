@@ -6,7 +6,7 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient<Database>(url, key)
 
-export type UserRole = 'super_admin' | 'admin' | 'manager' | 'cs' | 'crm'
+export type UserRole = 'super_admin' | 'admin' | 'manager' | 'cs' | 'crm' | 'kol_specialist'
 export type UserBrand = 'reglow' | 'amura' | 'purela' | null
 
 export interface UserProfile {
