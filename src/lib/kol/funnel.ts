@@ -10,7 +10,7 @@ export const awarenessSig = (c: KolContent) => c.views + c.likes
 export const considerationSig = (c: KolContent) => c.comments + c.saved + c.shares
 export function tierTotals(contents: KolContent[]) {
   return contents.reduce(
-    (acc, c) => ({ awareness: acc.awareness + awarenessSig(c), consideration: acc.consideration + considerationSig(c), action: acc.action }),
+    (acc, c) => ({ awareness: acc.awareness + awarenessSig(c), consideration: acc.consideration + considerationSig(c), action: acc.action /* Phase 3: clicks/promo, not tracked yet */ }),
     { awareness: 0, consideration: 0, action: 0 },
   )
 }
