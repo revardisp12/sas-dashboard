@@ -72,23 +72,47 @@ Budget ──(allocation)──▶ Campaign ──(contains)──▶ Konten KOL
 - CRUD campaigns: name, brand, linked budget, period_start, period_end, description, status
   (`active` / `ended`).
 - Campaign detail view shows:
-  - **KPI cards:** total reach/views, total engagement (likes+comments+saved+shares),
-    **ER%** = engagement ÷ views, **CPV** = total fee ÷ views, **CPE** = total fee ÷ engagement.
-  - **Trend chart:** engagement/views over time (by content posted_at).
-  - **KOL Leaderboard:** influencers in the campaign ranked by engagement (toggle to efficiency).
-  - **Content list:** all `kol_contents` in the campaign.
+  - **Funnel-tier signal cards (core):** engagement is NOT shown as a single total. It is split
+    by funnel tier (see §5.5) so content with different objectives is compared fairly. One card
+    per tier (Awareness / Consideration / Action), each showing the tier's total signals + how
+    many content target that tier.
+  - **Efficiency cards:** Total Views/Reach, Total Fee, **CPV** = total fee ÷ views.
+  - **Trend chart:** Awareness vs Consideration signals over time (by content posted_at).
+  - **KOL Leaderboard:** each content ranked by its signal **within its own objective tier** (an
+    awareness-objective content is judged on awareness signals), with a tier badge per row.
+  - **Content list:** all `kol_contents` in the campaign, each tagged with its objective tier.
+- A single blended "engagement rate / total engagement" is intentionally **dropped** in favor of
+  per-tier signals — different tiers optimize different metrics.
 - ROI/sales attribution is explicitly **out of MVP** (Phase 3).
 
 ### 5.4 Konten KOL
 - CRUD content rows: campaign, influencer (from Database KOL), platform, product, task,
-  `content_url`, status (`uploaded` / `broken` / `pending`), fee, posted_at, and metrics
-  (likes, comments, saved, shares, video_views).
+  **funnel objective** (`awareness` / `consideration` / `action` — the content's intended
+  funnel tier, chosen at input), `content_url`, status (`uploaded` / `broken` / `pending`),
+  fee, posted_at, and metrics (likes, comments, saved, shares, video_views).
 - **Auto-pull metrics from URL** — see §6. On save with a valid URL, the system attempts to
   fetch metrics; on success it fills them and tags `metrics_source='api'`. Manual entry is
   always allowed and overrides.
-- Table view: all content per campaign/influencer with metrics + an origin indicator
-  (`api` vs `manual`) and `metrics_fetched_at`.
+- Table view: all content per campaign/influencer with an **Objective** badge, a **tier-signal**
+  column (the content's performance on its objective tier — see §5.5), metrics, an origin
+  indicator (`api` vs `manual`) and `metrics_fetched_at`.
 - CSV import + template.
+
+### 5.5 Funnel-tier engagement model (Marcomm framework)
+Engagement is analyzed per funnel tier instead of as one lumped number, because different
+content serves different funnel stages. Each content carries an **objective** (its intended tier);
+metrics roll up into tier "signals":
+
+| Tier | Objective | Signals (metrics) |
+|------|-----------|-------------------|
+| **Awareness** | reach & visibility | Views + Likes |
+| **Consideration** | interest & intent | Comments + Saves + Shares |
+| **Action** | conversion (Phase 3) | Link clicks + Promo redemptions |
+
+This lets the team check, per tier, which content actually performs for the stage it was made for
+(e.g., an awareness-objective Reel judged on Awareness signals). The metric→tier mapping above is
+the agreed default; it lives in one config constant so it can be tuned later without code changes
+elsewhere.
 
 ## 6. Metrics Auto-Pull — Adapter Seam
 
@@ -128,7 +152,8 @@ kol_budgets       id, brand, name, nominal, created_at
 kol_campaigns     id, brand, name, budget_id → kol_budgets, period_start, period_end,
                   description, status ('active'|'ended'), created_at
 kol_contents      id, brand, campaign_id → kol_campaigns, influencer_id → kol_influencers,
-                  platform, product, task, content_url, status ('uploaded'|'broken'|'pending'),
+                  platform, product, task, funnel_objective ('awareness'|'consideration'|'action'),
+                  content_url, status ('uploaded'|'broken'|'pending'),
                   fee, likes, comments, saved, shares, video_views,
                   metrics_source ('api'|'manual'), metrics_fetched_at, posted_at, created_at
 ```
@@ -137,8 +162,8 @@ kol_contents      id, brand, campaign_id → kol_campaigns, influencer_id → ko
   pattern. `kol_specialist` reads/writes only its brand; `super_admin` all brands.
 - Apply the **GRANT + ALTER DEFAULT PRIVILEGES** lesson so new tables don't 403 (already in place
   project-wide).
-- Derived metrics (ER%, CPV, CPE, leaderboard rank, budget utilization) are **computed in the app**,
-  not stored.
+- Derived metrics (per-tier signals, CPV, leaderboard rank, budget utilization) are **computed in
+  the app**, not stored. The tier→metric mapping (§5.5) lives in one config constant.
 
 ## 8. Roles & Access
 
@@ -173,6 +198,7 @@ kol_contents      id, brand, campaign_id → kol_campaigns, influencer_id → ko
 
 - Exact RapidAPI plan + per-call field mapping (resolved when the key + docs are available; isolated
   to `RapidApiProvider`).
-- ER% denominator preference: views (default) vs follower-based reach — confirm with the team at build.
+- Funnel-tier metric mapping (§5.5) is the agreed Marcomm default (Awareness=Views+Likes,
+  Consideration=Comments+Saves+Shares, Action=clicks/promo). Tunable later via the config constant.
 - Whether budget pools are per-campaign or shared across campaigns within a brand (MVP assumes a
   pool can back multiple campaigns; utilization sums across them).
