@@ -49,7 +49,7 @@ export default function UserManagement({ brandColor }: Props) {
 
   const isSuper = myProfile?.role === 'super_admin'
   const availableRoles: UserRole[] = isSuper
-    ? ['super_admin', 'admin', 'manager', 'cs', 'crm']
+    ? ['super_admin', 'admin', 'manager', 'cs', 'crm', 'kol_specialist']
     : ['manager', 'cs', 'crm']
 
   async function loadUsers() {

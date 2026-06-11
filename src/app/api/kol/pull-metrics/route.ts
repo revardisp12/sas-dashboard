@@ -24,12 +24,13 @@ export async function POST(req: NextRequest) {
   const { data: userData, error: userErr } = await supabase.auth.getUser()
   if (userErr || !userData?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profErr } = await supabase
     .from('user_profiles')
     .select('role')
     .eq('id', userData.user.id)
     .single()
 
+  if (profErr) return NextResponse.json({ error: 'Profile lookup failed', detail: profErr.message }, { status: 500 })
   if (!profile || !(['super_admin', 'admin', 'kol_specialist'] as string[]).includes(profile.role as string)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
