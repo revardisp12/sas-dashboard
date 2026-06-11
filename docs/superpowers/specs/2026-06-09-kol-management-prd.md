@@ -78,8 +78,7 @@ Budget ──(allocation)──▶ Campaign ──(contains)──▶ Konten KOL
     many content target that tier.
   - **Efficiency cards:** Total Views/Reach, Total Fee, **CPV** = total fee ÷ views.
   - **Trend chart:** Awareness vs Consideration signals over time (by content posted_at).
-  - **KOL Leaderboard:** each content ranked by its signal **within its own objective tier** (an
-    awareness-objective content is judged on awareness signals), with a tier badge per row.
+  - **KOL Leaderboard:** content ranked by **total views/reach**, with an objective badge per row.
   - **Content list:** all `kol_contents` in the campaign, each tagged with its objective tier.
 - A single blended "engagement rate / total engagement" is intentionally **dropped** in favor of
   per-tier signals — different tiers optimize different metrics.
@@ -93,9 +92,9 @@ Budget ──(allocation)──▶ Campaign ──(contains)──▶ Konten KOL
 - **Auto-pull metrics from URL** — see §6. On save with a valid URL, the system attempts to
   fetch metrics; on success it fills them and tags `metrics_source='api'`. Manual entry is
   always allowed and overrides.
-- Table view: all content per campaign/influencer with an **Objective** badge, a **tier-signal**
-  column (the content's performance on its objective tier — see §5.5), metrics, an origin
-  indicator (`api` vs `manual`) and `metrics_fetched_at`.
+- Table view: all content per campaign/influencer with an **Objective** badge, the raw metrics
+  (views, likes, comments, saves, shares), an origin indicator (`api` vs `manual`) and
+  `metrics_fetched_at`.
 - **Bulk upload** (two modes): (a) CSV import with template, and (b) **paste many video links at
   once** (one per line). Either way, each row runs the auto-pull (§6) per content URL on submit —
   so a batch of links is enriched with metrics in one action.
@@ -111,10 +110,11 @@ metrics roll up into tier "signals":
 | **Consideration** | interest & intent | Comments + Saves + Shares |
 | **Action** | conversion (Phase 3) | Link clicks + Promo redemptions |
 
-This lets the team check, per tier, which content actually performs for the stage it was made for
-(e.g., an awareness-objective Reel judged on Awareness signals). The metric→tier mapping above is
-the agreed default; it lives in one config constant so it can be tuned later without code changes
-elsewhere.
+Each content carries an objective tier (set at input), and the campaign view rolls metrics up into
+these tier buckets — so the team sees, per tier, the aggregate signal and how many content target
+that tier. (We deliberately do NOT show a per-content "tier score" — it was confusing; content rows
+show raw metrics + an objective badge instead.) The metric→tier mapping above is the agreed default;
+it lives in one config constant so it can be tuned later without code changes elsewhere.
 
 ## 6. Metrics Auto-Pull — Adapter Seam
 

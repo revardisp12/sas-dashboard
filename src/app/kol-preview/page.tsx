@@ -52,7 +52,6 @@ const TIER = {
 // signals per tier
 const awarenessSig = (c: typeof contents[number]) => c.views + c.likes
 const considerationSig = (c: typeof contents[number]) => c.comments + c.saved + c.shares
-const actionSig = (_c: typeof contents[number]) => 0 // Phase 3: link clicks + promo redemptions
 
 const trend = [
   { d: '06-01', awareness: 199400, consideration: 1400 },
@@ -62,8 +61,6 @@ const trend = [
 ]
 
 const nameOf = (id: string) => influencers.find(i => i.id === id)?.name ?? '—'
-// sinyal sesuai objective tier konten (buat liat "konten ini perform di tier tujuannya nggak")
-const objSig = (c: typeof contents[number]) => c.objective === 'consideration' ? considerationSig(c) : c.objective === 'action' ? actionSig(c) : awarenessSig(c)
 
 export default function KolPreview() {
   const [tab, setTab] = useState<'db' | 'budget' | 'campaign' | 'konten'>('campaign')
@@ -143,7 +140,7 @@ function Campaign() {
   const awSig = live.reduce((s, c) => s + awarenessSig(c), 0)
   const conSig = live.reduce((s, c) => s + considerationSig(c), 0)
   const cnt = (t: Tier) => live.filter(c => c.objective === t).length
-  const board = [...live].sort((a, b) => objSig(b) - objSig(a))
+  const board = [...live].sort((a, b) => b.views - a.views)
 
   return (
     <div>
@@ -184,10 +181,10 @@ function Campaign() {
           </ResponsiveContainer>
         </Card>
 
-        {/* leaderboard — ranked by sinyal di objective tier-nya, badge tier per baris */}
+        {/* leaderboard — ranked by total views, badge objektif per baris */}
         <Card style={{ padding: 16 }}>
           <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>🏆 Leaderboard KOL</p>
-          <p style={{ fontSize: 11, color: C.sub, marginBottom: 10 }}>diranking dari sinyal di tier objektif masing-masing</p>
+          <p style={{ fontSize: 11, color: C.sub, marginBottom: 10 }}>diranking dari total views</p>
           {board.map((c, i) => {
             const m = TIER[c.objective]
             return (
@@ -197,7 +194,7 @@ function Campaign() {
                   <p style={{ fontSize: 13, fontWeight: 600 }}>{nameOf(c.inf)}</p>
                   <p style={{ fontSize: 11 }}><span style={{ color: m.fg, fontWeight: 600 }}>{m.label}</span> <span style={{ color: C.sub }}>· {c.platform}</span></p>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: m.color }}>{fmt(objSig(c))}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.cyan }}>{fmt(c.views)}</span>
               </div>
             )
           })}
@@ -259,10 +256,10 @@ function Konten() {
       )}
       <Card style={{ overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 1040 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 960 }}>
             <thead>
               <tr style={{ background: '#F9FAFB', color: C.sub, textAlign: 'left' }}>
-                {['Influencer', 'Plat', 'Objektif', 'Produk', 'URL', 'Status', 'Fee', 'Views', 'Likes', 'Sinyal Tier', 'Source'].map(h =>
+                {['Influencer', 'Plat', 'Objektif', 'Produk', 'URL', 'Status', 'Fee', 'Views', 'Likes', 'Source'].map(h =>
                   <th key={h} style={{ padding: '10px 12px', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>)}
               </tr>
             </thead>
@@ -280,7 +277,6 @@ function Konten() {
                   <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{c.fee ? rp(c.fee) : '—'}</td>
                   <td style={{ padding: '10px 12px' }}>{c.views ? fmt(c.views) : '—'}</td>
                   <td style={{ padding: '10px 12px' }}>{c.likes ? fmt(c.likes) : '—'}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: m.color }} title={`sinyal ${m.label}: ${m.desc}`}>{objSig(c) ? fmt(objSig(c)) : '—'}</td>
                   <td style={{ padding: '10px 12px' }}>{c.source === 'api'
                     ? <Badge text="API" bg="#DBEAFE" color="#1E40AF" /> : <Badge text="Manual" bg="#F3F4F6" color={C.sub} />}</td>
                 </tr>
