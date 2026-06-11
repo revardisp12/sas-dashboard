@@ -174,9 +174,7 @@ export default function CampaignTab({ brand }: { brand: Brand }) {
       return
     }
     let cancelled = false
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setContentsLoading(true)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError(null)
     getContents(brand, selectedId)
       .then(data => { if (!cancelled) setContents(data) })
