@@ -211,7 +211,26 @@ function Badge({ text, bg, color }: { text: string; bg: string; color: string })
   return <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: bg, color, fontWeight: 600 }}>{text}</span>
 }
 
+const btnPrimary: CSSProperties = { fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8, background: '#0EA5E9', color: '#fff', border: 'none', cursor: 'pointer' }
+const btnOutline: CSSProperties = { fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8, background: '#fff', color: '#0EA5E9', border: '1px solid #0EA5E9', cursor: 'pointer' }
+
+function BulkBox({ columns, children }: { columns: string; children?: ReactNode }) {
+  return (
+    <div style={{ border: `2px dashed ${C.border}`, borderRadius: 12, padding: 18, background: '#F8FAFC', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600 }}>⬆ Tarik &amp; lepas file CSV di sini, atau klik untuk pilih</p>
+          <p style={{ fontSize: 11, color: C.sub, marginTop: 3 }}>Kolom: {columns}</p>
+        </div>
+        <button style={{ fontSize: 12, fontWeight: 600, padding: '7px 12px', borderRadius: 8, background: '#fff', color: C.cyan, border: `1px solid ${C.cyan}`, cursor: 'pointer', whiteSpace: 'nowrap' }}>⬇ Download template</button>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 function Konten() {
+  const [bulk, setBulk] = useState(false)
   const statusBadge = (s: string) => s === 'uploaded' ? <Badge text="uploaded" bg="#DCFCE7" color="#166534" />
     : s === 'pending' ? <Badge text="pending" bg="#FEF3C7" color="#92400E" /> : <Badge text="broken" bg="#FEE2E2" color="#991B1B" />
 
@@ -219,9 +238,25 @@ function Konten() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700 }}>Konten KOL</h2>
-        <button style={{ fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8, background: C.cyan, color: '#fff', border: 'none' }}>+ Tambah Konten</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setBulk(v => !v)} style={btnOutline}>⬆ Bulk Upload Link</button>
+          <button style={btnPrimary}>+ Tambah Konten</button>
+        </div>
       </div>
       <p style={{ fontSize: 12, color: C.sub, marginBottom: 12 }}>💡 Paste <b>link video</b> di kolom URL → metrics auto-pull. Badge <b style={{ color: C.cyan }}>API</b> = otomatis, <b>Manual</b> = input tangan.</p>
+      {bulk && (
+        <BulkBox columns="campaign, influencer, platform, objective, product, task, content_url, fee">
+          <div style={{ marginTop: 14, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>…atau paste banyak link video sekaligus (1 per baris):</p>
+            <textarea defaultValue={''} placeholder={'tiktok.com/@.../video/...\ninstagram.com/reel/...\nyoutube.com/watch?v=...'}
+              style={{ width: '100%', minHeight: 84, fontSize: 12, padding: 10, borderRadius: 8, border: `1px solid ${C.border}`, fontFamily: 'monospace', resize: 'vertical' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, flexWrap: 'wrap', gap: 8 }}>
+              <p style={{ fontSize: 11, color: C.green }}>✓ Tiap link auto-pull metrics (likes/comments/views) begitu di-submit.</p>
+              <button style={btnPrimary}>Pull &amp; Simpan</button>
+            </div>
+          </div>
+        </BulkBox>
+      )}
       <Card style={{ overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 1040 }}>
@@ -293,12 +328,17 @@ function Budget() {
 }
 
 function Database() {
+  const [bulk, setBulk] = useState(false)
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700 }}>Database KOL</h2>
-        <button style={{ fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8, background: C.cyan, color: '#fff', border: 'none' }}>+ Tambah Influencer</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setBulk(v => !v)} style={btnOutline}>⬆ Bulk Upload</button>
+          <button style={btnPrimary}>+ Tambah Influencer</button>
+        </div>
       </div>
+      {bulk && <BulkBox columns="name, username, platform, followers, niche, contact" />}
       <Card style={{ overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>

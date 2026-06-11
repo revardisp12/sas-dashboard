@@ -96,7 +96,9 @@ Budget ──(allocation)──▶ Campaign ──(contains)──▶ Konten KOL
 - Table view: all content per campaign/influencer with an **Objective** badge, a **tier-signal**
   column (the content's performance on its objective tier — see §5.5), metrics, an origin
   indicator (`api` vs `manual`) and `metrics_fetched_at`.
-- CSV import + template.
+- **Bulk upload** (two modes): (a) CSV import with template, and (b) **paste many video links at
+  once** (one per line). Either way, each row runs the auto-pull (§6) per content URL on submit —
+  so a batch of links is enriched with metrics in one action.
 
 ### 5.5 Funnel-tier engagement model (Marcomm framework)
 Engagement is analyzed per funnel tier instead of as one lumped number, because different
