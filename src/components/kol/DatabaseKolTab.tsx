@@ -167,9 +167,11 @@ export default function DatabaseKolTab({ brand }: { brand: Brand }) {
         } satisfies Partial<KolInfluencer>))
 
         if (!rows.length) { setError('File CSV kosong atau tidak ada baris data.'); return }
+        const clean = rows.filter(r => (r.name ?? '').trim() !== '')
+        if (!clean.length) { setError('CSV kosong atau tidak ada kolom name.'); return }
         setError(null)
         try {
-          await bulkInsertInfluencers(rows, brand)
+          await bulkInsertInfluencers(clean, brand)
           setBulk(false)
           await loadInfluencers()
         } catch (e) {
@@ -201,15 +203,12 @@ export default function DatabaseKolTab({ brand }: { brand: Brand }) {
       {/* bulk upload box */}
       {bulk && (
         <div onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
-          <BulkUploadBox columns="name, username, platform, followers, niche, contact">
-            <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <BulkUploadBox
+            columns="name, username, platform, followers, niche, contact"
+            onDownloadTemplate={() => downloadTemplate()}
+          >
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
               <span style={{ fontSize: 12, color: C.sub }}>Klik area ini untuk pilih file CSV</span>
-              <button
-                onClick={(ev) => { ev.stopPropagation(); downloadTemplate() }}
-                style={{ fontSize: 12, fontWeight: 600, padding: '7px 12px', borderRadius: 8, background: '#fff', color: C.cyan, border: `1px solid ${C.cyan}`, cursor: 'pointer', whiteSpace: 'nowrap' }}
-              >
-                ⬇ Download template
-              </button>
             </div>
           </BulkUploadBox>
           <input
