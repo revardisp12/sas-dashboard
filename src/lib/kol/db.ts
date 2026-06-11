@@ -32,7 +32,7 @@ export async function getContents(brand: string, campaignId?: string): Promise<K
   let q = supabase.from('kol_contents').select('*').eq('brand', brand)
   if (campaignId) q = q.eq('campaign_id', campaignId)
   const { data, error } = await q.order('created_at', { ascending: false })
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []).map((r) => rowToContent(r as Row))
 }
 export async function upsertContent(c: Partial<KolContent> & { id?: string }, brand: string): Promise<void> {
@@ -40,16 +40,16 @@ export async function upsertContent(c: Partial<KolContent> & { id?: string }, br
   const { error } = c.id
     ? await supabase.from('kol_contents').update(payload).eq('id', c.id)
     : await supabase.from('kol_contents').insert(payload)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 export async function deleteContent(id: string): Promise<void> {
   const { error } = await supabase.from('kol_contents').delete().eq('id', id)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 export async function bulkInsertContents(rows: Partial<KolContent>[], brand: string): Promise<void> {
   if (!rows.length) return
   const { error } = await supabase.from('kol_contents').insert(rows.map(r => contentToRow(r, brand)))
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 
 // ── influencer ──
@@ -63,7 +63,7 @@ export function influencerToRow(i: Partial<KolInfluencer>, brand: string) {
 }
 export async function getInfluencers(brand: string): Promise<KolInfluencer[]> {
   const { data, error } = await supabase.from('kol_influencers').select('*').eq('brand', brand).order('name')
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []).map((r) => rowToInfluencer(r as Row))
 }
 export async function upsertInfluencer(i: Partial<KolInfluencer> & { id?: string }, brand: string): Promise<void> {
@@ -71,16 +71,16 @@ export async function upsertInfluencer(i: Partial<KolInfluencer> & { id?: string
   const { error } = i.id
     ? await supabase.from('kol_influencers').update(payload).eq('id', i.id)
     : await supabase.from('kol_influencers').insert(payload)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 export async function deleteInfluencer(id: string): Promise<void> {
   const { error } = await supabase.from('kol_influencers').delete().eq('id', id)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 export async function bulkInsertInfluencers(rows: Partial<KolInfluencer>[], brand: string): Promise<void> {
   if (!rows.length) return
   const { error } = await supabase.from('kol_influencers').insert(rows.map(r => influencerToRow(r, brand)))
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 
 // ── budget ──
@@ -92,7 +92,7 @@ export function budgetToRow(b: Partial<KolBudget>, brand: string) {
 }
 export async function getBudgets(brand: string): Promise<KolBudget[]> {
   const { data, error } = await supabase.from('kol_budgets').select('*').eq('brand', brand).order('name')
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []).map((r) => rowToBudget(r as Row))
 }
 export async function upsertBudget(b: Partial<KolBudget> & { id?: string }, brand: string): Promise<void> {
@@ -100,11 +100,11 @@ export async function upsertBudget(b: Partial<KolBudget> & { id?: string }, bran
   const { error } = b.id
     ? await supabase.from('kol_budgets').update(payload).eq('id', b.id)
     : await supabase.from('kol_budgets').insert(payload)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 export async function deleteBudget(id: string): Promise<void> {
   const { error } = await supabase.from('kol_budgets').delete().eq('id', id)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 
 // ── campaign ──
@@ -127,7 +127,7 @@ export function campaignToRow(c: Partial<KolCampaign>, brand: string) {
 }
 export async function getCampaigns(brand: string): Promise<KolCampaign[]> {
   const { data, error } = await supabase.from('kol_campaigns').select('*').eq('brand', brand).order('created_at', { ascending: false })
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []).map((r) => rowToCampaign(r as Row))
 }
 export async function upsertCampaign(c: Partial<KolCampaign> & { id?: string }, brand: string): Promise<void> {
@@ -135,9 +135,9 @@ export async function upsertCampaign(c: Partial<KolCampaign> & { id?: string }, 
   const { error } = c.id
     ? await supabase.from('kol_campaigns').update(payload).eq('id', c.id)
     : await supabase.from('kol_campaigns').insert(payload)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
 export async function deleteCampaign(id: string): Promise<void> {
   const { error } = await supabase.from('kol_campaigns').delete().eq('id', id)
-  if (error) throw error
+  if (error) throw new Error(error.message)
 }
