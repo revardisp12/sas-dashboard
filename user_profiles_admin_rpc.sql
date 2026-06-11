@@ -47,7 +47,7 @@ BEGIN
     RAISE EXCEPTION 'Forbidden: admin role required' USING ERRCODE = '42501';
   END IF;
 
-  IF new_role NOT IN ('super_admin', 'admin', 'manager', 'cs', 'crm') THEN
+  IF new_role NOT IN ('super_admin', 'admin', 'manager', 'cs', 'crm', 'kol_specialist') THEN
     RAISE EXCEPTION 'Invalid role: %', new_role USING ERRCODE = '22023';
   END IF;
 

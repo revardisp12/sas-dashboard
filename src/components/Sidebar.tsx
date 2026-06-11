@@ -6,7 +6,7 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music, Globe,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText,
+  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BRAND_COLORS, BRAND_RGB, BRAND_LABELS } from '@/lib/brand'
@@ -125,6 +125,10 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
         {accessible('performance') && <NavItem icon={Activity} label="Performance" color="#10B981" active={view === 'performance'} onClick={() => onViewChange('performance')} />}
         {accessible('product-analysis') && <NavItem icon={Package} label="Product Analysis" color="#00D4FF" active={view === 'product-analysis'} onClick={() => onViewChange('product-analysis')} />}
 
+        {accessible('kol') && (userRole === 'super_admin' || userRole === 'admin' || userRole === 'kol_specialist') && (
+          <NavItem icon={Users} label="KOL Management" color="#8B5CF6" active={view === 'kol'} onClick={() => onViewChange('kol')} />
+        )}
+
         {(accessible('google-ads') || accessible('meta-ads') || accessible('tiktok-shop') || accessible('shopee')) && (
           <>
             <div className="py-1" />
@@ -166,6 +170,19 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
               </div>
               <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Weekly Digest</span>
             </Link>
+            {(userRole === 'super_admin' || userRole === 'admin') && (
+              <Link href="/wms"
+                className="flex items-center gap-3 w-full rounded-xl transition-all text-left px-3 py-2.5"
+                style={{ background: 'transparent', borderLeft: '2px solid transparent' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F620' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+                  style={{ background: '#F3F4F6' }}>
+                  <RefreshCw size={14} style={{ color: '#6B7280' }} />
+                </div>
+                <span className="text-sm font-medium" style={{ color: '#6B7280' }}>WMS Sync</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { CustomerRFM } from '@/lib/types'
 import { fmtCurrency } from '@/lib/utils'
 import { SEGMENT_CONFIG, scoreColor } from '@/lib/rfm'
 import { X, Phone, Calendar, ShoppingBag, TrendingUp } from 'lucide-react'
+import OriginBadge from '@/components/wms/OriginBadge'
 
 interface Props {
   customer: CustomerRFM
@@ -49,7 +50,10 @@ export default function CustomerDetailModal({ customer, onClose }: Props) {
               {customer.transactions.map((tx, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: '#F9FAFB' }}>
                   <div><p className="text-xs font-medium" style={{ color: '#111827' }}>{tx.product}</p><p className="text-[10px]" style={{ color: '#4B5563' }}>{tx.date} · {tx.qty}x</p></div>
-                  <p className="text-sm font-bold" style={{ color: '#10B981' }}>{fmtCurrency(tx.revenue)}</p>
+                  <div className="flex items-center gap-2">
+                    <OriginBadge origin={tx.origin} />
+                    <p className="text-sm font-bold" style={{ color: '#10B981' }}>{fmtCurrency(tx.revenue)}</p>
+                  </div>
                 </div>
               ))}
             </div>
