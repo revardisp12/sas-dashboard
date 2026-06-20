@@ -6,7 +6,7 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music, Globe,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw,
+  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw, Calculator,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BRAND_COLORS, BRAND_RGB, BRAND_LABELS } from '@/lib/brand'
@@ -123,6 +123,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
         {accessible('overview') && <NavItem icon={LayoutDashboard} label="Overview" color="#F07830" active={view === 'overview'} onClick={() => onViewChange('overview')} />}
         {accessible('funnel') && <NavItem icon={TrendingUp} label="Funnel Analysis" color="#8B5CF6" active={view === 'funnel'} onClick={() => onViewChange('funnel')} />}
         {accessible('performance') && <NavItem icon={Activity} label="Performance" color="#10B981" active={view === 'performance'} onClick={() => onViewChange('performance')} />}
+        <NavItem icon={Calculator} label="C-Ads Calculator" color="#FF0050" active={view === 'cads-calculator'} onClick={() => onViewChange('cads-calculator')} />
         {accessible('product-analysis') && <NavItem icon={Package} label="Product Analysis" color="#00D4FF" active={view === 'product-analysis'} onClick={() => onViewChange('product-analysis')} />}
 
         {accessible('kol') && (userRole === 'super_admin' || userRole === 'admin' || userRole === 'kol_specialist') && (
