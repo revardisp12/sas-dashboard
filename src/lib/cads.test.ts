@@ -1,72 +1,67 @@
 import { describe, it, expect } from 'vitest'
 import {
-  safeDiv, considerationBuilt, awarenessImplied, buyersFromConsideration,
-  gmvFrom, gmvMaxBaseline, gmvMaxWithUplift, blendedRoas, calcCAds,
-  type CAdsInputs,
+  safeDiv, targetCo, audienceGap, gmvMaxBaseline, gmvMaxWithUplift, blendedRoas,
+  calcPlan, type PlanInputs,
 } from './cads'
 
-describe('cads helpers', () => {
+describe('cads V2 helpers', () => {
   it('safeDiv guards divide-by-zero', () => {
     expect(safeDiv(10, 2)).toBe(5)
     expect(safeDiv(10, 0)).toBe(0)
   })
-  it('considerationBuilt = budget / cpco', () => {
-    expect(considerationBuilt(15_000_000, 1_500)).toBe(10_000)
-    expect(considerationBuilt(15_000_000, 0)).toBe(0)
+  it('targetCo = benchmark × ambition', () => {
+    expect(targetCo(3_000_000, 0.5)).toBe(1_500_000)
+    expect(targetCo(3_866_994, 0.6)).toBeCloseTo(2_320_196, 0)
   })
-  it('awarenessImplied = consideration / awToCoRate', () => {
-    expect(awarenessImplied(10_000, 0.1)).toBe(100_000)
-    expect(awarenessImplied(10_000, 0)).toBe(0)
+  it('audienceGap = max(0, target − coNow) — never negative', () => {
+    expect(audienceGap(1_500_000, 1_000_000)).toBe(500_000)
+    expect(audienceGap(1_000_000, 1_500_000)).toBe(0)
   })
-  it('buyersFromConsideration = consideration * rate', () => {
-    expect(buyersFromConsideration(10_000, 0.02)).toBe(200)
-  })
-  it('gmvFrom = buyers * aov', () => {
-    expect(gmvFrom(200, 150_000)).toBe(30_000_000)
-  })
-  it('gmvMaxBaseline = budget * roas', () => {
+  it('gmvMax helpers', () => {
     expect(gmvMaxBaseline(35_000_000, 5)).toBe(175_000_000)
-  })
-  it('gmvMaxWithUplift = baseline * (1 + uplift)', () => {
     expect(gmvMaxWithUplift(175_000_000, 0.18)).toBe(206_500_000)
-  })
-  it('blendedRoas = gmv / totalBudget, guarded', () => {
-    expect(blendedRoas(206_500_000, 50_000_000)).toBeCloseTo(4.13, 2)
+    expect(blendedRoas(206_500_000, 85_000_000)).toBeCloseTo(2.43, 2)
     expect(blendedRoas(1, 0)).toBe(0)
   })
 })
 
-describe('calcCAds (orchestrator)', () => {
-  const inp: CAdsInputs = {
-    totalBudget: 50_000_000, consiShare: 0.3, cpco: 1_500,
-    awToCoRate: 0.103, coToBuyerRate: 0.02, aov: 150_000,
-    gmvMaxRoas: 5, consiUplift: 0.18,
+describe('calcPlan (orchestrator)', () => {
+  const inp: PlanInputs = {
+    coNow: 1_000_000, coBenchmark: 3_000_000, ambition: 0.5,
+    cpco: 100, coToSales: 0.01, aov: 150_000,
+    gmvMaxBudget: 35_000_000, gmvMaxRoas: 5, consiUplift: 0.18,
   }
-  const r = calcCAds(inp)
+  const r = calcPlan(inp)
 
-  it('splits the budget by consiShare', () => {
-    expect(r.budgetConsi).toBe(15_000_000)
-    expect(r.budgetGmvMax).toBe(35_000_000)
+  it('Step 1 — target & gap', () => {
+    expect(r.targetCo).toBe(1_500_000)
+    expect(r.audienceGap).toBe(500_000)
   })
-  it('builds the funnel cascade', () => {
-    expect(r.considerationBuilt).toBe(10_000)
-    expect(r.awarenessImplied).toBeCloseTo(97_087, 0)
-    expect(r.buyersFromConsi).toBe(200)
-    expect(r.gmvFromConsi).toBe(30_000_000)
-    expect(r.cpNewBuyer).toBe(75_000)
+  it('Step 2 — direct (AM) lens', () => {
+    expect(r.considerationBudget).toBe(50_000_000)   // 500k × 100
+    expect(r.incrementalBuyers).toBe(5_000)          // 500k × 1%
+    expect(r.incrementalGmv).toBe(750_000_000)       // 5k × 150k
+    expect(r.considerationRoas).toBe(15)             // 750M / 50M
   })
-  it('computes the conservative cross-impact (no double count)', () => {
+  it('Step 3 — cross-impact lens (no double count)', () => {
     expect(r.gmvMaxBaseline).toBe(175_000_000)
     expect(r.gmvMaxWithConsi).toBe(206_500_000)
-    expect(r.incrementalGmv).toBe(31_500_000)
+    expect(r.gmvMaxUpliftGmv).toBe(31_500_000)
+    expect(r.totalBudget).toBe(85_000_000)           // 50M + 35M
     expect(r.roasGmvMaxOnly).toBe(5)
-    expect(r.blendedRoas).toBeCloseTo(4.13, 2)
-    expect(r.roasDelta).toBeCloseTo(-0.87, 2)
+    expect(r.blendedRoas).toBeCloseTo(2.43, 2)        // 206.5M / 85M
+    expect(r.roasDelta).toBeCloseTo(-2.57, 2)
   })
-  it('is divide-by-zero safe with empty inputs', () => {
-    const z = calcCAds({ totalBudget: 0, consiShare: 0, cpco: 0, awToCoRate: 0, coToBuyerRate: 0, aov: 0, gmvMaxRoas: 0, consiUplift: 0 })
-    expect(z.considerationBuilt).toBe(0)
+  it('gap floors at 0 when already above target (no negative budget)', () => {
+    const z = calcPlan({ ...inp, coNow: 5_000_000 })
+    expect(z.audienceGap).toBe(0)
+    expect(z.considerationBudget).toBe(0)
+    expect(z.incrementalGmv).toBe(0)
+    expect(Number.isFinite(z.considerationRoas)).toBe(true)
+  })
+  it('all-zero inputs stay finite', () => {
+    const z = calcPlan({ coNow: 0, coBenchmark: 0, ambition: 0, cpco: 0, coToSales: 0, aov: 0, gmvMaxBudget: 0, gmvMaxRoas: 0, consiUplift: 0 })
     expect(z.blendedRoas).toBe(0)
-    expect(Number.isFinite(z.cpNewBuyer)).toBe(true)
+    expect(Number.isFinite(z.considerationRoas)).toBe(true)
   })
 })

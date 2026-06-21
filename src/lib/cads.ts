@@ -1,33 +1,35 @@
-// Pure, unit-tested calculation core for the C-Ads (Brand Consideration Ads) Calculator.
-// Models the TikTok ACC funnel cascade + the cross-impact of Consideration Ads on GMV Max.
-// All rates are decimals (0.103 = 10.3%). No double-counting: the headline blended ROAS
-// credits Consideration ONLY via its uplift to GMV Max (conservative model). The funnel
-// cascade fields are an "audience-building" lens shown separately, not summed into ROAS.
+// C-Ads Calculator V2 — chained planner combining the TikTok AM's
+// audience-gap→budget engine with our GMV Max cross-impact / blended-ROAS lens.
+// All rates are decimals (0.01 = 1%). The Step-2 "direct" lens (incrementalGmv)
+// and the Step-3 "cross-impact" lens (blendedRoas) are TWO separate ways to value
+// Consideration — never sum them. Headline decision metric = blendedRoas.
 
-export interface CAdsInputs {
-  totalBudget: number   // Rp — total monthly ad budget across both kantong
-  consiShare: number    // 0..1 — share of budget to Consideration ads
-  cpco: number          // Rp — cost per consideration
-  awToCoRate: number    // 0..1 — Awareness -> Consideration transition rate
-  coToBuyerRate: number // 0..1 — Consideration -> Buyer rate
-  aov: number           // Rp — average GMV per buyer
-  gmvMaxRoas: number    // GMV Max baseline ROAS (GMV per Rp spent)
-  consiUplift: number   // 0..1 — uplift Consideration gives to GMV Max GMV
+export interface PlanInputs {
+  // Step 1 — Target
+  coNow: number        // current Consideration audience
+  coBenchmark: number  // category benchmark Consideration audience (Top 5)
+  ambition: number     // 0..1 — share of benchmark to grow to
+  // Step 2 — Budget
+  cpco: number         // Rp — cost per (new) consideration
+  coToSales: number    // 0..1 — Consideration -> Sales conversion rate
+  aov: number          // Rp — average order value
+  // Step 3 — Worth it (cross-impact)
+  gmvMaxBudget: number // Rp — budget on GMV Max
+  gmvMaxRoas: number   // GMV Max baseline ROAS
+  consiUplift: number  // 0..1 — uplift Consideration gives to GMV Max
 }
 
-export interface CAdsResult {
-  budgetConsi: number
-  budgetGmvMax: number
-  // Funnel-building lens (audience the Consi budget builds; may overlap GMV Max buyers)
-  considerationBuilt: number
-  awarenessImplied: number
-  buyersFromConsi: number
-  gmvFromConsi: number
-  cpNewBuyer: number
-  // Cross-impact lens (conservative business view — no double counting)
+export interface PlanResult {
+  targetCo: number
+  audienceGap: number
+  considerationBudget: number
+  incrementalBuyers: number
+  incrementalGmv: number
+  considerationRoas: number
   gmvMaxBaseline: number
   gmvMaxWithConsi: number
-  incrementalGmv: number
+  gmvMaxUpliftGmv: number
+  totalBudget: number
   roasGmvMaxOnly: number
   blendedRoas: number
   roasDelta: number
@@ -36,20 +38,14 @@ export interface CAdsResult {
 export function safeDiv(a: number, b: number): number {
   return b === 0 ? 0 : a / b
 }
-export function considerationBuilt(budgetConsi: number, cpco: number): number {
-  return safeDiv(budgetConsi, cpco)
+export function targetCo(benchmark: number, ambition: number): number {
+  return benchmark * ambition
 }
-export function awarenessImplied(consideration: number, awToCoRate: number): number {
-  return safeDiv(consideration, awToCoRate)
+export function audienceGap(target: number, coNow: number): number {
+  return Math.max(0, target - coNow)
 }
-export function buyersFromConsideration(consideration: number, coToBuyerRate: number): number {
-  return consideration * coToBuyerRate
-}
-export function gmvFrom(buyers: number, aov: number): number {
-  return buyers * aov
-}
-export function gmvMaxBaseline(budgetGmvMax: number, roas: number): number {
-  return budgetGmvMax * roas
+export function gmvMaxBaseline(budget: number, roas: number): number {
+  return budget * roas
 }
 export function gmvMaxWithUplift(baseline: number, uplift: number): number {
   return baseline * (1 + uplift)
@@ -58,31 +54,32 @@ export function blendedRoas(gmv: number, totalBudget: number): number {
   return safeDiv(gmv, totalBudget)
 }
 
-export function calcCAds(inp: CAdsInputs): CAdsResult {
-  const budgetConsi = inp.totalBudget * inp.consiShare
-  const budgetGmvMax = inp.totalBudget - budgetConsi
+export function calcPlan(inp: PlanInputs): PlanResult {
+  const target = targetCo(inp.coBenchmark, inp.ambition)
+  const gap = audienceGap(target, inp.coNow)
 
-  const consider = considerationBuilt(budgetConsi, inp.cpco)
-  const awareness = awarenessImplied(consider, inp.awToCoRate)
-  const buyers = buyersFromConsideration(consider, inp.coToBuyerRate)
-  const gmvConsi = gmvFrom(buyers, inp.aov)
-  const cpNew = safeDiv(budgetConsi, buyers)
+  const considerationBudget = gap * inp.cpco
+  const incrementalBuyers = gap * inp.coToSales
+  const incrementalGmv = incrementalBuyers * inp.aov
+  const considerationRoas = safeDiv(incrementalGmv, considerationBudget)
 
-  const baseline = gmvMaxBaseline(budgetGmvMax, inp.gmvMaxRoas)
+  const baseline = gmvMaxBaseline(inp.gmvMaxBudget, inp.gmvMaxRoas)
   const withConsi = gmvMaxWithUplift(baseline, inp.consiUplift)
-  const roasOnly = blendedRoas(baseline, budgetGmvMax)
-  const blended = blendedRoas(withConsi, inp.totalBudget)
+  const totalBudget = considerationBudget + inp.gmvMaxBudget
+  const roasOnly = safeDiv(baseline, inp.gmvMaxBudget)
+  const blended = blendedRoas(withConsi, totalBudget)
 
   return {
-    budgetConsi, budgetGmvMax,
-    considerationBuilt: consider,
-    awarenessImplied: awareness,
-    buyersFromConsi: buyers,
-    gmvFromConsi: gmvConsi,
-    cpNewBuyer: cpNew,
+    targetCo: target,
+    audienceGap: gap,
+    considerationBudget,
+    incrementalBuyers,
+    incrementalGmv,
+    considerationRoas,
     gmvMaxBaseline: baseline,
     gmvMaxWithConsi: withConsi,
-    incrementalGmv: withConsi - baseline,
+    gmvMaxUpliftGmv: withConsi - baseline,
+    totalBudget,
     roasGmvMaxOnly: roasOnly,
     blendedRoas: blended,
     roasDelta: blended - roasOnly,
