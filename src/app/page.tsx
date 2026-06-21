@@ -36,6 +36,7 @@ import ProductAnalysisView from '@/components/views/ProductAnalysisView'
 import PerformanceView from '@/components/views/PerformanceView'
 import SettingsView from '@/components/views/SettingsView'
 import KolView from '@/components/kol/KolView'
+import CAdsCalculatorView from '@/components/views/CAdsCalculatorView'
 import LoginPage from '@/components/LoginPage'
 
 const VIEW_LABELS: Record<ActiveView, string> = {
@@ -44,6 +45,7 @@ const VIEW_LABELS: Record<ActiveView, string> = {
   'google-ads': 'Google Ads', 'meta-ads': 'Meta Ads', 'tiktok-shop': 'TikTok Shop',
   shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic', 'facebook-organic': 'Facebook Organic',
   settings: 'Settings', kol: 'KOL Management',
+  'cads-calculator': 'C-Ads Calculator',
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
 
@@ -446,6 +448,7 @@ export default function Dashboard() {
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
           {view === 'kol' && <KolView brand={brand} />}
+          {view === 'cads-calculator' && <CAdsCalculatorView brand={brand} />}
         </main>
       </div>
 
