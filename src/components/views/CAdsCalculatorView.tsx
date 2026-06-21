@@ -1,22 +1,23 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { Brand } from '@/lib/types'
-import { calcCAds, type CAdsInputs } from '@/lib/cads'
+import { calcPlan, type PlanInputs } from '@/lib/cads'
 import { fmtCurrency, fmtNum } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
-import { Calculator, Users, ShoppingCart, TrendingUp, Wallet } from 'lucide-react'
+import { Calculator, Target, Wallet, Scale } from 'lucide-react'
 
 const ACCENT: Record<Brand, string> = { reglow: '#C9A96E', amura: '#8FB050', purela: '#9B7FD4' }
 
 const DEFAULTS = {
-  totalBudget: 50_000_000,
-  consiSharePct: 30,   // %
-  cpco: 1_500,         // Rp
-  awToCoPct: 10.3,     // %
-  coToBuyerPct: 2,     // %
-  aov: 150_000,        // Rp
+  coNow: 1_000_000,
+  coBenchmark: 3_000_000,
+  ambitionPct: 80,      // %
+  cpco: 200,            // Rp
+  coToSalesPct: 1,      // %
+  aov: 150_000,         // Rp
+  gmvMaxBudget: 35_000_000,
   gmvMaxRoas: 5,
-  consiUpliftPct: 18,  // %
+  upliftPct: 18,        // %
 }
 
 function NumField({ label, value, onChange, suffix, step = 1 }: {
@@ -40,78 +41,100 @@ export default function CAdsCalculatorView({ brand }: { brand: Brand }) {
   const [f, setF] = useState(DEFAULTS)
   const set = (k: keyof typeof DEFAULTS) => (n: number) => setF(p => ({ ...p, [k]: n }))
 
-  const inputs: CAdsInputs = useMemo(() => ({
-    totalBudget: f.totalBudget,
-    consiShare: f.consiSharePct / 100,
+  const inputs: PlanInputs = useMemo(() => ({
+    coNow: f.coNow,
+    coBenchmark: f.coBenchmark,
+    ambition: f.ambitionPct / 100,
     cpco: f.cpco,
-    awToCoRate: f.awToCoPct / 100,
-    coToBuyerRate: f.coToBuyerPct / 100,
+    coToSales: f.coToSalesPct / 100,
     aov: f.aov,
+    gmvMaxBudget: f.gmvMaxBudget,
     gmvMaxRoas: f.gmvMaxRoas,
-    consiUplift: f.consiUpliftPct / 100,
+    consiUplift: f.upliftPct / 100,
   }), [f])
 
-  const r = useMemo(() => calcCAds(inputs), [inputs])
+  const r = useMemo(() => calcPlan(inputs), [inputs])
   const worthIt = r.roasDelta >= 0
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${accent}1A`, color: accent }}>
           <Calculator size={20} />
         </div>
         <div>
           <h2 className="text-lg font-bold" style={{ color: '#111827' }}>C-Ads Calculator</h2>
-          <p className="text-xs" style={{ color: '#6B7280' }}>Model split budget Consideration vs GMV Max → blended ROAS. Angka default = benchmark TikTok TTMS; ganti pakai data lo.</p>
+          <p className="text-xs" style={{ color: '#6B7280' }}>
+            Plan budget Consideration dari target audience → cek worth-it-nya ke GMV Max. Default = benchmark; ganti pakai data real Market Scope/Ads Manager.
+          </p>
         </div>
       </div>
 
-      {/* Inputs */}
+      {/* Section 1 — Target */}
       <div className="rounded-2xl p-5" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Target size={16} style={{ color: accent }} />
+          <p className="text-sm font-semibold" style={{ color: '#111827' }}>Bagian 1 — Target Audience</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <NumField label="Co audience sekarang" value={f.coNow} onChange={set('coNow')} step={100_000} />
+          <NumField label="Benchmark kategori" value={f.coBenchmark} onChange={set('coBenchmark')} step={100_000} />
+          <NumField label="Ambisi" value={f.ambitionPct} onChange={set('ambitionPct')} suffix="%" step={5} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <MetricCard label="Target Consideration" value={fmtNum(Math.round(r.targetCo))} accent={accent} sub="benchmark × ambisi" />
+          <MetricCard label="Audience Gap" value={fmtNum(Math.round(r.audienceGap))} accent="#6366F1" sub="yang harus ditambah" />
+        </div>
+      </div>
+
+      {/* Section 2 — Budget (lens langsung / AM) */}
+      <div className="rounded-2xl p-5" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Wallet size={16} style={{ color: accent }} />
+          <p className="text-sm font-semibold" style={{ color: '#111827' }}>Bagian 2 — Budget (Lens Langsung / AM)</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <NumField label="CPCo" value={f.cpco} onChange={set('cpco')} suffix="Rp" step={50} />
+          <NumField label="Co → Sales rate" value={f.coToSalesPct} onChange={set('coToSalesPct')} suffix="%" step={0.1} />
+          <NumField label="AOV" value={f.aov} onChange={set('aov')} suffix="Rp" step={10_000} />
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <NumField label="Total Budget" value={f.totalBudget} onChange={set('totalBudget')} suffix="Rp" step={1_000_000} />
-          <NumField label="Split ke Consi" value={f.consiSharePct} onChange={set('consiSharePct')} suffix="%" />
-          <NumField label="CPCo" value={f.cpco} onChange={set('cpco')} suffix="Rp" step={100} />
-          <NumField label="AOV / buyer" value={f.aov} onChange={set('aov')} suffix="Rp" step={10_000} />
-          <NumField label="Aw → Co rate" value={f.awToCoPct} onChange={set('awToCoPct')} suffix="%" step={0.1} />
-          <NumField label="Co → Buyer rate" value={f.coToBuyerPct} onChange={set('coToBuyerPct')} suffix="%" step={0.1} />
+          <MetricCard label="Budget Consideration" value={fmtCurrency(r.considerationBudget)} accent={accent} sub="gap × CPCo" />
+          <MetricCard label="Pembeli tambahan" value={fmtNum(Math.round(r.incrementalBuyers))} accent="#10B981" sub="gap × Co→Sales rate" />
+          <MetricCard label="Est. GMV (langsung)" value={fmtCurrency(r.incrementalGmv)} accent="#10B981" sub="lens 1 — lihat catatan" />
+          <MetricCard label="ROAS Consideration" value={`${r.considerationRoas.toFixed(2)}x`} accent="#6366F1" sub="GMV langsung ÷ budget" />
+        </div>
+      </div>
+
+      {/* Section 3 — Worth it? (cross-impact ke GMV Max) */}
+      <div className="rounded-2xl p-5" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Scale size={16} style={{ color: accent }} />
+          <p className="text-sm font-semibold" style={{ color: '#111827' }}>Bagian 3 — Worth it? (Cross-Impact ke GMV Max)</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <NumField label="Budget GMV Max" value={f.gmvMaxBudget} onChange={set('gmvMaxBudget')} suffix="Rp" step={1_000_000} />
           <NumField label="GMV Max ROAS" value={f.gmvMaxRoas} onChange={set('gmvMaxRoas')} suffix="x" step={0.1} />
-          <NumField label="Uplift ke GMV Max" value={f.consiUpliftPct} onChange={set('consiUpliftPct')} suffix="%" step={0.1} />
+          <NumField label="Uplift Consi → GMV Max" value={f.upliftPct} onChange={set('upliftPct')} suffix="%" step={1} />
         </div>
-        <div className="mt-3 text-[11px]" style={{ color: '#9CA3AF' }}>
-          Budget Consi: <b style={{ color: accent }}>{fmtCurrency(r.budgetConsi)}</b> · Budget GMV Max: <b style={{ color: accent }}>{fmtCurrency(r.budgetGmvMax)}</b>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <MetricCard label="GMV Max baseline" value={fmtCurrency(r.gmvMaxBaseline)} accent="#9CA3AF" sub={`ROAS ${r.roasGmvMaxOnly.toFixed(2)}x`} />
+          <MetricCard label="GMV Max + Consi" value={fmtCurrency(r.gmvMaxWithConsi)} accent={accent} sub={`+${f.upliftPct}% uplift`} />
+          <MetricCard label="Total budget" value={fmtCurrency(r.totalBudget)} accent="#6B7280" sub="Consi + GMV Max" />
+          <MetricCard label="Blended ROAS" value={`${r.blendedRoas.toFixed(2)}x`} accent={worthIt ? '#10B981' : '#EF4444'} sub={`${r.roasDelta >= 0 ? '+' : ''}${r.roasDelta.toFixed(2)}x vs GMV Max-only`} />
         </div>
-      </div>
-
-      {/* Lens 1: Funnel cascade (audience building) */}
-      <div>
-        <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#6B7280' }}>Audience Building (Cascade)</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard label="Awareness (implied)" value={fmtNum(Math.round(r.awarenessImplied))} icon={<TrendingUp size={16} />} accent="#8B5CF6" sub="dari Co ÷ Aw→Co rate" />
-          <MetricCard label="Consideration dibangun" value={fmtNum(Math.round(r.considerationBuilt))} icon={<Users size={16} />} accent={accent} sub="Budget Consi ÷ CPCo" />
-          <MetricCard label="Buyers (cascade)" value={fmtNum(Math.round(r.buyersFromConsi))} icon={<ShoppingCart size={16} />} accent="#10B981" sub="lens audiens, bisa overlap GMV Max" />
-          <MetricCard label="CP / New Buyer" value={fmtCurrency(r.cpNewBuyer)} icon={<Wallet size={16} />} accent="#F07830" />
-        </div>
-      </div>
-
-      {/* Lens 2: Cross-impact (the decision) */}
-      <div>
-        <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#6B7280' }}>Cross-Impact ke GMV Max (Konservatif)</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard label="GMV Max (baseline)" value={fmtCurrency(r.gmvMaxBaseline)} accent="#9CA3AF" sub={`ROAS ${r.roasGmvMaxOnly.toFixed(2)}x`} />
-          <MetricCard label="GMV Max + Consi" value={fmtCurrency(r.gmvMaxWithConsi)} accent={accent} sub={`+${f.consiUpliftPct}% uplift`} />
-          <MetricCard label="Incremental GMV" value={fmtCurrency(r.incrementalGmv)} icon={<TrendingUp size={16} />} accent="#10B981" />
-          <MetricCard label="Blended ROAS" value={`${r.blendedRoas.toFixed(2)}x`} icon={<TrendingUp size={16} />} accent={worthIt ? '#10B981' : '#EF4444'} sub={`${worthIt ? '+' : ''}${r.roasDelta.toFixed(2)}x vs GMV Max-only`} />
-        </div>
-        <div className="mt-3 rounded-xl px-4 py-3 text-sm" style={{ background: worthIt ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', color: worthIt ? '#047857' : '#B91C1C' }}>
+        {/* Verdict banner */}
+        <div className="rounded-xl px-4 py-3 text-sm" style={{ background: worthIt ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', color: worthIt ? '#047857' : '#B91C1C' }}>
           {worthIt
-            ? `✅ Split ini WORTH IT: blended ROAS (${r.blendedRoas.toFixed(2)}x) ≥ GMV Max-only (${r.roasGmvMaxOnly.toFixed(2)}x). Uplift Consi nutupin budget yang digeser.`
-            : `⚠️ Split ini belum worth it: blended ROAS (${r.blendedRoas.toFixed(2)}x) < GMV Max-only (${r.roasGmvMaxOnly.toFixed(2)}x). Kecilin split Consi, naikin uplift, atau turunin CPCo.`}
+            ? `✅ WORTH IT: blended ROAS (${r.blendedRoas.toFixed(2)}x) ≥ GMV Max-only (${r.roasGmvMaxOnly.toFixed(2)}x). Uplift Consi nutupin cost-nya.`
+            : `⚠️ Belum worth it: blended ROAS (${r.blendedRoas.toFixed(2)}x) < GMV Max-only (${r.roasGmvMaxOnly.toFixed(2)}x). Coba naikin uplift, turunin CPCo, atau kurangi budget Consi.`}
         </div>
       </div>
 
+      {/* Footer note — anti double-count */}
       <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
-        Catatan: &quot;Buyers (cascade)&quot; itu lens pembangunan audiens dan bisa overlap dengan pembeli GMV Max — makanya Blended ROAS cuma ngitung uplift Consi ke GMV Max biar gak double-count.
+        2 lensa nilai Consideration — <em>Est. GMV langsung</em> (lens 1) &amp; <em>Blended ROAS</em> (lens 3) JANGAN dijumlah (bisa double-count). Metrik keputusan = Blended ROAS.
       </p>
     </div>
   )
