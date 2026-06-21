@@ -20,15 +20,28 @@ const DEFAULTS = {
   upliftPct: 18,        // %
 }
 
-function NumField({ label, value, onChange, suffix, step = 1 }: {
+function NumField({ label, value, onChange, suffix }: {
   label: string; value: number; onChange: (n: number) => void; suffix?: string; step?: number
 }) {
+  // Show thousand separators (id-ID: "1.000.000") while idle, plain digits while
+  // editing so the caret doesn't jump. Parses dots/non-digits back to a number.
+  const [focused, setFocused] = useState(false)
+  const [draft, setDraft] = useState('')
+  const display = focused ? draft : value.toLocaleString('id-ID')
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: '#6B7280' }}>{label}</span>
       <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
-        <input type="number" value={value} step={step} min={0}
-          onChange={e => onChange(Math.max(0, Number(e.target.value)))}
+        <input type="text" inputMode="decimal" value={display}
+          onFocus={() => { setDraft(value === 0 ? '' : String(value)); setFocused(true) }}
+          onChange={e => {
+            const raw = e.target.value
+            setDraft(raw)
+            const cleaned = raw.replace(/[^0-9.]/g, '')
+            const n = cleaned === '' ? 0 : Number(cleaned)
+            onChange(Number.isFinite(n) ? Math.max(0, n) : 0)
+          }}
+          onBlur={() => setFocused(false)}
           className="w-full bg-transparent outline-none text-sm" style={{ color: '#111827' }} />
         {suffix && <span className="text-xs flex-shrink-0" style={{ color: '#9CA3AF' }}>{suffix}</span>}
       </div>
