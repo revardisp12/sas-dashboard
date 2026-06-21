@@ -11,7 +11,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
-const TABLES: WmsTable[] = ['sales', 'crm', 'products', 'google_ads', 'meta_ads']
+// V1.2 scope = revenue only. CRM + ads deferred; reseller endpoint has a backend bug.
+const TABLES: WmsTable[] = ['sales', 'products']
 
 function lastNDays(n: number) {
   const end = new Date()
