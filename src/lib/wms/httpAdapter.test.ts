@@ -92,26 +92,43 @@ describe('HttpWmsAdapter.fetchSales', () => {
     expect(scUrl).toContain('end_date=2026-06-21') // exclusive -> +1 day
   })
 
-  it('paginates orders/list until a short page', async () => {
-    const PAGE = 250
+  it('paginates across pages using metadata.count', async () => {
+    const TOTAL = 4228
     stubFetch((url) => {
       if (url.includes('/orders/list')) {
+        const len = Number(url.match(/[?&]length=(\d+)/)?.[1] ?? 0)
         const page = pageOf(url)
-        const n = page === 1 ? PAGE : 3 // page 2 short -> stop
+        const start = (page - 1) * len
+        const n = Math.max(0, Math.min(len, TOTAL - start))
         return {
           code: 200,
           data: Array.from({ length: n }, (_, i) => ({
-            id: page * 1000 + i, order_at: '2026-06-10T00:00:00+07:00',
+            id: start + i, order_at: '2026-06-10T00:00:00+07:00',
             qty: 1, amount: 1000, cogs: 0, channel_name: 'Manual', product_summary: 'X',
           })),
-          metadata: {},
+          metadata: { count: TOTAL },
         }
       }
-      return { code: 200, data: [], metadata: {} } // social-commerce empty
+      return { code: 200, data: [], metadata: { count: 0 } } // social-commerce empty
     })
 
     const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-30' })
-    expect(rows).toHaveLength(PAGE + 3)
+    expect(rows).toHaveLength(TOTAL)
+  })
+
+  it('retries a transient network failure, then succeeds', async () => {
+    let calls = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls++
+        if (calls === 1) throw new TypeError('terminated') // simulate WMS dropping the socket
+        return { ok: true, status: 200, json: async () => ({ code: 200, data: [], metadata: { count: 0 } }) } as unknown as Response
+      }),
+    )
+    const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-01' })
+    expect(rows).toEqual([])
+    expect(calls).toBeGreaterThanOrEqual(2) // first attempt threw, retry recovered
   })
 
   it('throws on an API error code (e.g. reseller 500)', async () => {

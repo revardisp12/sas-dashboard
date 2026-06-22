@@ -23,15 +23,24 @@ import type { WmsAdapter, WithWmsId, WmsDateRange } from './types'
 /** Dashboard brand -> WMS client_id (from GET /v1/open/clients/list). */
 const BRAND_CLIENT_ID: Record<Brand, number> = { reglow: 1, amura: 2, purela: 3 }
 
-const PAGE_SIZE = 250
-const MAX_PAGES = 400 // safety cap: 250 * 400 = 100k orders per brand per sync window
+// Per-endpoint page caps (verified vs live API): /orders/list accepts huge pages, but
+// /social-commerce/orders rejects length > 250 with HTTP 400. Big MP pages turn ~21 small
+// sequential requests into ~2-3 — the WMS drops the socket under sustained small-page pulls.
+const MP_PAGE_SIZE = 5000
+const SC_PAGE_SIZE = 250
+const MAX_PAGES = 500 // safety cap
+const MAX_RETRIES = 3
 
 interface WmsEnvelope<T> {
   code?: number
   error?: string
   msg?: { id?: string; en?: string }
   data?: T[] | null
+  metadata?: { count?: number; page?: number; length?: number; total_page?: number }
 }
+
+/** Deterministic application error (bad `code` in body) — not worth retrying. */
+class WmsApiError extends Error {}
 
 export class HttpWmsAdapter implements WmsAdapter {
   readonly mode = 'live' as const
@@ -39,25 +48,45 @@ export class HttpWmsAdapter implements WmsAdapter {
   constructor(private baseUrl: string, private apiKey: string) {}
 
   private async getJson<T>(path: string): Promise<WmsEnvelope<T>> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      headers: { 'X-Api-Key': this.apiKey, Accept: 'application/json' },
-    })
-    if (!res.ok) throw new Error(`WMS ${path} -> HTTP ${res.status}`)
-    const body = (await res.json()) as WmsEnvelope<T>
-    if (typeof body.code === 'number' && body.code !== 200) {
-      throw new Error(`WMS ${path} -> code ${body.code} ${body.error ?? body.msg?.en ?? ''}`.trim())
+    let lastErr: unknown
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch(`${this.baseUrl}${path}`, {
+          headers: { 'X-Api-Key': this.apiKey, Accept: 'application/json' },
+        })
+        if (!res.ok) {
+          // 4xx = deterministic (bad params) -> don't retry; 5xx/network are transient.
+          if (res.status >= 400 && res.status < 500) throw new WmsApiError(`WMS ${path} -> HTTP ${res.status}`)
+          throw new Error(`WMS ${path} -> HTTP ${res.status}`)
+        }
+        const body = (await res.json()) as WmsEnvelope<T>
+        if (typeof body.code === 'number' && body.code !== 200) {
+          throw new WmsApiError(`WMS ${path} -> code ${body.code} ${body.error ?? body.msg?.en ?? ''}`.trim())
+        }
+        return body
+      } catch (e) {
+        if (e instanceof WmsApiError) throw e // deterministic — don't retry
+        lastErr = e
+        if (attempt < MAX_RETRIES) await sleep(attempt * 1500) // backoff for transient socket/timeout drops
+      }
     }
-    return body
+    throw lastErr
   }
 
-  /** Walk a paged list endpoint until a page returns fewer than PAGE_SIZE rows. */
-  private async getAllPages<T>(buildPath: (page: number) => string): Promise<T[]> {
+  /**
+   * Walk a paged list endpoint. Termination is driven by metadata.count (robust to
+   * server-side page-size caps); falls back to a short-page check when count is absent.
+   */
+  private async getAllPages<T>(pageSize: number, buildPath: (page: number) => string): Promise<T[]> {
     const out: T[] = []
+    let total = Number.POSITIVE_INFINITY
     for (let page = 1; page <= MAX_PAGES; page++) {
       const body = await this.getJson<T>(buildPath(page))
       const data = body.data ?? []
       out.push(...data)
-      if (data.length < PAGE_SIZE) break
+      if (typeof body.metadata?.count === 'number') total = body.metadata.count
+      if (data.length === 0 || out.length >= total) break
+      if (!Number.isFinite(total) && data.length < pageSize) break
     }
     return out
   }
@@ -74,13 +103,15 @@ export class HttpWmsAdapter implements WmsAdapter {
 
     // 1) Marketplace (Shopee/Lazada/TikTok/Tokopedia) + manual orders.
     const marketplace = await this.getAllPages<MarketplaceOrder>(
+      MP_PAGE_SIZE,
       (page) =>
-        `/v1/open/orders/list?client_id=${cid}&${mpDateQ}&date_type=order_date&page=${page}&length=${PAGE_SIZE}`,
+        `/v1/open/orders/list?client_id=${cid}&${mpDateQ}&date_type=order_date&page=${page}&length=${MP_PAGE_SIZE}`,
     )
 
-    // 2) Social commerce (CS-entered) orders — a separate endpoint/table.
+    // 2) Social commerce (CS-entered) orders — separate endpoint/table, smaller page cap.
     const social = await this.getAllPages<SocialOrder>(
-      (page) => `/v1/open/social-commerce/orders?client_id=${cid}&${scDateQ}&page=${page}&length=${PAGE_SIZE}`,
+      SC_PAGE_SIZE,
+      (page) => `/v1/open/social-commerce/orders?client_id=${cid}&${scDateQ}&page=${page}&length=${SC_PAGE_SIZE}`,
     )
 
     const rows: WithWmsId<SalesRow>[] = []
@@ -202,3 +233,5 @@ const addDaysISO = (d: string, days: number): string => {
   dt.setUTCDate(dt.getUTCDate() + days)
   return dt.toISOString().slice(0, 10)
 }
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

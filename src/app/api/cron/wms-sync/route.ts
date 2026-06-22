@@ -9,6 +9,7 @@ import type { WmsTable } from '@/lib/wms/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300 // live sync paginates thousands of orders across 3 brands
 
 const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
 // V1.2 scope = revenue only. CRM + ads deferred; reseller endpoint has a backend bug.
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     const result = await runWmsSync({
       adapter: getWmsAdapter(),
       db: dbPort(supabase), log: logPort(supabase),
-      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'cron' },
+      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(1), trigger: 'cron' },
     })
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })
