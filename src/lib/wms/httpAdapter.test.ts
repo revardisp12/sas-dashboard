@@ -21,75 +21,49 @@ const pageOf = (url: string) => Number(url.match(/[?&]page=(\d+)/)?.[1] ?? 1)
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpWmsAdapter.fetchSales', () => {
-  it('merges marketplace + social-commerce into SalesRow with prefixed wmsId', async () => {
+  it('maps orders/list orders to SalesRow across all channels', async () => {
     stubFetch((url) => {
       if (url.includes('/orders/list')) {
         return {
           code: 200,
-          data: [{
-            id: 2980909, order_at: '2026-06-21T10:55:25+07:00', qty: 3,
-            amount: 252720, cogs: 274000, channel_name: 'Shopee',
-            product_summary: '1 RG-CB-30,1 RG-SL-30',
-            customer_name: '****', customer_phone: '****',
-          }],
-          metadata: { count: 1 },
+          data: [
+            { id: 2980909, order_at: '2026-06-21T10:55:25+07:00', qty: 3, amount: 252720, cogs: 274000, channel_name: 'Shopee', product_summary: '1 RG-CB-30,1 RG-SL-30' },
+            { id: 2980910, order_at: '2026-06-21T11:00:00+07:00', qty: 1, amount: 95000, cogs: 40000, channel_name: 'Customer Services', product_summary: '1 RG-RJ-20' },
+          ],
+          metadata: { count: 2 },
         }
       }
-      if (url.includes('/social-commerce/orders')) {
-        return {
-          code: 200,
-          data: [{
-            id: 95549, order_at: '2026-06-20T15:14:36+07:00', qty: 4,
-            amount: 284000, product_summary: '1 RG-RJ-20',
-            customer_name: 'Umi Khulsum', customer_phone: '6281212078085',
-          }],
-          metadata: { count: 1 },
-        }
-      }
-      return { code: 200, data: [], metadata: {} }
+      return { code: 200, data: [], metadata: { count: 0 } }
     })
 
     const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-21' })
 
     expect(rows).toHaveLength(2)
-
-    const mp = rows.find((r) => r.wmsId === 'mp-2980909')!
-    expect(mp).toMatchObject({
-      date: '2026-06-21', qty: 3, revenue: 252720, channel: 'Shopee',
-      cogs: 274000, grossProfit: 252720 - 274000, origin: 'wms',
+    expect(rows[0]).toMatchObject({
+      wmsId: 'ord-2980909', date: '2026-06-21', qty: 3, revenue: 252720,
+      channel: 'Shopee', cogs: 274000, grossProfit: 252720 - 274000, origin: 'wms',
       product: '1 RG-CB-30,1 RG-SL-30',
     })
+    // CS / social-commerce orders arrive via orders/list directly (channel name preserved).
+    expect(rows[1]).toMatchObject({ wmsId: 'ord-2980910', channel: 'Customer Services', revenue: 95000 })
+  })
 
-    const sc = rows.find((r) => r.wmsId === 'sc-95549')!
-    expect(sc).toMatchObject({
-      date: '2026-06-20', revenue: 284000, channel: 'Social Commerce', origin: 'wms',
-    })
-    // CRM deferred (V1.2): customer PII not written, even when the endpoint exposes it.
-    expect(sc.customerName).toBeUndefined()
-    expect(sc.phone).toBeUndefined()
+  it('does NOT call the social-commerce endpoint (CS orders already in orders/list -> no double-count)', async () => {
+    const fn = stubFetch(() => ({ code: 200, data: [], metadata: { count: 0 } }))
+    await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-02' })
+    const urls = fn.mock.calls.map((c) => String(c[0]))
+    expect(urls.some((u) => u.includes('/social-commerce'))).toBe(false)
+    expect(urls.some((u) => u.includes('/orders/list'))).toBe(true)
   })
 
   it('sends the brand client_id and X-Api-Key header', async () => {
-    const fn = stubFetch(() => ({ code: 200, data: [], metadata: {} }))
+    const fn = stubFetch(() => ({ code: 200, data: [], metadata: { count: 0 } }))
     await new HttpWmsAdapter(BASE, KEY).fetchSales('amura', { start: '2026-06-01', end: '2026-06-02' })
 
     const urls = fn.mock.calls.map((c) => String(c[0]))
     expect(urls.some((u) => u.includes('client_id=2'))).toBe(true) // amura -> 2
     const init = fn.mock.calls[0][1] as RequestInit
     expect((init.headers as Record<string, string>)['X-Api-Key']).toBe(KEY)
-  })
-
-  it('extends only social-commerce end_date by one day (exclusive vs inclusive boundary)', async () => {
-    const fn = stubFetch(() => ({ code: 200, data: [], metadata: {} }))
-    await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-20' })
-
-    const urls = fn.mock.calls.map((c) => String(c[0]))
-    const mpUrl = urls.find((u) => u.includes('/orders/list'))!
-    const scUrl = urls.find((u) => u.includes('/social-commerce/orders'))!
-    expect(mpUrl).toContain('start_date=2026-06-01')
-    expect(mpUrl).toContain('end_date=2026-06-20') // inclusive -> as-is
-    expect(scUrl).toContain('start_date=2026-06-01')
-    expect(scUrl).toContain('end_date=2026-06-21') // exclusive -> +1 day
   })
 
   it('paginates across pages using metadata.count', async () => {
@@ -109,7 +83,7 @@ describe('HttpWmsAdapter.fetchSales', () => {
           metadata: { count: TOTAL },
         }
       }
-      return { code: 200, data: [], metadata: { count: 0 } } // social-commerce empty
+      return { code: 200, data: [], metadata: { count: 0 } }
     })
 
     const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-30' })
@@ -131,8 +105,8 @@ describe('HttpWmsAdapter.fetchSales', () => {
     expect(calls).toBeGreaterThanOrEqual(2) // first attempt threw, retry recovered
   })
 
-  it('throws on an API error code (e.g. reseller 500)', async () => {
-    stubFetch(() => ({ code: 500, error: "Unknown column 'orders.client_id'", data: null, metadata: {} }))
+  it('throws on an API error code (deterministic, no retry)', async () => {
+    stubFetch(() => ({ code: 500, error: 'boom', data: null, metadata: {} }))
     await expect(
       new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-02' }),
     ).rejects.toThrow()

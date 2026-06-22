@@ -5,29 +5,24 @@ import type { WmsAdapter, WithWmsId, WmsDateRange } from './types'
  * Real WMS HTTP adapter — Reglow / Perpack Open API (`wms-api.sinergisuperapp.com`).
  *
  * V1.2 scope = REVENUE only:
- *  - fetchSales: merge marketplace+manual (`/orders/list`) + social commerce
- *    (`/social-commerce/orders`), per brand (client_id), into the dashboard SalesRow.
- *  - fetchProducts: a SKU -> name/price catalog (dictionary) from `/stock-by-warehouse`
- *    so reports read "Reglow Sunscreen" instead of "RG-SL-30". Stock levels are NOT
- *    imported (operations concern, out of marketing scope).
+ *  - fetchSales: every order for a brand (client_id) from `/orders/list`, mapped to SalesRow.
+ *    That endpoint already spans ALL channels — marketplace (Shopee/Lazada/TikTok/Tokopedia),
+ *    manual, and customer-service/social-commerce (channel -3) — so it is the single,
+ *    non-double-counting source for revenue.
+ *  - fetchProducts: a SKU -> name/price catalog (dictionary) from `/stock-by-warehouse`.
  *
  * Deferred (methods intentionally omitted -> runWmsSync skips them):
- *  - CRM / contactable customer PII (marketplace masks it; social-commerce exposes it
- *    but we defer the whole CRM concern).
- *  - Ads (the WMS has no ads endpoint), reseller orders (endpoint has a client_id bug).
+ *  - CRM / contactable PII (would come from /social-commerce, which exposes unmasked
+ *    customer fields for the SAME CS orders that /orders/list returns masked).
+ *  - Ads (no WMS endpoint), reseller orders (separate table; endpoint has a client_id bug).
  *
- * Auth: `X-Api-Key` header (static shared key). Multi-tenant: every request MUST carry
- * `client_id`, or the shared key returns all clients' data.
+ * Auth: `X-Api-Key` header. Multi-tenant: every request MUST carry `client_id`.
  */
 
 /** Dashboard brand -> WMS client_id (from GET /v1/open/clients/list). */
 const BRAND_CLIENT_ID: Record<Brand, number> = { reglow: 1, amura: 2, purela: 3 }
 
-// Per-endpoint page caps (verified vs live API): /orders/list accepts huge pages, but
-// /social-commerce/orders rejects length > 250 with HTTP 400. Big MP pages turn ~21 small
-// sequential requests into ~2-3 — the WMS drops the socket under sustained small-page pulls.
-const MP_PAGE_SIZE = 5000
-const SC_PAGE_SIZE = 250
+const PAGE_SIZE = 5000 // /orders/list accepts large pages; big pages avoid the socket drops seen with many small sequential requests
 const MAX_PAGES = 500 // safety cap
 const MAX_RETRIES = 3
 
@@ -39,7 +34,7 @@ interface WmsEnvelope<T> {
   metadata?: { count?: number; page?: number; length?: number; total_page?: number }
 }
 
-/** Deterministic application error (bad `code` in body) — not worth retrying. */
+/** Deterministic application error (bad `code` / 4xx) — not worth retrying. */
 class WmsApiError extends Error {}
 
 export class HttpWmsAdapter implements WmsAdapter {
@@ -94,33 +89,21 @@ export class HttpWmsAdapter implements WmsAdapter {
   fetchSales = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<SalesRow>[]> => {
     const cid = BRAND_CLIENT_ID[brand]
 
-    // The two order endpoints disagree on end_date semantics (verified vs live API):
-    //   /orders/list            -> end_date INCLUSIVE  (start <= date <= end)
-    //   /social-commerce/orders -> end_date EXCLUSIVE  (start <= date <  end)
-    // So social commerce gets end+1, otherwise it silently drops the entire `end` day.
-    const mpDateQ = `start_date=${range.start}&end_date=${range.end}`
-    const scDateQ = `start_date=${range.start}&end_date=${addDaysISO(range.end, 1)}`
-
-    // 1) Marketplace (Shopee/Lazada/TikTok/Tokopedia) + manual orders.
-    const marketplace = await this.getAllPages<MarketplaceOrder>(
-      MP_PAGE_SIZE,
+    // /orders/list already returns EVERY channel for the tenant — marketplace, manual, AND
+    // customer-service/social-commerce (channel -3). The separate /social-commerce endpoint
+    // returns those same CS orders (with extra PII), so pulling it too double-counts revenue.
+    const orders = await this.getAllPages<WmsOrder>(
+      PAGE_SIZE,
       (page) =>
-        `/v1/open/orders/list?client_id=${cid}&${mpDateQ}&date_type=order_date&page=${page}&length=${MP_PAGE_SIZE}`,
+        `/v1/open/orders/list?client_id=${cid}&start_date=${range.start}&end_date=${range.end}` +
+        `&date_type=order_date&page=${page}&length=${PAGE_SIZE}`,
     )
 
-    // 2) Social commerce (CS-entered) orders — separate endpoint/table, smaller page cap.
-    const social = await this.getAllPages<SocialOrder>(
-      SC_PAGE_SIZE,
-      (page) => `/v1/open/social-commerce/orders?client_id=${cid}&${scDateQ}&page=${page}&length=${SC_PAGE_SIZE}`,
-    )
-
-    const rows: WithWmsId<SalesRow>[] = []
-
-    for (const o of marketplace) {
+    return orders.map((o) => {
       const revenue = num(o.amount)
       const cogs = num(o.cogs)
-      rows.push({
-        wmsId: `mp-${o.id}`, // prefix: marketplace + social ids live in different tables
+      return {
+        wmsId: `ord-${o.id}`,
         date: dateOnly(o.order_at),
         product: o.product_summary ?? '',
         qty: num(o.qty),
@@ -130,26 +113,8 @@ export class HttpWmsAdapter implements WmsAdapter {
         grossProfit: revenue - cogs,
         source: 'organic',
         origin: 'wms',
-      })
-    }
-
-    for (const o of social) {
-      const revenue = num(o.amount)
-      rows.push({
-        wmsId: `sc-${o.id}`,
-        date: dateOnly(o.order_at),
-        product: o.product_summary ?? '',
-        qty: num(o.qty),
-        revenue,
-        channel: 'Social Commerce',
-        cogs: 0, // social-commerce endpoint carries no COGS
-        grossProfit: 0, // unknown COGS -> don't fabricate a margin
-        source: 'organic',
-        origin: 'wms',
-      })
-    }
-
-    return rows
+      }
+    })
   }
 
   fetchProducts = async (brand: Brand): Promise<WithWmsId<ProductMaster>[]> => {
@@ -193,21 +158,13 @@ export class HttpWmsAdapter implements WmsAdapter {
 
 // --- WMS response shapes (only the fields we read) ---
 
-interface MarketplaceOrder {
+interface WmsOrder {
   id: number
   order_at: string
   qty: number
   amount: number
   cogs: number
   channel_name: string
-  product_summary: string
-}
-
-interface SocialOrder {
-  id: number
-  order_at: string
-  qty: number
-  amount: number
   product_summary: string
 }
 
@@ -226,12 +183,4 @@ interface StockProduct {
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 const dateOnly = (ts: unknown): string => String(ts ?? '').slice(0, 10)
-
-/** Add `days` to a YYYY-MM-DD date, returning YYYY-MM-DD (UTC-safe). */
-const addDaysISO = (d: string, days: number): string => {
-  const dt = new Date(`${d}T00:00:00Z`)
-  dt.setUTCDate(dt.getUTCDate() + days)
-  return dt.toISOString().slice(0, 10)
-}
-
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
