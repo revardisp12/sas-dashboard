@@ -43,12 +43,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // Optional brand scope: the dashboard sends the brand currently in view, so "Sync Now"
+  // pulls just that brand (fast — Purela alone is ~5.8k orders/day) instead of all three.
+  const body = (await req.json().catch(() => null)) as { brand?: string } | null
+  const brands: Brand[] = body?.brand && (BRANDS as string[]).includes(body.brand) ? [body.brand as Brand] : BRANDS
+
   const service = createClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
   try {
     const result = await runWmsSync({
       adapter: getWmsAdapter(),
       db: dbPort(service), log: logPort(service),
-      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(1), trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
+      opts: { brands, tables: TABLES, range: lastNDays(1), trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
     })
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })

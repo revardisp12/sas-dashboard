@@ -21,6 +21,7 @@ import {
 import { useRealtimeSync } from '@/lib/wms/useRealtimeSync'
 import Sidebar from '@/components/Sidebar'
 import TimeframeSelector from '@/components/TimeframeSelector'
+import BrandSyncButton from '@/components/wms/BrandSyncButton'
 import OverviewView from '@/components/views/OverviewView'
 import FunnelView from '@/components/views/FunnelView'
 import SalesView from '@/components/views/SalesView'
@@ -413,6 +414,12 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-4">
+            {(['super_admin', 'admin'] as string[]).includes(profile?.role ?? '') && (
+              <BrandSyncButton
+                brand={brand}
+                onResult={r => { if (r.ok) { showSuccess(r.text); loadData(brand) } else showError(r.text) }}
+              />
+            )}
             <TimeframeSelector value={timeframe} onChange={t => { setTimeframe(t); setDateRange(null) }} dateRange={dateRange} onDateRangeChange={setDateRange} />
             <div className="text-right hidden lg:block">
               <p className="text-[10px]" style={{ color: '#374151' }}>{today}</p>
