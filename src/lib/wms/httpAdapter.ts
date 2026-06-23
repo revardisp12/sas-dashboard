@@ -1,5 +1,6 @@
 import type { Brand, SalesRow, ProductMaster } from '@/lib/types'
 import type { WmsAdapter, WithWmsId, WmsDateRange } from './types'
+import { channelForId, isRevenueStatus } from '@/lib/channels'
 
 /**
  * Real WMS HTTP adapter — Reglow / Perpack Open API (`wms-api.sinergisuperapp.com`).
@@ -99,22 +100,27 @@ export class HttpWmsAdapter implements WmsAdapter {
         `&date_type=order_date&page=${page}&length=${PAGE_SIZE}`,
     )
 
-    return orders.map((o) => {
+    const rows: WithWmsId<SalesRow>[] = []
+    for (const o of orders) {
+      const channel = channelForId(o.channel_id)
+      if (!channel) continue                 // untracked channel (Manual, Distributor, …)
+      if (!isRevenueStatus(o.status)) continue // pending/cancelled/returned/…
       const revenue = num(o.amount)
       const cogs = num(o.cogs)
-      return {
+      rows.push({
         wmsId: `ord-${o.id}`,
         date: dateOnly(o.order_at),
         product: o.product_summary ?? '',
         qty: num(o.qty),
         revenue,
-        channel: o.channel_name || 'Lainnya',
+        channel,                              // canonical key, e.g. 'shopee'
         cogs,
         grossProfit: revenue - cogs,
         source: 'organic',
         origin: 'wms',
-      }
-    })
+      })
+    }
+    return rows
   }
 
   fetchProducts = async (brand: Brand): Promise<WithWmsId<ProductMaster>[]> => {
@@ -164,7 +170,9 @@ interface WmsOrder {
   qty: number
   amount: number
   cogs: number
+  channel_id: number
   channel_name: string
+  status: string
   product_summary: string
 }
 

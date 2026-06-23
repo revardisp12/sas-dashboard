@@ -21,16 +21,19 @@ const pageOf = (url: string) => Number(url.match(/[?&]page=(\d+)/)?.[1] ?? 1)
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpWmsAdapter.fetchSales', () => {
-  it('maps orders/list orders to SalesRow across all channels', async () => {
+  it('keeps only tracked channels + revenue statuses, mapping channel to canonical', async () => {
     stubFetch((url) => {
       if (url.includes('/orders/list')) {
         return {
           code: 200,
           data: [
-            { id: 2980909, order_at: '2026-06-21T10:55:25+07:00', qty: 3, amount: 252720, cogs: 274000, channel_name: 'Shopee', product_summary: '1 RG-CB-30,1 RG-SL-30' },
-            { id: 2980910, order_at: '2026-06-21T11:00:00+07:00', qty: 1, amount: 95000, cogs: 40000, channel_name: 'Customer Services', product_summary: '1 RG-RJ-20' },
+            { id: 1, channel_id: 4, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 100000, cogs: 90000, channel_name: 'Shopee', product_summary: 'A' },
+            { id: 2, channel_id: -3, status: 'paid', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 50000, cogs: 40000, channel_name: 'Customer Services', product_summary: 'B' },
+            { id: 3, channel_id: 1, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 999, cogs: 0, channel_name: 'Manual', product_summary: 'C' },      // Manual -> dropped
+            { id: 4, channel_id: 4, status: 'cancelled', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 777, cogs: 0, channel_name: 'Shopee', product_summary: 'D' },     // cancelled -> dropped
+            { id: 5, channel_id: 4, status: 'pending', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 555, cogs: 0, channel_name: 'Shopee', product_summary: 'E' },       // pending -> dropped
           ],
-          metadata: { count: 2 },
+          metadata: { count: 5 },
         }
       }
       return { code: 200, data: [], metadata: { count: 0 } }
@@ -38,14 +41,9 @@ describe('HttpWmsAdapter.fetchSales', () => {
 
     const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-21' })
 
-    expect(rows).toHaveLength(2)
-    expect(rows[0]).toMatchObject({
-      wmsId: 'ord-2980909', date: '2026-06-21', qty: 3, revenue: 252720,
-      channel: 'Shopee', cogs: 274000, grossProfit: 252720 - 274000, origin: 'wms',
-      product: '1 RG-CB-30,1 RG-SL-30',
-    })
-    // CS / social-commerce orders arrive via orders/list directly (channel name preserved).
-    expect(rows[1]).toMatchObject({ wmsId: 'ord-2980910', channel: 'Customer Services', revenue: 95000 })
+    expect(rows.map(r => r.wmsId)).toEqual(['ord-1', 'ord-2'])     // only the 2 tracked+revenue orders
+    expect(rows[0]).toMatchObject({ channel: 'shopee', revenue: 100000 })
+    expect(rows[1]).toMatchObject({ channel: 'cs', revenue: 50000 })
   })
 
   it('does NOT call the social-commerce endpoint (CS orders already in orders/list -> no double-count)', async () => {
@@ -77,8 +75,8 @@ describe('HttpWmsAdapter.fetchSales', () => {
         return {
           code: 200,
           data: Array.from({ length: n }, (_, i) => ({
-            id: start + i, order_at: '2026-06-10T00:00:00+07:00',
-            qty: 1, amount: 1000, cogs: 0, channel_name: 'Manual', product_summary: 'X',
+            id: start + i, channel_id: 4, status: 'completed', order_at: '2026-06-10T00:00:00+07:00',
+            qty: 1, amount: 1000, cogs: 0, channel_name: 'Shopee', product_summary: 'X',
           })),
           metadata: { count: TOTAL },
         }
