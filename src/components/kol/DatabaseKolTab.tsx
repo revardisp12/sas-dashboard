@@ -228,7 +228,7 @@ export default function DatabaseKolTab({ brand }: { brand: Brand }) {
           <p style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: C.text }}>
             {form.id ? 'Edit Influencer' : 'Tambah Influencer'}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Nama" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Sarah Azhari" />
             <Field label="Username" value={form.username} onChange={v => setForm(f => ({ ...f, username: v }))} placeholder="@sarahaz" />
             <div>

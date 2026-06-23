@@ -154,6 +154,7 @@ export default function UserManagement({ brandColor }: Props) {
 
       {/* Table */}
       <div className="rounded-xl overflow-hidden border" style={{ borderColor: '#E5E7EB' }}>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
@@ -271,6 +272,7 @@ export default function UserManagement({ brandColor }: Props) {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

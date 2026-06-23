@@ -130,7 +130,7 @@ export default function BudgetTab({ brand }: { brand: Brand }) {
           <p style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: C.text }}>
             {form.id ? 'Edit Budget' : 'Tambah Budget'}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: C.sub, display: 'block', marginBottom: 4 }}>Nama Budget</label>
               <input

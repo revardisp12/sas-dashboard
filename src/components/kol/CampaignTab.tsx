@@ -292,7 +292,7 @@ export default function CampaignTab({ brand }: { brand: Brand }) {
           <p style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: C.text }}>
             {form.id ? 'Edit Campaign' : 'Tambah Campaign'}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Nama Campaign" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Reglow Glow-Up Juni 2026" />
             {/* budget select */}
             <div>
@@ -351,9 +351,9 @@ export default function CampaignTab({ brand }: { brand: Brand }) {
           Belum ada campaign, tambah dulu.
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div className="flex-col sm:flex-row" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
           {/* ── campaign selector ── */}
-          <div style={{ width: 240, flexShrink: 0 }}>
+          <div className="w-full sm:w-60" style={{ flexShrink: 0 }}>
             <Card style={{ overflow: 'hidden' }}>
               {campaigns.map((cam, i) => {
                 const isActive = cam.status === 'active'

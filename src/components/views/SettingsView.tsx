@@ -300,7 +300,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
         <div className="space-y-5">
           <div className="rounded-2xl p-5 space-y-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <p className="text-sm font-semibold" style={{ color: '#111827' }}>Tambah Produk</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#6B7280' }}>SKU</label>
                 <input value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))}
@@ -466,7 +466,7 @@ export default function SettingsView({ brand, products, onProductsChange, onBulk
           {/* Add bundle form */}
           <div className="rounded-2xl p-5 space-y-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
             <p className="text-sm font-semibold" style={{ color: '#111827' }}>Tambah Bundle</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#6B7280' }}>Nama Bundle</label>
                 <input value={bundleForm.name} onChange={e => setBundleForm(f => ({ ...f, name: e.target.value }))}
