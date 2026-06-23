@@ -9,6 +9,11 @@ function makePorts(fake: FakeSupabase): { db: DbPort; log: LogPort } {
     async upsert(table, rows, onConflict) {
       return fake.from(table).upsert(rows as Record<string, unknown>[], { onConflict })
     },
+    async deleteWmsInRange(table, brand, start, end) {
+      const ex = fake.store[table] ?? []
+      fake.store[table] = ex.filter(r => !(r.origin === 'wms' && r.brand === brand && String(r.date) >= start && String(r.date) <= end))
+      return { error: null }
+    },
   }
   const log: LogPort = {
     async start() { return 'log-1' },
@@ -84,6 +89,7 @@ describe('runWmsSync', () => {
         captured[table] = (captured[table] ?? []).concat(rows)
         return { error: null }
       },
+      async deleteWmsInRange() { return { error: null } },
     }
     const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ } }
     // Adapter returns the SAME wms_id twice for sales (simulating the pagination race).
@@ -96,6 +102,38 @@ describe('runWmsSync', () => {
     expect(res.status).toBe('success')           // dedup prevented the ON CONFLICT crash
     expect(captured['sales']).toHaveLength(1)     // the duplicate was collapsed
     expect(res.tables['sales']).toBe(1)
+  })
+
+  it('scope-replaces ranged tables: wipes stale WMS rows in range, keeps manual + out-of-range', async () => {
+    const fake = new FakeSupabase()
+    // Pre-seed rows that the fresh pull would NOT re-create (old channel mapping, etc.).
+    fake.store['sales'] = [
+      { brand: 'reglow', wms_id: 'ord-STALE', origin: 'wms', date: '2026-06-10', channel: 'cs', revenue: 999 }, // stale, in range -> DELETE
+      { brand: 'reglow', wms_id: null, origin: 'manual', date: '2026-06-10', channel: 'cs', revenue: 111 },     // manual -> KEEP
+      { brand: 'reglow', wms_id: 'ord-FAR', origin: 'wms', date: '2026-01-01', channel: 'cs', revenue: 222 },   // out of range -> KEEP
+    ]
+    const { db, log } = makePorts(fake)
+    const adapter = new MockWmsAdapter()
+    const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow'] as Brand[], tables: ['sales'], range: { start: '2026-06-01', end: '2026-06-30' } }) })
+
+    expect(res.status).toBe('success')
+    const sales = fake.store['sales']
+    expect(sales.some(r => r.wms_id === 'ord-STALE')).toBe(false)                 // stale in-range removed
+    expect(sales.some(r => r.origin === 'manual' && r.revenue === 111)).toBe(true) // manual untouched
+    expect(sales.some(r => r.wms_id === 'ord-FAR')).toBe(true)                     // out-of-range untouched
+    expect(sales.some(r => r.origin === 'wms' && String(r.date) >= '2026-06-01')).toBe(true) // fresh pull inserted
+  })
+
+  it('does NOT scope-delete non-ranged tables (products keyed by sku/wms_id, upsert handles them)', async () => {
+    const fake = new FakeSupabase()
+    fake.store['products'] = [
+      { brand: 'reglow', wms_id: 'prod-KEEP', origin: 'wms', sku: 'OLD', name: 'old' }, // no date; must survive a products sync
+    ]
+    const { db, log } = makePorts(fake)
+    const adapter = new MockWmsAdapter()
+    const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow'] as Brand[], tables: ['products'] }) })
+    expect(res.status).toBe('success')
+    expect(fake.store['products'].some(r => r.wms_id === 'prod-KEEP')).toBe(true) // not wiped (non-ranged)
   })
 
   it('skips remaining tables of a brand after its first table fails', async () => {
