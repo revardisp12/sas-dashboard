@@ -9,9 +9,11 @@ import type { WmsTable } from '@/lib/wms/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300 // live sync paginates thousands of orders across 3 brands
 
 const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
-const TABLES: WmsTable[] = ['sales', 'crm', 'products', 'google_ads', 'meta_ads']
+// Revenue scope: marketplace + CS Soscom (sales), repeat customers (crm), product catalog.
+const TABLES: WmsTable[] = ['sales', 'products', 'crm']
 
 function lastNDays(n: number) {
   const end = new Date()
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
     const result = await runWmsSync({
       adapter: getWmsAdapter(),
       db: dbPort(supabase), log: logPort(supabase),
-      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'cron' },
+      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(1), trigger: 'cron' },
     })
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })

@@ -19,9 +19,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 const ROLE_VIEWS: Record<UserRole, ActiveView[]> = {
-  super_admin:    ['overview','funnel','performance','cads-calculator','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','facebook-organic','settings','kol'],
-  admin:          ['overview','funnel','performance','cads-calculator','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','facebook-organic','settings','kol'],
-  manager:        ['overview','funnel','performance','cads-calculator','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','instagram','tiktok-organic','facebook-organic','settings'],
+  super_admin:    ['overview','funnel','performance','cads-calculator','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','tokopedia','lazada','instagram','tiktok-organic','facebook-organic','settings','kol'],
+  admin:          ['overview','funnel','performance','cads-calculator','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','tokopedia','lazada','instagram','tiktok-organic','facebook-organic','settings','kol'],
+  manager:        ['overview','funnel','performance','cads-calculator','sales','crm','product-analysis','google-ads','meta-ads','tiktok-shop','shopee','tokopedia','lazada','instagram','tiktok-organic','facebook-organic','settings'],
   cs:             ['sales'],
   crm:            ['crm'],
   kol_specialist: ['kol'],

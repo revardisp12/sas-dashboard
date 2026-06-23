@@ -120,15 +120,26 @@ export async function deleteTask(id: string): Promise<void> {
 // ── Sales ────────────────────────────────────────────────────────────────────
 
 export async function getSales(brand: Brand): Promise<SalesRow[]> {
-  const { data, error } = await supabase.from('sales').select('*').eq('brand', brand).order('date')
-  if (error) throw error
-  return (data ?? []).map(r => ({
-    date: r.date, product: r.product, qty: r.qty, revenue: r.revenue,
-    channel: r.channel ?? '', cogs: r.cogs ?? 0, grossProfit: r.gross_profit ?? 0,
-    customerName: r.customer_name ?? '', phone: r.phone ?? '',
-    address: r.address ?? '', source: (r.source ?? 'organic') as SalesSource,
-    origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
-  }))
+  // PostgREST caps each request at 1000 rows — paginate so high-volume brands
+  // (Purela ~5.8k orders/day) load fully instead of being silently truncated.
+  const PAGE = 1000
+  const rows: SalesRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from('sales').select('*').eq('brand', brand).order('date').range(from, from + PAGE - 1)
+    if (error) throw error
+    const batch = data ?? []
+    for (const r of batch) {
+      rows.push({
+        date: r.date, product: r.product, qty: r.qty, revenue: r.revenue,
+        channel: r.channel ?? '', cogs: r.cogs ?? 0, grossProfit: r.gross_profit ?? 0,
+        customerName: r.customer_name ?? '', phone: r.phone ?? '',
+        address: r.address ?? '', source: (r.source ?? 'organic') as SalesSource,
+        origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
+      })
+    }
+    if (batch.length < PAGE) break
+  }
+  return rows
 }
 
 export async function appendSales(rows: SalesRow[], brand: Brand): Promise<void> {
@@ -156,13 +167,24 @@ export async function replaceSales(rows: SalesRow[], brand: Brand): Promise<void
 // ── CRM ──────────────────────────────────────────────────────────────────────
 
 export async function getCRM(brand: Brand): Promise<CRMRow[]> {
-  const { data, error } = await supabase.from('crm').select('*').eq('brand', brand).order('date')
-  if (error) throw error
-  return (data ?? []).map(r => ({
-    date: r.date, customerName: r.customer_name ?? '',
-    phone: r.phone ?? '', product: r.product, qty: r.qty, revenue: r.revenue,
-    origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
-  }))
+  // PostgREST caps each request at 1000 rows — paginate so retention RFM sees the full
+  // history (repeat-customer rows accumulate across months) instead of being truncated.
+  const PAGE = 1000
+  const rows: CRMRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from('crm').select('*').eq('brand', brand).order('date').range(from, from + PAGE - 1)
+    if (error) throw error
+    const batch = data ?? []
+    for (const r of batch) {
+      rows.push({
+        date: r.date, customerName: r.customer_name ?? '',
+        phone: r.phone ?? '', product: r.product, qty: r.qty, revenue: r.revenue,
+        origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
+      })
+    }
+    if (batch.length < PAGE) break
+  }
+  return rows
 }
 
 export async function appendCRM(rows: CRMRow[], brand: Brand): Promise<void> {

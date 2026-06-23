@@ -9,9 +9,18 @@ BEGIN
   FOREACH t IN ARRAY ARRAY['sales','crm','products','google_ads','meta_ads'] LOOP
     EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS origin text NOT NULL DEFAULT ''manual''', t);
     EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS wms_id text', t);
-    EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON public.%I (brand, wms_id) WHERE wms_id IS NOT NULL', t||'_wms_uniq', t);
+    -- Plain (non-partial) unique index: NULLs are distinct in Postgres, so manual rows
+    -- (wms_id IS NULL) still coexist, but PostgREST's upsert ON CONFLICT (brand, wms_id)
+    -- — which omits any WHERE predicate — can match this index. A partial index can't.
+    EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON public.%I (brand, wms_id)', t||'_wms_uniq', t);
+    -- The WMS sync writes via the service_role key. Existing tables are only granted to
+    -- authenticated (the app writes via RLS), so service_role needs explicit grants here.
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE ON public.%I TO service_role', t);
   END LOOP;
 END $$;
+
+-- service_role also needs sequence usage for any serial-id inserts
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO service_role;
 
 -- 2) sync_log observability table
 CREATE TABLE IF NOT EXISTS public.sync_log (

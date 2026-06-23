@@ -9,9 +9,11 @@ import type { WmsTable } from '@/lib/wms/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300 // live sync paginates thousands of orders across 3 brands
 
 const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
-const TABLES: WmsTable[] = ['sales', 'crm', 'products', 'google_ads', 'meta_ads']
+// Revenue scope: marketplace + CS Soscom (sales), repeat customers (crm), product catalog.
+const TABLES: WmsTable[] = ['sales', 'products', 'crm']
 
 function lastNDays(n: number) {
   const end = new Date(); const start = new Date(); start.setUTCDate(start.getUTCDate() - n)
@@ -41,13 +43,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // Optional brand scope + date range from the dashboard popover.
+  const body = (await req.json().catch(() => null)) as { brand?: string; start?: string; end?: string } | null
+  const brands: Brand[] = body?.brand && (BRANDS as string[]).includes(body.brand) ? [body.brand as Brand] : BRANDS
+
+  const MAX_RANGE_DAYS = 31
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/
+  let range = lastNDays(1)
+  if (body?.start && body?.end && dateRe.test(body.start) && dateRe.test(body.end)) {
+    if (body.end < body.start) {
+      return NextResponse.json({ error: 'end_date sebelum start_date' }, { status: 400 })
+    }
+    const days = Math.round((Date.parse(body.end) - Date.parse(body.start)) / 86_400_000)
+    if (days > MAX_RANGE_DAYS) {
+      return NextResponse.json({ error: `Maksimal ${MAX_RANGE_DAYS} hari per tarikan` }, { status: 400 })
+    }
+    range = { start: body.start, end: body.end }
+  }
+
   const service = createClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
   try {
     const result = await runWmsSync({
       adapter: getWmsAdapter(),
       db: dbPort(service), log: logPort(service),
-      opts: { brands: BRANDS, tables: TABLES, range: lastNDays(7), trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
+      opts: { brands, tables: TABLES, range, trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
     })
+
+    // Best-effort: record the pulled range for the dashboard's duplicate-pull guard.
+    if (brands.length === 1 && body?.start && body?.end && result.status !== 'failed') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (service as any).from('wms_pull_log').insert({
+        brand: brands[0], range_start: range.start, range_end: range.end, rows: result.tables?.sales ?? 0,
+      }).then(() => {}, () => {})
+    }
+
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })
   } catch (e) {

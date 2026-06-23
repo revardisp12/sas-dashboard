@@ -20,8 +20,12 @@ const BRAND_CONFIG: Record<Brand, { label: string; color: string; glow: string; 
 const PAID_PLATFORMS = [
   { id: 'google-ads' as ActiveView, label: 'Google Ads', icon: BarChart2, color: '#4285F4' },
   { id: 'meta-ads' as ActiveView, label: 'Meta Ads', icon: Target, color: '#1877F2' },
-  { id: 'tiktok-shop' as ActiveView, label: 'TikTok Shop', icon: ShoppingBag, color: '#FF0050' },
+]
+const MARKETPLACE_PLATFORMS = [
   { id: 'shopee' as ActiveView, label: 'Shopee', icon: ShoppingBag, color: '#F05536' },
+  { id: 'tiktok-shop' as ActiveView, label: 'TikTok Shop', icon: ShoppingBag, color: '#FF0050' },
+  { id: 'tokopedia' as ActiveView, label: 'Tokopedia', icon: ShoppingBag, color: '#42B549' },
+  { id: 'lazada' as ActiveView, label: 'Lazada', icon: ShoppingBag, color: '#0F146D' },
 ]
 const ORGANIC_PLATFORMS = [
   { id: 'instagram' as ActiveView, label: 'Instagram', icon: Camera, color: '#E1306C' },
@@ -44,6 +48,7 @@ interface Props {
 export default function Sidebar({ brand, view, onBrandChange, onViewChange, accessibleBrands, canAccess, userName, userRole }: Props) {
   const { signOut } = useAuth()
   const [paidOpen, setPaidOpen] = useState(true)
+  const [marketplaceOpen, setMarketplaceOpen] = useState(true)
   const [organicOpen, setOrganicOpen] = useState(true)
   const [salesOpen, setSalesOpen] = useState(true)
   const [brandDropOpen, setBrandDropOpen] = useState(false)
@@ -130,7 +135,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
           <NavItem icon={Users} label="KOL Management" color="#8B5CF6" active={view === 'kol'} onClick={() => onViewChange('kol')} />
         )}
 
-        {(accessible('google-ads') || accessible('meta-ads') || accessible('tiktok-shop') || accessible('shopee')) && (
+        {(accessible('google-ads') || accessible('meta-ads')) && (
           <>
             <div className="py-1" />
             <DropSection label="Paid Traffic" open={paidOpen} onToggle={() => setPaidOpen(p => !p)}>
@@ -139,6 +144,14 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
               ))}
             </DropSection>
           </>
+        )}
+
+        {MARKETPLACE_PLATFORMS.some(p => accessible(p.id)) && (
+          <DropSection label="Marketplace" open={marketplaceOpen} onToggle={() => setMarketplaceOpen(p => !p)} color="#F05536">
+            {MARKETPLACE_PLATFORMS.map(p => accessible(p.id) && (
+              <NavItem key={p.id} icon={p.icon} label={p.label} color={p.color} active={view === p.id} onClick={() => onViewChange(p.id)} indent />
+            ))}
+          </DropSection>
         )}
 
         {(accessible('instagram') || accessible('tiktok-organic') || accessible('facebook-organic')) && (
@@ -161,7 +174,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
           <span className="text-[10px] font-semibold tracking-widest uppercase px-2" style={{ color: '#6B7280' }}>Reports</span>
           <div className="mt-1 space-y-0.5">
             <Link href={`/digest/${brand}`}
-              className="flex items-center gap-3 w-full rounded-xl transition-all text-left px-3 py-2.5"
+              className="flex items-center gap-3 w-full rounded-xl transition-all text-left py-2.5 pr-3 pl-6"
               style={{ background: 'transparent', borderLeft: '2px solid transparent' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F620' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
@@ -173,7 +186,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
             </Link>
             {(userRole === 'super_admin' || userRole === 'admin') && (
               <Link href="/wms"
-                className="flex items-center gap-3 w-full rounded-xl transition-all text-left px-3 py-2.5"
+                className="flex items-center gap-3 w-full rounded-xl transition-all text-left py-2.5 pr-3 pl-6"
                 style={{ background: 'transparent', borderLeft: '2px solid transparent' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F620' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
@@ -242,21 +255,23 @@ function DropSection({ label, open, onToggle, children, color = '#6B7280' }: {
 function NavItem({ icon: Icon, label, color, active, onClick, indent = false }: {
   icon: React.ElementType; label: string; color: string; active: boolean; onClick: () => void; indent?: boolean
 }) {
+  // All nav items share one size; hierarchy comes from the section header + a subtle left
+  // inset on grouped items — never from shrinking the icon/text (that looked uneven).
   return (
     <button onClick={onClick}
-      className={`flex items-center gap-3 w-full rounded-xl transition-all text-left ${indent ? 'px-3 py-2 ml-2' : 'px-3 py-2.5'}`}
+      className={`flex items-center gap-3 w-full rounded-xl transition-all text-left py-2.5 pr-3 ${indent ? 'pl-6' : 'pl-3'}`}
       style={{
         background: active ? `${color}18` : 'transparent',
         borderLeft: active ? `2px solid ${color}` : '2px solid transparent',
       }}>
-      <div className={`${indent ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg flex items-center justify-center flex-shrink-0 transition-all`}
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
         style={{
           background: active ? `${color}25` : '#F3F4F6',
           boxShadow: active ? `0 0 10px ${color}40` : 'none',
         }}>
-        <Icon size={indent ? 12 : 14} style={{ color: active ? color : '#6B7280' }} />
+        <Icon size={14} style={{ color: active ? color : '#6B7280' }} />
       </div>
-      <span className={`${indent ? 'text-xs' : 'text-sm'} font-medium`} style={{ color: active ? '#111827' : '#6B7280' }}>
+      <span className="text-sm font-medium" style={{ color: active ? '#111827' : '#6B7280' }}>
         {label}
       </span>
     </button>

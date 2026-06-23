@@ -17,6 +17,34 @@ export function filterByRange<T extends { date: string }>(data: T[], from: strin
   return data.filter(r => r.date >= from && r.date <= to)
 }
 
+/** Dropdown period options for the dashboard timeframe selector. */
+export type Period = 'kemarin' | '7d' | '14d' | 'custom'
+
+export const PERIOD_LABELS: Record<Period, string> = {
+  kemarin: 'Kemarin',
+  '7d': '7 Hari Terakhir',
+  '14d': '14 Hari Terakhir',
+  custom: 'Pilih Tanggal Sendiri',
+}
+
+const ymdLocal = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+/** Resolve a preset period to a concrete [from,to] window anchored on today (local time). */
+export function resolvePeriod(p: Exclude<Period, 'custom'>): { from: string; to: string } {
+  const today = new Date()
+  if (p === 'kemarin') {
+    const y = new Date(today)
+    y.setDate(y.getDate() - 1)
+    const s = ymdLocal(y)
+    return { from: s, to: s }
+  }
+  const days = p === '7d' ? 7 : 14
+  const from = new Date(today)
+  from.setDate(from.getDate() - days + 1)
+  return { from: ymdLocal(from), to: ymdLocal(today) }
+}
+
 export function filterByDays<T extends { date: string }>(data: T[], days: number): T[] {
   if (days === 0 || data.length === 0) return data
   const timestamps = data.map(r => new Date(r.date).getTime()).filter(t => !isNaN(t))
@@ -41,6 +69,25 @@ export function fmtNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'jt'
   if (n >= 10_000) return Math.round(n / 1_000) + 'rb'
   return n.toLocaleString('id-ID')
+}
+
+// Exact (non-abbreviated) variants for metric cards: "Rp 2.700.000.000", "13.000".
+export function fmtCurrencyExact(n: number): string {
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID')
+}
+
+export function fmtNumExact(n: number): string {
+  return Math.round(n).toLocaleString('id-ID')
+}
+
+/** Shrink the font for long exact values so they still fit a card. `base` = the card's normal px. */
+export function fitSize(value: string, base: number): number {
+  const len = value.length
+  if (len <= 8) return base
+  if (len <= 11) return Math.round(base * 0.82)
+  if (len <= 14) return Math.round(base * 0.70)
+  if (len <= 17) return Math.round(base * 0.58)
+  return Math.round(base * 0.48)
 }
 
 export function pct(part: number, total: number): string {

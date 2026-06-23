@@ -4,12 +4,28 @@ import type { DbPort, LogPort } from './sync'
 
 type Client = ReturnType<typeof createClient<Database>>
 
+const UPSERT_BATCH = 1000 // high-volume brands (e.g. Purela ~5.8k orders/day) exceed PostgREST's single-payload limits
+
 export function dbPort(supabase: Client): DbPort {
   return {
     async upsert(table, rows, onConflict) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table is a runtime string; Supabase's .from() overloads require a literal type union, so a narrow cast on the table arg is unavoidable
-      const { error } = await supabase.from(table as any).upsert(rows, { onConflict })
-      return { error: error ? { message: error.message } : null }
+      for (let i = 0; i < rows.length; i += UPSERT_BATCH) {
+        const chunk = rows.slice(i, i + UPSERT_BATCH)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table is a runtime string; Supabase's .from() overloads require a literal type union, so a narrow cast on the table arg is unavoidable
+        const { error } = await supabase.from(table as any).upsert(chunk, { onConflict })
+        if (error) return { error: { message: error.message } }
+      }
+      return { error: null }
+    },
+    async deleteWmsInRange(table, brand, start, end) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime table string; .from() needs a literal union
+      const { error } = await (supabase.from(table as any) as any)
+        .delete()
+        .eq('origin', 'wms')
+        .eq('brand', brand)
+        .gte('date', start)
+        .lte('date', end)
+      return error ? { error: { message: error.message } } : { error: null }
     },
   }
 }

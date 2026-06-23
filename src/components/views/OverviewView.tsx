@@ -1,6 +1,7 @@
 'use client'
-import { BrandData, Brand, Timeframe, ProductMaster, CRMRow } from '@/lib/types'
-import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
+import { BrandData, Brand, DateRange, ProductMaster, CRMRow } from '@/lib/types'
+import { filterByRange, fmtCurrencyExact as fmtCurrency, fmtNumExact as fmtNum, fitSize, chartTooltipStyle } from '@/lib/utils'
+import { CHANNELS } from '@/lib/channels'
 import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users, Package, Trophy, AlertTriangle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -27,21 +28,31 @@ function calcCrmSnapshot(crm: CRMRow[]) {
   return { total: raw.length, champions, atRisk }
 }
 
-interface Props { data: BrandData; brand: Brand; timeframe: Timeframe; products?: ProductMaster[] }
+interface Props { data: BrandData; brand: Brand; range: DateRange; products?: ProductMaster[] }
 
-export default function OverviewView({ data, brand, timeframe, products = [] }: Props) {
-  const ga = filterByDays(data.googleAds, timeframe)
-  const meta = filterByDays(data.metaAds, timeframe)
-  const tts = filterByDays(data.tiktokShop, timeframe)
-  const shopee = filterByDays(data.shopee ?? [], timeframe)
-  const ig = filterByDays(data.instagram, timeframe)
-  const tt = filterByDays(data.tiktokOrganic, timeframe)
-  const sales = filterByDays(data.sales, timeframe)
-  const crm = filterByDays(data.crm, timeframe)
+export default function OverviewView({ data, brand, range, products = [] }: Props) {
+  const ga = filterByRange(data.googleAds, range.from, range.to)
+  const meta = filterByRange(data.metaAds, range.from, range.to)
+  const tts = filterByRange(data.tiktokShop, range.from, range.to)
+  const ig = filterByRange(data.instagram, range.from, range.to)
+  const tt = filterByRange(data.tiktokOrganic, range.from, range.to)
+  const sales = filterByRange(data.sales, range.from, range.to)
+  const crm = filterByRange(data.crm, range.from, range.to)
+
+  // Revenue per sales channel — ties the Overview to the per-channel sidebar views
+  // (Shopee/TikTok/etc) and to the Total Revenue headline (same `sales` source).
+  const channelStats = CHANNELS.map(c => {
+    const rs = sales.filter(r => r.channel === c.key)
+    return { key: c.key, label: c.label, revenue: rs.reduce((s, r) => s + r.revenue, 0), orders: rs.length }
+  }).filter(c => c.orders > 0).sort((a, b) => b.revenue - a.revenue)
 
   const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0) + tts.reduce((s, r) => s + (r.adSpent || 0), 0)
-  const totalRevenue = sales.reduce((s, r) => s + r.revenue, 0) + tts.reduce((s, r) => s + r.gmv, 0) + shopee.reduce((s, r) => s + r.gmv, 0) + crm.reduce((s, r) => s + r.revenue, 0)
-  const totalOrders = tts.reduce((s, r) => s + r.orders, 0) + shopee.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0) + crm.length
+  // Headline total = whole business: Sales (marketplace + CS Acquisition) + CRM (Retention).
+  // The CS feed is split — new/renew land in `sales` (channel cs), repeat in `crm` — so both
+  // are summed here to match the finance report's combined revenue. (The "Sales Performance"
+  // section below stays Sales-only.)
+  const totalRevenue = sales.reduce((s, r) => s + r.revenue, 0) + crm.reduce((s, r) => s + r.revenue, 0)
+  const totalOrders = sales.length + crm.length
   const blendedRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0
   const totalImpressions = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
 
@@ -84,9 +95,28 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
         <KpiCard label="Blended ROAS" value={blendedRoas > 0 ? blendedRoas.toFixed(2) + 'x' : '-'} icon={<BarChart2 size={16} />} color="#00D4FF" />
       </div>
 
-      {/* Paid Traffic */}
+      {/* Revenue by Channel — sourced from the sales table so it ties out to the
+          per-channel sidebar views (Shopee/TikTok/etc) and the Total Revenue headline. */}
+      {channelStats.length > 0 && (
+        <Section title="Revenue by Channel">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+            {channelStats.map(c => (
+              <div key={c.key} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <ShoppingBag size={13} style={{ color: '#C9A96E' }} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>{c.label}</span>
+                </div>
+                <p className="font-bold" style={{ color: '#111827', fontSize: fitSize(fmtCurrency(c.revenue), 18), whiteSpace: 'nowrap' }}>{fmtCurrency(c.revenue)}</p>
+                <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>{fmtNum(c.orders)} order</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Paid Traffic (ad platforms — populated when ad data is uploaded) */}
       <Section title="Paid Traffic">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <PlatformCard icon={<BarChart2 size={14} />} color="#4285F4" title="Google Ads"
             items={[
               { label: 'Spend', value: fmtCurrency(ga.reduce((s, r) => s + r.spend, 0)) },
@@ -101,20 +131,6 @@ export default function OverviewView({ data, brand, timeframe, products = [] }: 
               { label: 'Clicks', value: fmtNum(meta.reduce((s, r) => s + r.clicks, 0)) },
               { label: 'Avg ROAS', value: meta.length > 0 ? (meta.reduce((s, r) => s + r.roas, 0) / meta.length).toFixed(2) + 'x' : '-' },
             ]} empty={meta.length === 0} />
-          <PlatformCard icon={<ShoppingBag size={14} />} color="#FF0050" title="TikTok Shop"
-            items={[
-              { label: 'GMV', value: fmtCurrency(tts.reduce((s, r) => s + r.gmv, 0)) },
-              { label: 'Orders', value: fmtNum(tts.reduce((s, r) => s + r.orders, 0)) },
-              { label: 'Ad Spent', value: fmtCurrency(tts.reduce((s, r) => s + (r.adSpent || 0), 0)) },
-              { label: 'ROAS', value: (() => { const spent = tts.reduce((s, r) => s + (r.adSpent || 0), 0); const rev = tts.reduce((s, r) => s + r.revenue, 0); return spent > 0 ? (rev / spent).toFixed(2) + 'x' : '-' })() },
-            ]} empty={tts.length === 0} />
-          <PlatformCard icon={<ShoppingBag size={14} />} color="#F05536" title="Shopee"
-            items={[
-              { label: 'GMV', value: fmtCurrency(shopee.reduce((s, r) => s + r.gmv, 0)) },
-              { label: 'Orders', value: fmtNum(shopee.reduce((s, r) => s + r.orders, 0)) },
-              { label: 'Ad Spend', value: fmtCurrency(shopee.reduce((s, r) => s + r.adSpend, 0)) },
-              { label: 'Avg ROAS', value: (() => { const spend = shopee.reduce((s, r) => s + r.adSpend, 0); const rev = shopee.reduce((s, r) => s + r.revenue, 0); return spend > 0 ? (rev / spend).toFixed(2) + 'x' : '-' })() },
-            ]} empty={shopee.length === 0} />
         </div>
       </Section>
 
@@ -264,7 +280,7 @@ function KpiCard({ label, value, icon, color }: { label: string; value: string; 
         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ background: `rgba(${r},${g},${b},0.15)`, color }}>{icon}</div>
       </div>
-      <p className="text-2xl font-bold" style={{ color: '#111827' }}>{value}</p>
+      <p className="font-bold" style={{ color: '#111827', fontSize: fitSize(value, 24), whiteSpace: 'nowrap' }}>{value}</p>
     </div>
   )
 }
@@ -294,7 +310,7 @@ function PlatformCard({ icon, color, title, items, empty }: {
         {items.map(item => (
           <div key={item.label}>
             <p className="text-[10px]" style={{ color: '#4B5563' }}>{item.label}</p>
-            <p className="text-sm font-bold" style={{ color: empty ? '#9CA3AF' : '#111827' }}>{empty ? '-' : item.value}</p>
+            <p className="font-bold" style={{ color: empty ? '#9CA3AF' : '#111827', fontSize: fitSize(item.value, 14), whiteSpace: 'nowrap' }}>{empty ? '-' : item.value}</p>
           </div>
         ))}
       </div>
@@ -306,7 +322,7 @@ function MiniStat({ label, value, color }: { label: string; value: string; color
   return (
     <div className="rounded-xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
       <p className="text-[10px] mb-1" style={{ color: '#4B5563' }}>{label}</p>
-      <p className="text-lg font-bold" style={{ color }}>{value}</p>
+      <p className="font-bold" style={{ color, fontSize: fitSize(value, 18), whiteSpace: 'nowrap' }}>{value}</p>
     </div>
   )
 }

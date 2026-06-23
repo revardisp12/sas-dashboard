@@ -1,19 +1,19 @@
 'use client'
-import { BrandData, Brand, Timeframe } from '@/lib/types'
-import { filterByDays, fmtNum } from '@/lib/utils'
+import { BrandData, Brand, DateRange } from '@/lib/types'
+import { filterByRange, fmtNum } from '@/lib/utils'
 
-interface Props { data: BrandData; brand: Brand; timeframe: Timeframe }
+interface Props { data: BrandData; brand: Brand; range: DateRange }
 
 interface Stage {
   label: string; sublabel: string; value: number
   color: string; bg: string; icon: string
 }
 
-export default function FunnelView({ data, timeframe }: Props) {
-  const ga = filterByDays(data.googleAds, timeframe)
-  const meta = filterByDays(data.metaAds, timeframe)
-  const tts = filterByDays(data.tiktokShop, timeframe)
-  const sales = filterByDays(data.sales, timeframe)
+export default function FunnelView({ data, range }: Props) {
+  const ga = filterByRange(data.googleAds, range.from, range.to)
+  const meta = filterByRange(data.metaAds, range.from, range.to)
+  const tts = filterByRange(data.tiktokShop, range.from, range.to)
+  const sales = filterByRange(data.sales, range.from, range.to)
 
   const awareness = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
   const consideration = ga.reduce((s, r) => s + r.clicks, 0) + meta.reduce((s, r) => s + r.clicks, 0)
