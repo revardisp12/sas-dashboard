@@ -28,9 +28,12 @@ export function channelLabel(key: ChannelKey): string {
   return CHANNELS.find(c => c.key === key)?.label ?? key
 }
 
-/** Order statuses that count as revenue. Everything else (pending/cancelled/returned/…) is excluded. */
-const REVENUE_STATUSES = new Set(['paid', 'packing', 'packed', 'pick', 'process', 'sent', 'completed'])
+/**
+ * Statuses that are NOT revenue (cancelled / returned). Everything else counts — matching the
+ * partner finance report: gross-of-discount, excluding only cancellations and returns.
+ */
+const NON_REVENUE_STATUSES = new Set(['cancelled', 'cancelled_return', 'returned'])
 
 export function isRevenueStatus(status: string): boolean {
-  return REVENUE_STATUSES.has(status)
+  return !NON_REVENUE_STATUSES.has(status)
 }

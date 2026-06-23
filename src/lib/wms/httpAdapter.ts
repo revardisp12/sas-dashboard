@@ -103,9 +103,11 @@ export class HttpWmsAdapter implements WmsAdapter {
     const rows: WithWmsId<SalesRow>[] = []
     for (const o of orders) {
       const channel = channelForId(o.channel_id)
-      if (!channel) continue                 // untracked channel (Manual, Distributor, …)
-      if (!isRevenueStatus(o.status)) continue // pending/cancelled/returned/…
-      const revenue = num(o.amount)
+      if (!channel) continue // untracked channel (Manual, Distributor, …)
+      if (!isRevenueStatus(o.status)) continue // drop cancelled / returned (not real revenue)
+      // Revenue = GROSS (pre-discount) to match the partner finance report. `amount` is
+      // net-of-discount, so the full ticket = amount + discount_order.
+      const revenue = num(o.amount) + num(o.discount_order)
       const cogs = num(o.cogs)
       rows.push({
         wmsId: `ord-${o.id}`,
@@ -169,9 +171,9 @@ interface WmsOrder {
   order_at: string
   qty: number
   amount: number
+  discount_order: number
   cogs: number
   channel_id: number
-  channel_name: string
   status: string
   product_summary: string
 }

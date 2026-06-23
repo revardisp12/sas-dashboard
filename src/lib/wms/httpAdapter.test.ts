@@ -21,19 +21,18 @@ const pageOf = (url: string) => Number(url.match(/[?&]page=(\d+)/)?.[1] ?? 1)
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpWmsAdapter.fetchSales', () => {
-  it('keeps only tracked channels + revenue statuses, mapping channel to canonical', async () => {
+  it('keeps tracked channels (drops Manual) + non-cancelled/returned statuses; revenue is gross (amount + discount)', async () => {
     stubFetch((url) => {
       if (url.includes('/orders/list')) {
         return {
           code: 200,
           data: [
-            { id: 1, channel_id: 4, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 100000, cogs: 90000, channel_name: 'Shopee', product_summary: 'A' },
-            { id: 2, channel_id: -3, status: 'paid', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 50000, cogs: 40000, channel_name: 'Customer Services', product_summary: 'B' },
-            { id: 3, channel_id: 1, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 999, cogs: 0, channel_name: 'Manual', product_summary: 'C' },      // Manual -> dropped
-            { id: 4, channel_id: 4, status: 'cancelled', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 777, cogs: 0, channel_name: 'Shopee', product_summary: 'D' },     // cancelled -> dropped
-            { id: 5, channel_id: 4, status: 'pending', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 555, cogs: 0, channel_name: 'Shopee', product_summary: 'E' },       // pending -> dropped
+            { id: 1, channel_id: 4, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 100000, discount_order: 20000, cogs: 90000, product_summary: 'A' }, // Shopee, gross 120000
+            { id: 2, channel_id: -3, status: 'pending', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 50000, discount_order: 0, cogs: 40000, product_summary: 'B' },        // CS, pending KEPT
+            { id: 3, channel_id: 1, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 999, discount_order: 0, cogs: 0, product_summary: 'C' },             // Manual -> dropped (channel)
+            { id: 4, channel_id: 4, status: 'cancelled', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 777, discount_order: 0, cogs: 0, product_summary: 'D' },             // cancelled -> dropped (status)
           ],
-          metadata: { count: 5 },
+          metadata: { count: 4 },
         }
       }
       return { code: 200, data: [], metadata: { count: 0 } }
@@ -41,8 +40,8 @@ describe('HttpWmsAdapter.fetchSales', () => {
 
     const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-21' })
 
-    expect(rows.map(r => r.wmsId)).toEqual(['ord-1', 'ord-2'])     // only the 2 tracked+revenue orders
-    expect(rows[0]).toMatchObject({ channel: 'shopee', revenue: 100000 })
+    expect(rows.map(r => r.wmsId)).toEqual(['ord-1', 'ord-2'])      // Manual + cancelled dropped; pending kept
+    expect(rows[0]).toMatchObject({ channel: 'shopee', revenue: 120000 }) // gross = amount + discount_order
     expect(rows[1]).toMatchObject({ channel: 'cs', revenue: 50000 })
   })
 
