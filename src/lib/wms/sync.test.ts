@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { runWmsSync, type DbPort, type LogPort } from './sync'
+import { runWmsSync, dedupeByKeys, type DbPort, type LogPort } from './sync'
 import { MockWmsAdapter } from './mockAdapter'
 import { FakeSupabase } from './fakeSupabase'
 import type { Brand } from '@/lib/types'
@@ -69,6 +69,35 @@ describe('runWmsSync', () => {
     expect(res.status).toBe('success')
   })
 
+  it('dedupes duplicate wms_ids before upsert (a paginated read over live data can surface an id twice)', async () => {
+    // A DbPort that mimics Postgres exactly: a single payload repeating a conflict key errors.
+    const captured: Record<string, unknown[]> = {}
+    const db: DbPort = {
+      async upsert(table, rows, onConflict) {
+        const keys = onConflict.split(',')
+        const seen = new Set<string>()
+        for (const r of rows as Record<string, unknown>[]) {
+          const k = keys.map(c => String(r[c])).join('|')
+          if (seen.has(k)) return { error: { message: 'ON CONFLICT DO UPDATE command cannot affect row a second time' } }
+          seen.add(k)
+        }
+        captured[table] = (captured[table] ?? []).concat(rows)
+        return { error: null }
+      },
+    }
+    const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ } }
+    // Adapter returns the SAME wms_id twice for sales (simulating the pagination race).
+    const adapter = new MockWmsAdapter()
+    const dupRow = { wmsId: 'ord-1', date: '2026-06-01', product: 'A', qty: 1, revenue: 100, channel: 'shopee', cogs: 0, grossProfit: 100, source: 'organic', origin: 'wms' }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    adapter.fetchSales = async () => [dupRow, { ...dupRow }] as any
+
+    const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow'] as Brand[], tables: ['sales'] }) })
+    expect(res.status).toBe('success')           // dedup prevented the ON CONFLICT crash
+    expect(captured['sales']).toHaveLength(1)     // the duplicate was collapsed
+    expect(res.tables['sales']).toBe(1)
+  })
+
   it('skips remaining tables of a brand after its first table fails', async () => {
     const fake = new FakeSupabase()
     const { db, log } = makePorts(fake)
@@ -87,5 +116,29 @@ describe('runWmsSync', () => {
     // reglow wrote both tables
     expect((fake.store['sales'] ?? []).some(r => r.brand === 'reglow')).toBe(true)
     expect((fake.store['crm'] ?? []).some(r => r.brand === 'reglow')).toBe(true)
+  })
+})
+
+describe('dedupeByKeys', () => {
+  it('keeps one row per composite key (last occurrence wins)', () => {
+    const rows = [
+      { brand: 'reglow', wms_id: 'sc-1', revenue: 100 },
+      { brand: 'reglow', wms_id: 'sc-2', revenue: 200 },
+      { brand: 'reglow', wms_id: 'sc-1', revenue: 150 }, // dup key -> last wins
+      { brand: 'amura', wms_id: 'sc-1', revenue: 300 },  // different brand -> kept
+    ]
+    const out = dedupeByKeys(rows, ['brand', 'wms_id'])
+    expect(out).toHaveLength(3)
+    expect(out.find(r => r.brand === 'reglow' && r.wms_id === 'sc-1')!.revenue).toBe(150)
+    expect(out.some(r => r.brand === 'amura' && r.wms_id === 'sc-1')).toBe(true)
+  })
+
+  it('treats null/undefined key parts as empty (no collisions across distinct ids)', () => {
+    const rows = [
+      { brand: 'reglow', wms_id: null },
+      { brand: 'reglow', wms_id: undefined },
+    ]
+    // both collapse to the same empty key — manual rows (wms_id null) are never upserted via WMS
+    expect(dedupeByKeys(rows, ['brand', 'wms_id'])).toHaveLength(1)
   })
 })
