@@ -20,8 +20,12 @@ const BRAND_CONFIG: Record<Brand, { label: string; color: string; glow: string; 
 const PAID_PLATFORMS = [
   { id: 'google-ads' as ActiveView, label: 'Google Ads', icon: BarChart2, color: '#4285F4' },
   { id: 'meta-ads' as ActiveView, label: 'Meta Ads', icon: Target, color: '#1877F2' },
-  { id: 'tiktok-shop' as ActiveView, label: 'TikTok Shop', icon: ShoppingBag, color: '#FF0050' },
+]
+const MARKETPLACE_PLATFORMS = [
   { id: 'shopee' as ActiveView, label: 'Shopee', icon: ShoppingBag, color: '#F05536' },
+  { id: 'tiktok-shop' as ActiveView, label: 'TikTok Shop', icon: ShoppingBag, color: '#FF0050' },
+  { id: 'tokopedia' as ActiveView, label: 'Tokopedia', icon: ShoppingBag, color: '#42B549' },
+  { id: 'lazada' as ActiveView, label: 'Lazada', icon: ShoppingBag, color: '#0F146D' },
 ]
 const ORGANIC_PLATFORMS = [
   { id: 'instagram' as ActiveView, label: 'Instagram', icon: Camera, color: '#E1306C' },
@@ -44,6 +48,7 @@ interface Props {
 export default function Sidebar({ brand, view, onBrandChange, onViewChange, accessibleBrands, canAccess, userName, userRole }: Props) {
   const { signOut } = useAuth()
   const [paidOpen, setPaidOpen] = useState(true)
+  const [marketplaceOpen, setMarketplaceOpen] = useState(true)
   const [organicOpen, setOrganicOpen] = useState(true)
   const [salesOpen, setSalesOpen] = useState(true)
   const [brandDropOpen, setBrandDropOpen] = useState(false)
@@ -130,7 +135,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
           <NavItem icon={Users} label="KOL Management" color="#8B5CF6" active={view === 'kol'} onClick={() => onViewChange('kol')} />
         )}
 
-        {(accessible('google-ads') || accessible('meta-ads') || accessible('tiktok-shop') || accessible('shopee')) && (
+        {(accessible('google-ads') || accessible('meta-ads')) && (
           <>
             <div className="py-1" />
             <DropSection label="Paid Traffic" open={paidOpen} onToggle={() => setPaidOpen(p => !p)}>
@@ -139,6 +144,14 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
               ))}
             </DropSection>
           </>
+        )}
+
+        {MARKETPLACE_PLATFORMS.some(p => accessible(p.id)) && (
+          <DropSection label="Marketplace" open={marketplaceOpen} onToggle={() => setMarketplaceOpen(p => !p)} color="#F05536">
+            {MARKETPLACE_PLATFORMS.map(p => accessible(p.id) && (
+              <NavItem key={p.id} icon={p.icon} label={p.label} color={p.color} active={view === p.id} onClick={() => onViewChange(p.id)} indent />
+            ))}
+          </DropSection>
         )}
 
         {(accessible('instagram') || accessible('tiktok-organic') || accessible('facebook-organic')) && (
