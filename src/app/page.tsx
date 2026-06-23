@@ -8,7 +8,7 @@ import {
   loadBrandData,
   getProducts, upsertProduct, bulkInsertProducts, deleteProduct as dbDeleteProduct,
   getBundles, upsertBundle, deleteBundle as dbDeleteBundle,
-  appendSales, replaceSales,
+  replaceSales,
   appendCRM, replaceCRM,
   replaceGoogleAds, appendGoogleAds,
   replaceMetaAds, appendMetaAds,
@@ -24,11 +24,9 @@ import TimeframeSelector from '@/components/TimeframeSelector'
 import BrandSyncButton from '@/components/wms/BrandSyncButton'
 import OverviewView from '@/components/views/OverviewView'
 import FunnelView from '@/components/views/FunnelView'
-import SalesView from '@/components/views/SalesView'
+import ChannelSalesView from '@/components/views/ChannelSalesView'
 import GoogleAdsView from '@/components/platforms/GoogleAdsView'
 import MetaAdsView from '@/components/platforms/MetaAdsView'
-import TikTokShopView from '@/components/platforms/TikTokShopView'
-import ShopeeView from '@/components/platforms/ShopeeView'
 import InstagramView from '@/components/platforms/InstagramView'
 import TikTokOrganicView from '@/components/platforms/TikTokOrganicView'
 import FacebookOrganicView from '@/components/platforms/FacebookOrganicView'
@@ -47,6 +45,7 @@ const VIEW_LABELS: Record<ActiveView, string> = {
   shopee: 'Shopee', instagram: 'Instagram', 'tiktok-organic': 'TikTok Organic', 'facebook-organic': 'Facebook Organic',
   settings: 'Settings', kol: 'KOL Management',
   'cads-calculator': 'C-Ads Calculator',
+  tokopedia: 'Tokopedia', lazada: 'Lazada',
 }
 const BRAND_LABELS: Record<Brand, string> = { reglow: 'Reglow Skincare', amura: 'Amura', purela: 'Purela' }
 
@@ -269,16 +268,6 @@ export default function Dashboard() {
     }
   }
 
-  async function handleManualSales(rows: import('@/lib/types').SalesRow[]) {
-    try {
-      await appendSales(rows, brand)
-      setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: [...prev[brand].sales, ...rows] } }))
-      showSuccess(`Sales ditambahkan: ${rows.length} baris`)
-    } catch (e) {
-      showError(`Simpan sales gagal: ${errMsg(e)}`)
-    }
-  }
-
   async function handleManualCRM(rows: import('@/lib/types').CRMRow[]) {
     try {
       await appendCRM(rows, brand)
@@ -286,16 +275,6 @@ export default function Dashboard() {
       showSuccess(`CRM ditambahkan: ${rows.length} baris`)
     } catch (e) {
       showError(`Simpan CRM gagal: ${errMsg(e)}`)
-    }
-  }
-
-  async function handleBulkSales(rows: import('@/lib/types').SalesRow[]) {
-    try {
-      await replaceSales(rows, brand)
-      setData(prev => ({ ...prev, [brand]: { ...prev[brand], sales: rows } }))
-      showSuccess(`Replace sales sukses: ${rows.length} baris`)
-    } catch (e) {
-      showError(`Replace sales gagal: ${errMsg(e)}`)
     }
   }
 
@@ -442,11 +421,13 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto px-8 py-6 pb-24">
           {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} products={products} />}
           {view === 'funnel' && <FunnelView data={bd} brand={brand} timeframe={timeframe} />}
-          {view === 'sales' && <SalesView data={bd.sales} brand={brand} timeframe={timeframe} onUpload={handleUpload} onBulkUpload={handleBulkSales} products={products} bundles={bundles} onManualAdd={handleManualSales} />}
+          {view === 'sales' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="cs" products={products} />}
+          {view === 'shopee' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="shopee" products={products} />}
+          {view === 'tiktok-shop' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="tiktok" products={products} />}
+          {view === 'tokopedia' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="tokopedia" products={products} />}
+          {view === 'lazada' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="lazada" products={products} />}
           {view === 'google-ads' && <GoogleAdsView data={filtered.googleAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('googleAds')} salesData={filtered.sales} />}
           {view === 'meta-ads' && <MetaAdsView data={filtered.metaAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('metaAds')} salesData={filtered.sales} />}
-          {view === 'tiktok-shop' && <TikTokShopView data={filtered.tiktokShop} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokShop')} />}
-          {view === 'shopee' && <ShopeeView data={filtered.shopee} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('shopee')} />}
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('instagram')} />}
           {view === 'tiktok-organic' && <TikTokOrganicView data={filtered.tiktokOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('tiktokOrganic')} />}
           {view === 'facebook-organic' && <FacebookOrganicView data={filtered.facebookOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('facebookOrganic')} />}
