@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Brand, ActiveView, Timeframe, DateRange, BrandData, emptyBrandData, ProductMaster, BundleMaster } from '@/lib/types'
+import { Brand, ActiveView, DateRange, BrandData, emptyBrandData, ProductMaster, BundleMaster } from '@/lib/types'
 import { parseFile } from '@/lib/csvParser'
-import { filterByDays, filterByRange } from '@/lib/utils'
+import { filterByRange, resolvePeriod, type Period } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   loadBrandData,
@@ -79,8 +79,8 @@ export default function Dashboard() {
     return 'reglow'
   })
   const [view, setView] = useState<ActiveView>('overview')
-  const [timeframe, setTimeframe] = useState<Timeframe>(30)
-  const [dateRange, setDateRange] = useState<DateRange | null>(null)
+  const [period, setPeriod] = useState<Period>('7d')
+  const [dateRange, setDateRange] = useState<DateRange>(() => resolvePeriod('7d'))
   const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() })
   const [products, setProducts] = useState<ProductMaster[]>([])
   const [bundles, setBundles] = useState<BundleMaster[]>([])
@@ -347,8 +347,7 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   function applyFilter<T extends { date: string }>(rows: T[]): T[] {
-    if (dateRange) return filterByRange(rows, dateRange.from, dateRange.to)
-    return filterByDays(rows, timeframe)
+    return filterByRange(rows, dateRange.from, dateRange.to)
   }
 
   const filtered = {
@@ -399,7 +398,12 @@ export default function Dashboard() {
                 onResult={r => { if (r.ok) { showSuccess(r.text); loadData(brand) } else showError(r.text) }}
               />
             )}
-            <TimeframeSelector value={timeframe} onChange={t => { setTimeframe(t); setDateRange(null) }} dateRange={dateRange} onDateRangeChange={setDateRange} />
+            <TimeframeSelector
+              period={period}
+              dateRange={dateRange}
+              onSelectPeriod={p => { setPeriod(p); setDateRange(resolvePeriod(p)) }}
+              onCustomRange={r => { setPeriod('custom'); setDateRange(r) }}
+            />
             <div className="text-right hidden lg:block">
               <p className="text-[10px]" style={{ color: '#374151' }}>{today}</p>
               <div className="flex items-center gap-1.5 mt-0.5 justify-end">
@@ -419,13 +423,13 @@ export default function Dashboard() {
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto px-8 py-6 pb-24">
-          {view === 'overview' && <OverviewView data={bd} brand={brand} timeframe={timeframe} products={products} />}
-          {view === 'funnel' && <FunnelView data={bd} brand={brand} timeframe={timeframe} />}
-          {view === 'sales' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="cs" products={products} />}
-          {view === 'shopee' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="shopee" products={products} />}
-          {view === 'tiktok-shop' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="tiktok" products={products} />}
-          {view === 'tokopedia' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="tokopedia" products={products} />}
-          {view === 'lazada' && <ChannelSalesView sales={bd.sales} brand={brand} timeframe={timeframe} channel="lazada" products={products} />}
+          {view === 'overview' && <OverviewView data={bd} brand={brand} range={dateRange} products={products} />}
+          {view === 'funnel' && <FunnelView data={bd} brand={brand} range={dateRange} />}
+          {view === 'sales' && <ChannelSalesView sales={bd.sales} brand={brand} range={dateRange} channel="cs" products={products} />}
+          {view === 'shopee' && <ChannelSalesView sales={bd.sales} brand={brand} range={dateRange} channel="shopee" products={products} />}
+          {view === 'tiktok-shop' && <ChannelSalesView sales={bd.sales} brand={brand} range={dateRange} channel="tiktok" products={products} />}
+          {view === 'tokopedia' && <ChannelSalesView sales={bd.sales} brand={brand} range={dateRange} channel="tokopedia" products={products} />}
+          {view === 'lazada' && <ChannelSalesView sales={bd.sales} brand={brand} range={dateRange} channel="lazada" products={products} />}
           {view === 'google-ads' && <GoogleAdsView data={filtered.googleAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('googleAds')} salesData={filtered.sales} />}
           {view === 'meta-ads' && <MetaAdsView data={filtered.metaAds} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('metaAds')} salesData={filtered.sales} />}
           {view === 'instagram' && <InstagramView data={filtered.instagram} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('instagram')} />}
@@ -433,7 +437,7 @@ export default function Dashboard() {
           {view === 'facebook-organic' && <FacebookOrganicView data={filtered.facebookOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('facebookOrganic')} />}
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} onBulkUpload={handleBulkCRM} products={products} bundles={bundles} onManualAdd={handleManualCRM} />}
           {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
-          {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} timeframe={timeframe} products={products} bundles={bundles} />}
+          {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} range={dateRange} products={products} bundles={bundles} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
           {view === 'kol' && <KolView brand={brand} />}
           {view === 'cads-calculator' && <CAdsCalculatorView brand={brand} />}

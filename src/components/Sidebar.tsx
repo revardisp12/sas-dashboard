@@ -174,7 +174,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
           <span className="text-[10px] font-semibold tracking-widest uppercase px-2" style={{ color: '#6B7280' }}>Reports</span>
           <div className="mt-1 space-y-0.5">
             <Link href={`/digest/${brand}`}
-              className="flex items-center gap-3 w-full rounded-xl transition-all text-left px-3 py-2.5"
+              className="flex items-center gap-3 w-full rounded-xl transition-all text-left py-2.5 pr-3 pl-6"
               style={{ background: 'transparent', borderLeft: '2px solid transparent' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F620' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
@@ -186,7 +186,7 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
             </Link>
             {(userRole === 'super_admin' || userRole === 'admin') && (
               <Link href="/wms"
-                className="flex items-center gap-3 w-full rounded-xl transition-all text-left px-3 py-2.5"
+                className="flex items-center gap-3 w-full rounded-xl transition-all text-left py-2.5 pr-3 pl-6"
                 style={{ background: 'transparent', borderLeft: '2px solid transparent' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F620' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}>
@@ -255,21 +255,23 @@ function DropSection({ label, open, onToggle, children, color = '#6B7280' }: {
 function NavItem({ icon: Icon, label, color, active, onClick, indent = false }: {
   icon: React.ElementType; label: string; color: string; active: boolean; onClick: () => void; indent?: boolean
 }) {
+  // All nav items share one size; hierarchy comes from the section header + a subtle left
+  // inset on grouped items — never from shrinking the icon/text (that looked uneven).
   return (
     <button onClick={onClick}
-      className={`flex items-center gap-3 w-full rounded-xl transition-all text-left ${indent ? 'px-3 py-2 ml-2' : 'px-3 py-2.5'}`}
+      className={`flex items-center gap-3 w-full rounded-xl transition-all text-left py-2.5 pr-3 ${indent ? 'pl-6' : 'pl-3'}`}
       style={{
         background: active ? `${color}18` : 'transparent',
         borderLeft: active ? `2px solid ${color}` : '2px solid transparent',
       }}>
-      <div className={`${indent ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg flex items-center justify-center flex-shrink-0 transition-all`}
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
         style={{
           background: active ? `${color}25` : '#F3F4F6',
           boxShadow: active ? `0 0 10px ${color}40` : 'none',
         }}>
-        <Icon size={indent ? 12 : 14} style={{ color: active ? color : '#6B7280' }} />
+        <Icon size={14} style={{ color: active ? color : '#6B7280' }} />
       </div>
-      <span className={`${indent ? 'text-xs' : 'text-sm'} font-medium`} style={{ color: active ? '#111827' : '#6B7280' }}>
+      <span className="text-sm font-medium" style={{ color: active ? '#111827' : '#6B7280' }}>
         {label}
       </span>
     </button>

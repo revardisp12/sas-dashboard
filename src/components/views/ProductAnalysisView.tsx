@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { SalesRow, CRMRow, Brand, Timeframe, ProductMaster, BundleMaster } from '@/lib/types'
+import { SalesRow, CRMRow, Brand, DateRange, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
 import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts'
@@ -103,7 +103,7 @@ function filterCRMByDays(data: CRMRow[], days: number): CRMRow[] {
 }
 
 function calcProductStats(sales: SalesRow[], crm: CRMRow[], days: number): ProductStat[] {
-  const filteredSales = filterByDays(sales, days as Timeframe)
+  const filteredSales = filterByDays(sales, days)
   const filteredCRM = filterCRMByDays(crm, days)
 
   const unified: { date: string; product: string; qty: number; revenue: number; customer?: string }[] = [
@@ -178,14 +178,15 @@ interface Props {
   salesData: SalesRow[]
   crmData: CRMRow[]
   brand: Brand
-  timeframe: Timeframe
+  range: DateRange
   products: ProductMaster[]
   bundles: BundleMaster[]
 }
 
-export default function ProductAnalysisView({ salesData, crmData, brand, timeframe: globalTf, products, bundles }: Props) {
+export default function ProductAnalysisView({ salesData, crmData, brand, range, products, bundles }: Props) {
   const accent = BRAND_COLORS[brand]
-  const [localTf, setLocalTf] = useState<number>(globalTf || 90)
+  const seedDays = Math.round((Date.parse(range.to) - Date.parse(range.from)) / 86_400_000) + 1
+  const [localTf, setLocalTf] = useState<number>(Number.isFinite(seedDays) && seedDays > 0 ? seedDays : 90)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
   const [speedFilter, setSpeedFilter] = useState<'fast' | 'medium' | 'slow'>('fast')

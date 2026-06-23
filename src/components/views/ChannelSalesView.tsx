@@ -1,23 +1,23 @@
 'use client'
 import { useMemo } from 'react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import type { Brand, SalesRow, Timeframe, ProductMaster } from '@/lib/types'
+import type { Brand, SalesRow, DateRange, ProductMaster } from '@/lib/types'
 import type { ChannelKey } from '@/lib/channels'
 import { channelLabel } from '@/lib/channels'
-import { filterByDays, fmtCurrency, fmtNum, fmtCurrencyExact, fmtNumExact, fitSize } from '@/lib/utils'
+import { filterByRange, fmtCurrency, fmtNum, fmtCurrencyExact, fmtNumExact, fitSize } from '@/lib/utils'
 
 interface Props {
   sales: SalesRow[]
   brand: Brand
-  timeframe: Timeframe
+  range: DateRange
   channel: ChannelKey
   products?: ProductMaster[]
 }
 
-export default function ChannelSalesView({ sales, timeframe, channel }: Props) {
+export default function ChannelSalesView({ sales, range, channel }: Props) {
   const rows = useMemo(
-    () => filterByDays(sales.filter(r => r.channel === channel), timeframe),
-    [sales, channel, timeframe],
+    () => filterByRange(sales.filter(r => r.channel === channel), range.from, range.to),
+    [sales, channel, range],
   )
 
   const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0)
