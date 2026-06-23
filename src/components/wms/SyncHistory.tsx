@@ -22,6 +22,7 @@ export default function SyncHistory({ refreshKey }: { refreshKey: number }) {
   if (loading) return <p style={{ color: '#6B7280' }}>Memuat riwayat…</p>
   if (!rows.length) return <p style={{ color: '#6B7280' }}>Belum ada sync.</p>
   return (
+    <div className="overflow-x-auto">
     <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
       <thead><tr style={{ textAlign: 'left', color: '#6B7280' }}><th>Waktu</th><th>Trigger</th><th>Status</th><th>Baris</th><th>Error</th></tr></thead>
       <tbody>
@@ -36,5 +37,6 @@ export default function SyncHistory({ refreshKey }: { refreshKey: number }) {
         ))}
       </tbody>
     </table>
+    </div>
   )
 }

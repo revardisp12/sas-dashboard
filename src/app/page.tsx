@@ -4,6 +4,7 @@ import { Brand, ActiveView, DateRange, BrandData, emptyBrandData, ProductMaster,
 import { parseFile } from '@/lib/csvParser'
 import { filterByRange, resolvePeriod, type Period } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { Menu } from 'lucide-react'
 import {
   loadBrandData,
   getProducts, upsertProduct, bulkInsertProducts, deleteProduct as dbDeleteProduct,
@@ -79,6 +80,7 @@ export default function Dashboard() {
     return 'reglow'
   })
   const [view, setView] = useState<ActiveView>('overview')
+  const [mobileNav, setMobileNav] = useState(false)
   const [period, setPeriod] = useState<Period>('7d')
   const [dateRange, setDateRange] = useState<DateRange>(() => resolvePeriod('7d'))
   const [data, setData] = useState<Record<Brand, BrandData>>({ reglow: emptyBrandData(), amura: emptyBrandData(), purela: emptyBrandData() })
@@ -366,32 +368,44 @@ export default function Dashboard() {
       <Sidebar
         brand={brand}
         view={view}
-        onBrandChange={b => { handleBrandChange(b); setView('overview') }}
-        onViewChange={v => { if (canAccess(v)) setView(v) }}
+        onBrandChange={b => { handleBrandChange(b); setView('overview'); setMobileNav(false) }}
+        onViewChange={v => { if (canAccess(v)) { setView(v); setMobileNav(false) } }}
         onReset={() => {}}
         accessibleBrands={accessibleBrands}
         canAccess={canAccess}
         userName={profile?.full_name ?? profile?.role}
         userRole={profile?.role}
+        open={mobileNav}
+        onClose={() => setMobileNav(false)}
       />
+      {mobileNav && (
+        <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setMobileNav(false)} aria-hidden />
+      )}
 
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: 240 }}>
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-8 py-3 flex-shrink-0"
+        <div className="flex flex-col gap-3 px-4 py-3 flex-shrink-0 lg:flex-row lg:items-center lg:justify-between lg:px-8"
           style={{ borderBottom: '1px solid #E5E7EB', background: '#FFFFFF' }}>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#9CA3AF' }}>{BRAND_LABELS[brand]}</span>
-              <span style={{ color: '#D1D5DB' }}>/</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280' }}>{VIEW_LABELS[view]}</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setMobileNav(true)}
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0"
+              style={{ background: '#F3F4F6', color: '#374151' }} aria-label="Buka menu">
+              <Menu size={18} />
+            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#9CA3AF' }}>{BRAND_LABELS[brand]}</span>
+                <span style={{ color: '#D1D5DB' }}>/</span>
+                <span className="text-[10px] font-semibold tracking-widest uppercase truncate" style={{ color: '#6B7280' }}>{VIEW_LABELS[view]}</span>
+              </div>
+              <h1 className="text-base lg:text-lg font-bold truncate" style={{ color: '#111827' }}>
+                {VIEW_LABELS[view]}
+                <span className="text-sm font-normal ml-2 hidden sm:inline" style={{ color: '#9CA3AF' }}>Analytics</span>
+              </h1>
             </div>
-            <h1 className="text-lg font-bold" style={{ color: '#111827' }}>
-              {VIEW_LABELS[view]}
-              <span className="text-sm font-normal ml-2" style={{ color: '#9CA3AF' }}>Analytics</span>
-            </h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 lg:gap-4 flex-wrap">
             {(['super_admin', 'admin'] as string[]).includes(profile?.role ?? '') && (
               <BrandSyncButton
                 brand={brand}
@@ -422,7 +436,7 @@ export default function Dashboard() {
         )}
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto px-8 py-6 pb-24">
+        <main className="flex-1 overflow-y-auto px-4 py-4 pb-24 lg:px-8 lg:py-6">
           {view === 'overview' && <OverviewView data={bd} brand={brand} range={dateRange} products={products} />}
           {view === 'funnel' && <FunnelView data={bd} brand={brand} range={dateRange} />}
           {view === 'sales' && <ChannelSalesView sales={bd.sales} brand={brand} range={dateRange} channel="cs" products={products} />}

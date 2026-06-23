@@ -143,6 +143,7 @@ export default function CSVValidationModal({ title, brand, validCount, invalidRo
                 Produk Tidak Dikenali ({invalidRows.length} baris)
               </p>
               <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #E5E7EB' }}>
+                <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
@@ -168,6 +169,7 @@ export default function CSVValidationModal({ title, brand, validCount, invalidRo
                     )}
                   </tbody>
                 </table>
+                </div>
               </div>
 
               <button onClick={() => downloadInvalidCSV(invalidRows)}
