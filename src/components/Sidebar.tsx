@@ -6,7 +6,7 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music, Globe,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw, Calculator,
+  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw, Calculator, X,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BRAND_COLORS, BRAND_RGB, BRAND_LABELS } from '@/lib/brand'
@@ -43,9 +43,11 @@ interface Props {
   canAccess?: (v: ActiveView) => boolean
   userName?: string
   userRole?: string
+  open?: boolean
+  onClose?: () => void
 }
 
-export default function Sidebar({ brand, view, onBrandChange, onViewChange, accessibleBrands, canAccess, userName, userRole }: Props) {
+export default function Sidebar({ brand, view, onBrandChange, onViewChange, accessibleBrands, canAccess, userName, userRole, open = false, onClose }: Props) {
   const { signOut } = useAuth()
   const [paidOpen, setPaidOpen] = useState(true)
   const [marketplaceOpen, setMarketplaceOpen] = useState(true)
@@ -58,21 +60,26 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
   const accessible = canAccess ?? (() => true)
 
   return (
-    <aside className="fixed left-0 top-0 h-screen flex flex-col z-50 overflow-y-auto"
+    <aside className={`fixed left-0 top-0 h-screen flex flex-col z-50 overflow-y-auto transition-transform duration-300 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       style={{ width: 240, background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}>
 
       {/* Logo */}
       <div className="px-5 py-5 flex-shrink-0" style={{ borderBottom: '1px solid #F3F4F6' }}>
-        <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(240,120,48,0.1)', border: '1px solid rgba(240,120,48,0.2)' }}>
-            <Image src="/logo-sas.png" alt="SAS" fill style={{ objectFit: 'contain' }} className="p-1"
-              onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = 'none' }} />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(240,120,48,0.1)', border: '1px solid rgba(240,120,48,0.2)' }}>
+              <Image src="/logo-sas.png" alt="SAS" fill style={{ objectFit: 'contain' }} className="p-1"
+                onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = 'none' }} />
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#F07830' }}>SAS</p>
+              <p className="text-[10px]" style={{ color: '#374151' }}>Marketing Analytics</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#F07830' }}>SAS</p>
-            <p className="text-[10px]" style={{ color: '#374151' }}>Marketing Analytics</p>
-          </div>
+          <button onClick={onClose} className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0" style={{ color: '#9CA3AF' }} aria-label="Tutup menu">
+            <X size={18} />
+          </button>
         </div>
       </div>
 

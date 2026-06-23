@@ -48,13 +48,13 @@ export default function ChannelSalesView({ sales, range, channel }: Props) {
 
       {/* Metric cards: Revenue, Units, Transactions. Gross Profit/Margin intentionally omitted —
           WMS COGS is unreliable (handled in the separate margin change). */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard label="Total Revenue" value={fmtCurrencyExact(totalRevenue)} />
         <MetricCard label="Units Sold" value={fmtNumExact(totalQty)} />
         <MetricCard label="Transaksi" value={fmtNumExact(txCount)} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Top 5 Produk (Revenue)">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={topProducts} layout="vertical" margin={{ left: 20 }}>
