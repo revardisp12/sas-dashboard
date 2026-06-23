@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as { brand?: string; start?: string; end?: string } | null
   const brands: Brand[] = body?.brand && (BRANDS as string[]).includes(body.brand) ? [body.brand as Brand] : BRANDS
 
-  const MAX_RANGE_DAYS = 7
+  const MAX_RANGE_DAYS = 31
   const dateRe = /^\d{4}-\d{2}-\d{2}$/
   let range = lastNDays(1)
   if (body?.start && body?.end && dateRe.test(body.start) && dateRe.test(body.end)) {
@@ -68,6 +68,15 @@ export async function POST(req: NextRequest) {
       db: dbPort(service), log: logPort(service),
       opts: { brands, tables: TABLES, range, trigger: 'manual', triggeredBy: userData.user.email ?? undefined },
     })
+
+    // Best-effort: record the pulled range for the dashboard's duplicate-pull guard.
+    if (brands.length === 1 && body?.start && body?.end && result.status !== 'failed') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (service as any).from('wms_pull_log').insert({
+        brand: brands[0], range_start: range.start, range_end: range.end, rows: result.tables?.sales ?? 0,
+      }).then(() => {}, () => {})
+    }
+
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })
   } catch (e) {
