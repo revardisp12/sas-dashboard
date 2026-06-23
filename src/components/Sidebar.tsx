@@ -6,10 +6,11 @@ import { Brand, ActiveView } from '@/lib/types'
 import {
   BarChart2, Target, ShoppingBag, Camera, Music, Globe,
   ChevronDown, ChevronRight, LayoutDashboard, TrendingUp,
-  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw, Calculator, X,
+  ShoppingCart, LogOut, Users, Package, Settings, Activity, FileText, RefreshCw, Calculator, X, KeyRound,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BRAND_COLORS, BRAND_RGB, BRAND_LABELS } from '@/lib/brand'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 const BRAND_CONFIG: Record<Brand, { label: string; color: string; glow: string; rgb: string }> = {
   reglow: { label: BRAND_LABELS.reglow, color: BRAND_COLORS.reglow, glow: `rgba(${BRAND_RGB.reglow},0.3)`, rgb: BRAND_RGB.reglow },
@@ -54,12 +55,14 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
   const [organicOpen, setOrganicOpen] = useState(true)
   const [salesOpen, setSalesOpen] = useState(true)
   const [brandDropOpen, setBrandDropOpen] = useState(false)
+  const [pwOpen, setPwOpen] = useState(false)
 
   const cfg = BRAND_CONFIG[brand]
   const brands = accessibleBrands ?? ['reglow', 'amura']
   const accessible = canAccess ?? (() => true)
 
   return (
+    <>
     <aside className={`fixed left-0 top-0 h-screen flex flex-col z-50 overflow-y-auto transition-transform duration-300 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       style={{ width: 240, background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}>
 
@@ -228,6 +231,15 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
           </div>
         )}
 
+        <button onClick={() => setPwOpen(true)}
+          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+          style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#4B5563' }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6' }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#F9FAFB' }}>
+          <KeyRound size={13} />
+          Ganti Password
+        </button>
+
         <button onClick={() => signOut()}
           className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
           style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#4B5563' }}
@@ -238,6 +250,8 @@ export default function Sidebar({ brand, view, onBrandChange, onViewChange, acce
         </button>
       </div>
     </aside>
+    <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} accent={cfg.color} />
+    </>
   )
 }
 

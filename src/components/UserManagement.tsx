@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, type UserRole, type UserBrand } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { Users, Edit2, Check, X } from 'lucide-react'
+import { Users, Edit2, Check, X, UserPlus, Copy } from 'lucide-react'
 
 interface UserWithEmail {
   id: string
@@ -47,10 +47,53 @@ export default function UserManagement({ brandColor }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Add-user form
+  const [showAdd, setShowAdd] = useState(false)
+  const [addName, setAddName] = useState('')
+  const [addEmail, setAddEmail] = useState('')
+  const [addRole, setAddRole] = useState<UserRole>('cs')
+  const [addBrand, setAddBrand] = useState<UserBrand>(null)
+  const [adding, setAdding] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+  const [createdCreds, setCreatedCreds] = useState<{ email: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+
   const isSuper = myProfile?.role === 'super_admin'
+  const canAdd = isSuper || myProfile?.role === 'admin'
   const availableRoles: UserRole[] = isSuper
     ? ['super_admin', 'admin', 'manager', 'cs', 'crm', 'kol_specialist']
     : ['manager', 'cs', 'crm']
+
+  function openAdd() {
+    setShowAdd(true)
+    setAddName(''); setAddEmail('')
+    setAddRole(isSuper ? 'manager' : 'cs')
+    setAddBrand(isSuper ? null : (myProfile?.brand ?? null)) // admin: locked to own brand
+    setAddError(null); setCreatedCreds(null)
+  }
+
+  async function submitAdd() {
+    setAdding(true); setAddError(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) { setAddError('Sesi habis — login ulang.'); setAdding(false); return }
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ full_name: addName, email: addEmail, role: addRole, brand: addBrand }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok && res.status !== 207) { setAddError(json.error ?? 'Gagal membuat akun'); setAdding(false); return }
+      setCreatedCreds({ email: json.email, password: json.password })
+      if (res.status === 207 && json.error) setAddError(json.error)
+      setShowAdd(false); setCopied(false)
+      await loadUsers()
+    } catch {
+      setAddError('Gagal terhubung ke server.')
+    }
+    setAdding(false)
+  }
 
   async function loadUsers() {
     setLoading(true)
@@ -119,10 +162,19 @@ export default function UserManagement({ brandColor }: Props) {
       <div className="flex items-center gap-2">
         <Users size={16} style={{ color: brandColor }} />
         <span className="text-sm font-semibold" style={{ color: '#374151' }}>Kelola Users</span>
-        <span className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium"
-          style={{ background: `${brandColor}15`, color: brandColor }}>
-          {filteredUsers.length} users
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={{ background: `${brandColor}15`, color: brandColor }}>
+            {filteredUsers.length} users
+          </span>
+          {canAdd && !showAdd && (
+            <button onClick={openAdd}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: brandColor, color: '#fff' }}>
+              <UserPlus size={13} /> Tambah User
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Brand filter pills */}
@@ -144,6 +196,82 @@ export default function UserManagement({ brandColor }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Generated credentials — shown ONCE */}
+      {createdCreds && (
+        <div className="rounded-xl p-4 space-y-2" style={{ background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold" style={{ color: '#065F46' }}>✓ Akun berhasil dibuat</p>
+            <button onClick={() => setCreatedCreds(null)} className="p-1 rounded" style={{ color: '#065F46' }}><X size={14} /></button>
+          </div>
+          <p className="text-xs" style={{ color: '#047857' }}>Simpan & kasih ke anggota tim — password ini cuma ditampilin <b>SEKALI</b>:</p>
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: '#fff', border: '1px solid #A7F3D0' }}>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px]" style={{ color: '#6B7280' }}>{createdCreds.email}</p>
+              <p className="text-sm font-mono font-semibold truncate" style={{ color: '#111827' }}>{createdCreds.password}</p>
+            </div>
+            <button onClick={() => { navigator.clipboard?.writeText(`Email: ${createdCreds.email}\nPassword: ${createdCreds.password}`); setCopied(true) }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium flex-shrink-0"
+              style={{ background: '#10B981', color: '#fff' }}>
+              <Copy size={12} /> {copied ? 'Tersalin' : 'Salin'}
+            </button>
+          </div>
+          <p className="text-[11px]" style={{ color: '#047857' }}>Anggota bisa ganti password sendiri di menu profil (sidebar) setelah login.</p>
+        </div>
+      )}
+
+      {/* Add-user form */}
+      {showAdd && (
+        <div className="rounded-xl p-4 space-y-3" style={{ background: '#F9FAFB', border: `1px solid ${brandColor}30` }}>
+          <p className="text-sm font-semibold" style={{ color: '#374151' }}>Tambah User Baru</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-medium" style={{ color: '#6B7280' }}>Nama Lengkap</label>
+              <input value={addName} onChange={e => setAddName(e.target.value)} placeholder="Budi Santoso"
+                className="w-full mt-1 text-sm px-3 py-2 rounded-lg border outline-none" style={{ borderColor: '#E5E7EB', color: '#374151' }} />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium" style={{ color: '#6B7280' }}>Email</label>
+              <input value={addEmail} onChange={e => setAddEmail(e.target.value)} type="email" placeholder="budi@email.com"
+                className="w-full mt-1 text-sm px-3 py-2 rounded-lg border outline-none" style={{ borderColor: '#E5E7EB', color: '#374151' }} />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium" style={{ color: '#6B7280' }}>Role</label>
+              <select value={addRole} onChange={e => setAddRole(e.target.value as UserRole)}
+                className="w-full mt-1 text-sm px-3 py-2 rounded-lg border outline-none bg-white" style={{ borderColor: '#E5E7EB', color: '#374151' }}>
+                {availableRoles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-medium" style={{ color: '#6B7280' }}>Brand</label>
+              {addRole === 'super_admin' ? (
+                <p className="text-sm px-3 py-2 mt-1" style={{ color: '#9CA3AF' }}>Semua brand</p>
+              ) : isSuper ? (
+                <select value={addBrand ?? ''} onChange={e => setAddBrand((e.target.value as UserBrand) || null)}
+                  className="w-full mt-1 text-sm px-3 py-2 rounded-lg border outline-none bg-white" style={{ borderColor: '#E5E7EB', color: '#374151' }}>
+                  <option value="">— pilih brand —</option>
+                  <option value="reglow">Reglow</option>
+                  <option value="amura">Amura</option>
+                  <option value="purela">Purela</option>
+                </select>
+              ) : (
+                <p className="text-sm px-3 py-2 mt-1 capitalize" style={{ color: '#374151' }}>
+                  {myProfile?.brand ?? '—'} <span className="text-[11px]" style={{ color: '#9CA3AF' }}>(brand kamu)</span>
+                </p>
+              )}
+            </div>
+          </div>
+          {addError && <p className="text-xs" style={{ color: '#DC2626' }}>{addError}</p>}
+          <div className="flex items-center gap-2">
+            <button onClick={submitAdd} disabled={adding}
+              className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: brandColor, color: '#fff', opacity: adding ? 0.6 : 1 }}>
+              {adding ? 'Membuat…' : 'Buat Akun'}
+            </button>
+            <button onClick={() => { setShowAdd(false); setAddError(null) }}
+              className="px-4 py-2 rounded-lg text-xs font-medium" style={{ background: '#F3F4F6', color: '#6B7280' }}>Batal</button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="text-xs rounded-lg px-3 py-2"
