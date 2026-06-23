@@ -43,6 +43,25 @@ export function fmtNum(n: number): string {
   return n.toLocaleString('id-ID')
 }
 
+// Exact (non-abbreviated) variants for metric cards: "Rp 2.700.000.000", "13.000".
+export function fmtCurrencyExact(n: number): string {
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID')
+}
+
+export function fmtNumExact(n: number): string {
+  return Math.round(n).toLocaleString('id-ID')
+}
+
+/** Shrink the font for long exact values so they still fit a card. `base` = the card's normal px. */
+export function fitSize(value: string, base: number): number {
+  const len = value.length
+  if (len <= 8) return base
+  if (len <= 11) return Math.round(base * 0.82)
+  if (len <= 14) return Math.round(base * 0.70)
+  if (len <= 17) return Math.round(base * 0.58)
+  return Math.round(base * 0.48)
+}
+
 export function pct(part: number, total: number): string {
   if (total === 0) return '0%'
   return ((part / total) * 100).toFixed(1) + '%'

@@ -4,7 +4,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import type { Brand, SalesRow, Timeframe, ProductMaster } from '@/lib/types'
 import type { ChannelKey } from '@/lib/channels'
 import { channelLabel } from '@/lib/channels'
-import { filterByDays, fmtCurrency, fmtNum } from '@/lib/utils'
+import { filterByDays, fmtCurrency, fmtNum, fmtCurrencyExact, fmtNumExact, fitSize } from '@/lib/utils'
 
 interface Props {
   sales: SalesRow[]
@@ -49,9 +49,9 @@ export default function ChannelSalesView({ sales, timeframe, channel }: Props) {
       {/* Metric cards: Revenue, Units, Transactions. Gross Profit/Margin intentionally omitted —
           WMS COGS is unreliable (handled in the separate margin change). */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-        <MetricCard label="Total Revenue" value={fmtCurrency(totalRevenue)} />
-        <MetricCard label="Units Sold" value={fmtNum(totalQty)} />
-        <MetricCard label="Transaksi" value={fmtNum(txCount)} />
+        <MetricCard label="Total Revenue" value={fmtCurrencyExact(totalRevenue)} />
+        <MetricCard label="Units Sold" value={fmtNumExact(totalQty)} />
+        <MetricCard label="Transaksi" value={fmtNumExact(txCount)} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -84,7 +84,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 16 }}>
       <p style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
-      <p style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{value}</p>
+      <p style={{ fontSize: fitSize(value, 24), fontWeight: 700, marginTop: 4 }}>{value}</p>
     </div>
   )
 }

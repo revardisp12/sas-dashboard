@@ -1,6 +1,6 @@
 'use client'
 import { BrandData, Brand, Timeframe, ProductMaster, CRMRow } from '@/lib/types'
-import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
+import { filterByDays, fmtCurrencyExact as fmtCurrency, fmtNumExact as fmtNum, fitSize, chartTooltipStyle } from '@/lib/utils'
 import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users, Package, Trophy, AlertTriangle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -263,7 +263,7 @@ function KpiCard({ label, value, icon, color }: { label: string; value: string; 
         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ background: `rgba(${r},${g},${b},0.15)`, color }}>{icon}</div>
       </div>
-      <p className="text-2xl font-bold" style={{ color: '#111827' }}>{value}</p>
+      <p className="font-bold" style={{ color: '#111827', fontSize: fitSize(value, 24), whiteSpace: 'nowrap' }}>{value}</p>
     </div>
   )
 }
@@ -293,7 +293,7 @@ function PlatformCard({ icon, color, title, items, empty }: {
         {items.map(item => (
           <div key={item.label}>
             <p className="text-[10px]" style={{ color: '#4B5563' }}>{item.label}</p>
-            <p className="text-sm font-bold" style={{ color: empty ? '#9CA3AF' : '#111827' }}>{empty ? '-' : item.value}</p>
+            <p className="font-bold" style={{ color: empty ? '#9CA3AF' : '#111827', fontSize: fitSize(item.value, 14), whiteSpace: 'nowrap' }}>{empty ? '-' : item.value}</p>
           </div>
         ))}
       </div>
@@ -305,7 +305,7 @@ function MiniStat({ label, value, color }: { label: string; value: string; color
   return (
     <div className="rounded-xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
       <p className="text-[10px] mb-1" style={{ color: '#4B5563' }}>{label}</p>
-      <p className="text-lg font-bold" style={{ color }}>{value}</p>
+      <p className="font-bold" style={{ color, fontSize: fitSize(value, 18), whiteSpace: 'nowrap' }}>{value}</p>
     </div>
   )
 }
