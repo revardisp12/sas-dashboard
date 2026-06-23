@@ -17,7 +17,8 @@ const ID_TO_CHANNEL: Record<number, ChannelKey> = {
   6: 'tiktok',
   7: 'tokopedia',
   5: 'lazada',
-  [-3]: 'cs',
+  // CS (channel -3) is intentionally absent — CS orders are pulled from /social-commerce
+  // (split by customer_type), not /orders/list, to match the finance report.
 }
 
 export function channelForId(id: number): ChannelKey | null {

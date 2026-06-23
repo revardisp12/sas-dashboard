@@ -21,18 +21,28 @@ const pageOf = (url: string) => Number(url.match(/[?&]page=(\d+)/)?.[1] ?? 1)
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HttpWmsAdapter.fetchSales', () => {
-  it('keeps tracked channels (drops Manual) + non-cancelled/returned statuses; revenue is gross (amount + discount)', async () => {
+  it('marketplace from orders/list (CS ch -3 excluded) + Soscom from social-commerce (new/renew); gross revenue', async () => {
     stubFetch((url) => {
       if (url.includes('/orders/list')) {
         return {
           code: 200,
           data: [
             { id: 1, channel_id: 4, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 100000, discount_order: 20000, cogs: 90000, product_summary: 'A' }, // Shopee, gross 120000
-            { id: 2, channel_id: -3, status: 'pending', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 50000, discount_order: 0, cogs: 40000, product_summary: 'B' },        // CS, pending KEPT
+            { id: 2, channel_id: -3, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 99999, discount_order: 0, cogs: 0, product_summary: 'X' },          // CS-via-orders -> DROPPED (sourced from social-commerce)
             { id: 3, channel_id: 1, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 999, discount_order: 0, cogs: 0, product_summary: 'C' },             // Manual -> dropped (channel)
             { id: 4, channel_id: 4, status: 'cancelled', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 777, discount_order: 0, cogs: 0, product_summary: 'D' },             // cancelled -> dropped (status)
           ],
           metadata: { count: 4 },
+        }
+      }
+      if (url.includes('/social-commerce/orders')) {
+        return {
+          code: 200,
+          data: [
+            { id: 50, customer_type: 'new', status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 60000, discount_amount: 5000, product_summary: 'S', customer_name: 'Budi', customer_phone: '08123' },  // new -> cs sales, gross 65000
+            { id: 51, customer_type: 'repeat', status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 40000, discount_amount: 0, product_summary: 'R', customer_name: 'Sari', customer_phone: '08999' },   // repeat -> CRM, NOT sales
+          ],
+          metadata: { count: 2 },
         }
       }
       return { code: 200, data: [], metadata: { count: 0 } }
@@ -40,17 +50,17 @@ describe('HttpWmsAdapter.fetchSales', () => {
 
     const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-21' })
 
-    expect(rows.map(r => r.wmsId)).toEqual(['ord-1', 'ord-2'])      // Manual + cancelled dropped; pending kept
+    expect(rows.map(r => r.wmsId)).toEqual(['ord-1', 'sc-50'])           // shopee + CS-new; CS-via-orders/Manual/cancelled/repeat excluded
     expect(rows[0]).toMatchObject({ channel: 'shopee', revenue: 120000 }) // gross = amount + discount_order
-    expect(rows[1]).toMatchObject({ channel: 'cs', revenue: 50000 })
+    expect(rows[1]).toMatchObject({ channel: 'cs', revenue: 65000 })      // social-commerce new, gross = amount + discount_amount
   })
 
-  it('does NOT call the social-commerce endpoint (CS orders already in orders/list -> no double-count)', async () => {
+  it('DOES call the social-commerce endpoint (CS / Soscom source)', async () => {
     const fn = stubFetch(() => ({ code: 200, data: [], metadata: { count: 0 } }))
     await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-02' })
     const urls = fn.mock.calls.map((c) => String(c[0]))
-    expect(urls.some((u) => u.includes('/social-commerce'))).toBe(false)
     expect(urls.some((u) => u.includes('/orders/list'))).toBe(true)
+    expect(urls.some((u) => u.includes('/social-commerce'))).toBe(true)
   })
 
   it('sends the brand client_id and X-Api-Key header', async () => {
@@ -156,10 +166,42 @@ describe('HttpWmsAdapter.fetchProducts', () => {
     })
   })
 
-  it('does not implement deferred tables (crm / ads)', () => {
+  it('implements fetchCRM but not the deferred ads tables', () => {
     const a = new HttpWmsAdapter(BASE, KEY) as unknown as Record<string, unknown>
-    expect(a.fetchCRM).toBeUndefined()
+    expect(typeof a.fetchCRM).toBe('function')
     expect(a.fetchGoogleAds).toBeUndefined()
     expect(a.fetchMetaAds).toBeUndefined()
+  })
+})
+
+describe('HttpWmsAdapter.fetchCRM', () => {
+  it('returns only repeat social-commerce customers (with name/phone), gross revenue', async () => {
+    stubFetch((url) => {
+      if (url.includes('/social-commerce/orders')) {
+        return {
+          code: 200,
+          data: [
+            { id: 50, customer_type: 'new', status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 60000, discount_amount: 0, product_summary: 'S', customer_name: 'Budi', customer_phone: '08123' },   // new -> Acquisition (skip)
+            { id: 51, customer_type: 'repeat', status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 2, amount: 40000, discount_amount: 5000, product_summary: 'R', customer_name: 'Sari', customer_phone: '08999' }, // repeat -> CRM, gross 45000
+            { id: 52, customer_type: 'repeat', status: 'cancelled', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 10000, discount_amount: 0, product_summary: 'Z', customer_name: 'Cancelled', customer_phone: '08000' }, // cancelled -> dropped
+          ],
+          metadata: { count: 3 },
+        }
+      }
+      return { code: 200, data: [], metadata: { count: 0 } }
+    })
+
+    const rows = await new HttpWmsAdapter(BASE, KEY).fetchCRM('reglow', { start: '2026-06-01', end: '2026-06-21' })
+
+    expect(rows).toHaveLength(1) // only the non-cancelled repeat customer
+    expect(rows[0]).toMatchObject({ wmsId: 'sc-51', customerName: 'Sari', phone: '08999', qty: 2, revenue: 45000 })
+  })
+
+  it('does not read the marketplace orders/list endpoint', async () => {
+    const fn = stubFetch(() => ({ code: 200, data: [], metadata: { count: 0 } }))
+    await new HttpWmsAdapter(BASE, KEY).fetchCRM('reglow', { start: '2026-06-01', end: '2026-06-02' })
+    const urls = fn.mock.calls.map((c) => String(c[0]))
+    expect(urls.some((u) => u.includes('/social-commerce'))).toBe(true)
+    expect(urls.some((u) => u.includes('/orders/list'))).toBe(false)
   })
 })

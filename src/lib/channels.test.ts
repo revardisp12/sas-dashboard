@@ -3,17 +3,17 @@ import { describe, it, expect } from 'vitest'
 import { channelForId, isRevenueStatus, CHANNELS, channelLabel } from './channels'
 
 describe('channels', () => {
-  it('maps tracked WMS channel_id to canonical key', () => {
+  it('maps tracked WMS marketplace channel_id to canonical key', () => {
     expect(channelForId(4)).toBe('shopee')
     expect(channelForId(6)).toBe('tiktok')
     expect(channelForId(7)).toBe('tokopedia')
     expect(channelForId(5)).toBe('lazada')
-    expect(channelForId(-3)).toBe('cs')
   })
-  it('returns null for untracked channels (manual, distributor, etc.)', () => {
+  it('returns null for untracked channels (manual, distributor, CS-via-orders)', () => {
     expect(channelForId(1)).toBeNull()   // Manual
     expect(channelForId(-4)).toBeNull()  // Distributor
     expect(channelForId(2)).toBeNull()   // Open API
+    expect(channelForId(-3)).toBeNull()  // CS -> pulled from /social-commerce instead
   })
   it('counts every status except cancelled / returned', () => {
     expect(isRevenueStatus('completed')).toBe(true)

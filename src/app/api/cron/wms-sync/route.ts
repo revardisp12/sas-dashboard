@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // live sync paginates thousands of orders across 3 brands
 
 const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
-// V1.2 scope = revenue only. CRM + ads deferred; reseller endpoint has a backend bug.
-const TABLES: WmsTable[] = ['sales', 'products']
+// Revenue scope: marketplace + CS Soscom (sales), repeat customers (crm), product catalog.
+const TABLES: WmsTable[] = ['sales', 'products', 'crm']
 
 function lastNDays(n: number) {
   const end = new Date()

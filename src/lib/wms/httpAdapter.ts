@@ -1,21 +1,20 @@
-import type { Brand, SalesRow, ProductMaster } from '@/lib/types'
+import type { Brand, SalesRow, CRMRow, ProductMaster } from '@/lib/types'
 import type { WmsAdapter, WithWmsId, WmsDateRange } from './types'
 import { channelForId, isRevenueStatus } from '@/lib/channels'
 
 /**
  * Real WMS HTTP adapter — Reglow / Perpack Open API (`wms-api.sinergisuperapp.com`).
  *
- * V1.2 scope = REVENUE only:
- *  - fetchSales: every order for a brand (client_id) from `/orders/list`, mapped to SalesRow.
- *    That endpoint already spans ALL channels — marketplace (Shopee/Lazada/TikTok/Tokopedia),
- *    manual, and customer-service/social-commerce (channel -3) — so it is the single,
- *    non-double-counting source for revenue.
- *  - fetchProducts: a SKU -> name/price catalog (dictionary) from `/stock-by-warehouse`.
+ * Mirrors the partner finance model:
+ *  - fetchSales: marketplace orders (Shopee/TikTok/Tokopedia/Lazada) from `/orders/list`
+ *    (channel -3 / CS is NOT mapped here), PLUS customer-service "Soscom" orders from
+ *    `/social-commerce/orders` with customer_type new|renew -> channel `cs` (Acquisition by CS).
+ *  - fetchCRM: the same social-commerce feed, customer_type `repeat` -> the `crm` table
+ *    (Retention by CRM). Social commerce exposes unmasked customer name/phone.
+ *  - fetchProducts: a SKU -> name/price catalog from `/stock-by-warehouse`.
  *
- * Deferred (methods intentionally omitted -> runWmsSync skips them):
- *  - CRM / contactable PII (would come from /social-commerce, which exposes unmasked
- *    customer fields for the SAME CS orders that /orders/list returns masked).
- *  - Ads (no WMS endpoint), reseller orders (separate table; endpoint has a client_id bug).
+ * Revenue = GROSS (pre-discount) to match finance: orders.amount + discount_order, and
+ * social-commerce amount + discount_amount. Cancelled / returned statuses are excluded.
  *
  * Auth: `X-Api-Key` header. Multi-tenant: every request MUST carry `client_id`.
  */
@@ -23,7 +22,8 @@ import { channelForId, isRevenueStatus } from '@/lib/channels'
 /** Dashboard brand -> WMS client_id (from GET /v1/open/clients/list). */
 const BRAND_CLIENT_ID: Record<Brand, number> = { reglow: 1, amura: 2, purela: 3 }
 
-const PAGE_SIZE = 5000 // /orders/list accepts large pages; big pages avoid the socket drops seen with many small sequential requests
+const PAGE_SIZE = 5000 // /orders/list accepts large pages; avoids socket drops from many small requests
+const SC_PAGE_SIZE = 250 // /social-commerce/orders rejects length > 250 (HTTP 400)
 const MAX_PAGES = 500 // safety cap
 const MAX_RETRIES = 3
 
@@ -87,27 +87,34 @@ export class HttpWmsAdapter implements WmsAdapter {
     return out
   }
 
+  /** Social-commerce orders for the range. Its end_date is EXCLUSIVE (verified) -> +1 day. */
+  private fetchSocialOrders(cid: number, range: WmsDateRange): Promise<SocialOrder[]> {
+    const scEnd = addDaysISO(range.end, 1)
+    return this.getAllPages<SocialOrder>(
+      SC_PAGE_SIZE,
+      (page) =>
+        `/v1/open/social-commerce/orders?client_id=${cid}&start_date=${range.start}&end_date=${scEnd}` +
+        `&page=${page}&length=${SC_PAGE_SIZE}`,
+    )
+  }
+
   fetchSales = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<SalesRow>[]> => {
     const cid = BRAND_CLIENT_ID[brand]
+    const rows: WithWmsId<SalesRow>[] = []
 
-    // /orders/list already returns EVERY channel for the tenant — marketplace, manual, AND
-    // customer-service/social-commerce (channel -3). The separate /social-commerce endpoint
-    // returns those same CS orders (with extra PII), so pulling it too double-counts revenue.
+    // 1) Marketplace (Shopee/TikTok/Tokopedia/Lazada) from /orders/list. Channel -3 (CS) is
+    //    intentionally NOT mapped here (channelForId returns null) — CS comes from social-commerce.
     const orders = await this.getAllPages<WmsOrder>(
       PAGE_SIZE,
       (page) =>
         `/v1/open/orders/list?client_id=${cid}&start_date=${range.start}&end_date=${range.end}` +
         `&date_type=order_date&page=${page}&length=${PAGE_SIZE}`,
     )
-
-    const rows: WithWmsId<SalesRow>[] = []
     for (const o of orders) {
       const channel = channelForId(o.channel_id)
-      if (!channel) continue // untracked channel (Manual, Distributor, …)
-      if (!isRevenueStatus(o.status)) continue // drop cancelled / returned (not real revenue)
-      // Revenue = GROSS (pre-discount) to match the partner finance report. `amount` is
-      // net-of-discount, so the full ticket = amount + discount_order.
-      const revenue = num(o.amount) + num(o.discount_order)
+      if (!channel) continue // untracked (Manual, Distributor, CS-via-orders, …)
+      if (!isRevenueStatus(o.status)) continue // drop cancelled / returned
+      const revenue = num(o.amount) + num(o.discount_order) // GROSS (pre-discount), matches finance
       const cogs = num(o.cogs)
       rows.push({
         wmsId: `ord-${o.id}`,
@@ -115,11 +122,53 @@ export class HttpWmsAdapter implements WmsAdapter {
         product: o.product_summary ?? '',
         qty: num(o.qty),
         revenue,
-        channel,                              // canonical key, e.g. 'shopee'
+        channel,
         cogs,
         grossProfit: revenue - cogs,
         source: 'organic',
         origin: 'wms',
+      })
+    }
+
+    // 2) CS "Soscom" = social-commerce orders, customer_type new|renew -> channel 'cs'
+    //    (Acquisition by CS). `repeat` customers go to fetchCRM -> Retention by CRM.
+    const social = await this.fetchSocialOrders(cid, range)
+    for (const o of social) {
+      if (o.customer_type === 'repeat') continue
+      if (!isRevenueStatus(o.status)) continue
+      const revenue = num(o.amount) + num(o.discount_amount)
+      rows.push({
+        wmsId: `sc-${o.id}`,
+        date: dateOnly(o.order_at),
+        product: o.product_summary ?? '',
+        qty: num(o.qty),
+        revenue,
+        channel: 'cs',
+        cogs: 0,
+        grossProfit: 0,
+        source: 'organic',
+        origin: 'wms',
+      })
+    }
+
+    return rows
+  }
+
+  fetchCRM = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<CRMRow>[]> => {
+    const cid = BRAND_CLIENT_ID[brand]
+    const social = await this.fetchSocialOrders(cid, range)
+    const rows: WithWmsId<CRMRow>[] = []
+    for (const o of social) {
+      if (o.customer_type !== 'repeat') continue // retention = repeat customers only
+      if (!isRevenueStatus(o.status)) continue
+      rows.push({
+        wmsId: `sc-${o.id}`,
+        date: dateOnly(o.order_at),
+        customerName: o.customer_name ?? '',
+        phone: o.customer_phone ?? '',
+        product: o.product_summary ?? '',
+        qty: num(o.qty),
+        revenue: num(o.amount) + num(o.discount_amount),
       })
     }
     return rows
@@ -178,6 +227,19 @@ interface WmsOrder {
   product_summary: string
 }
 
+interface SocialOrder {
+  id: number
+  order_at: string
+  qty: number
+  amount: number
+  discount_amount: number
+  status: string
+  customer_type: string
+  customer_name: string
+  customer_phone: string
+  product_summary: string
+}
+
 interface Integration {
   id: number
   warehouse_id: number
@@ -193,4 +255,9 @@ interface StockProduct {
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 const dateOnly = (ts: unknown): string => String(ts ?? '').slice(0, 10)
+const addDaysISO = (d: string, days: number): string => {
+  const dt = new Date(`${d}T00:00:00Z`)
+  dt.setUTCDate(dt.getUTCDate() + days)
+  return dt.toISOString().slice(0, 10)
+}
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
