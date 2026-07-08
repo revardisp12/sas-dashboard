@@ -105,6 +105,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: code })
   } catch (e) {
     console.error('[wms/sync]', e)
-    return NextResponse.json({ error: 'Sync failed', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Sync failed' }, { status: 500 })
   }
 }

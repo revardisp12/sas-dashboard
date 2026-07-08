@@ -5,6 +5,14 @@
 **Builds on:** existing WMS integration (`src/lib/wms/*`, `HttpWmsAdapter`) — adapter already pulls orders from the Reglow/Perpack Open API into the `sales` table per brand.
 **Status:** Design — awaiting user review before plan.
 
+> **⚠️ SUPERSEDED (2026-07-08):** this doc's revenue-status logic (whitelist) and CS
+> mapping (channel_id -3 via `/orders/list`) describe the *original* design, since
+> replaced: revenue status is now a **denylist** (`src/lib/channels.ts` `isRevenueStatus`
+> — exclude cancelled/cancelled_return/returned only) and CS is sourced from
+> `/social-commerce/orders` split by `customer_type` (see `src/lib/wms/httpAdapter.ts`),
+> not channel -3. Treat this file as historical context only — the shipped code in
+> `src/lib/channels.ts`/`httpAdapter.ts` is the source of truth.
+
 ---
 
 ## 1. Problem & Goal

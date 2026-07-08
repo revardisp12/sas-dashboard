@@ -40,6 +40,23 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ brand: str
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // The upsert_digest RPC already rejects a mismatched brand at write time (SECURITY DEFINER,
+  // enforces caller.brand === p_brand for non-super roles) — but that check only runs AFTER
+  // this route has already done the full heavy computation (paginated fetches across 6
+  // tables x2 date ranges + RFM). Check role/brand here too so an unauthorized request fails
+  // fast instead of burning compute on a regenerate that was always going to be rejected.
+  const { data: profile, error: profErr } = await supabase.from('user_profiles').select('role, brand').eq('id', userData.user.id).single()
+  if (profErr) {
+    console.error('[/api/digest/regenerate] profile lookup failed:', profErr.message)
+    return NextResponse.json({ error: 'Profile lookup failed' }, { status: 500 })
+  }
+  if (!profile || !['super_admin', 'admin', 'manager'].includes(profile.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (profile.role !== 'super_admin' && profile.brand !== brand) {
+    return NextResponse.json({ error: 'Anda hanya bisa regenerate digest brand Anda sendiri' }, { status: 403 })
+  }
+
   try {
     const { weekStart, weekEnd } = previousMonSunWeek(new Date())
     const startYmd = ymd(weekStart)
@@ -98,7 +115,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ brand: str
     return NextResponse.json({ ok: true, payload })
   } catch (e) {
     console.error('[/api/digest/regenerate]', e)
-    return NextResponse.json({ error: 'Internal error', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
 

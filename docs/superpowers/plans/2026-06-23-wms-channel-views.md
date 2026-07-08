@@ -1,5 +1,10 @@
 # WMS Channel Views + Per-Transaction Marketplace + Date-Range Sync — Implementation Plan
 
+> **⚠️ SUPERSEDED (2026-07-08):** the revenue-status whitelist and CS-via-channel--3
+> mapping described below were replaced shortly after this plan shipped — revenue status
+> is now a denylist and CS is sourced from `/social-commerce/orders` (customer_type split).
+> See `src/lib/channels.ts` and `src/lib/wms/httpAdapter.ts` for the current, correct logic.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Route every tracked WMS sales channel into its own per-transaction view (filtered from one `sales` table), add Tokopedia + Lazada, exclude non-revenue orders, and let the user sync any date range from the dashboard.

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       results.push({ brand, ok: true })
     } catch (e) {
       console.error(`[cron/weekly-digest] ${brand} failed:`, e)
-      results.push({ brand, ok: false, error: e instanceof Error ? e.message : String(e) })
+      results.push({ brand, ok: false })
     }
   }
 
