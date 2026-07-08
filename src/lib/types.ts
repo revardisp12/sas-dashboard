@@ -1,7 +1,6 @@
 export type Brand = 'reglow' | 'amura' | 'purela'
 export type Platform = 'google-ads' | 'meta-ads' | 'tiktok-shop' | 'shopee' | 'instagram' | 'tiktok-organic' | 'facebook-organic'
 export type ActiveView = Platform | 'overview' | 'funnel' | 'performance' | 'sales' | 'crm' | 'product-analysis' | 'settings' | 'kol' | 'cads-calculator' | 'tokopedia' | 'lazada'
-export type Timeframe = 7 | 14 | 30 | 90 | 0
 export interface DateRange { from: string; to: string }
 export type CRMTimeframe = 30 | 90 | 180 | 365 | 0
 

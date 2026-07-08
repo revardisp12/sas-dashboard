@@ -7,19 +7,27 @@ interface LogRow { id: string; trigger: string; status: string; tables: Record<s
 export default function SyncHistory({ refreshKey }: { refreshKey: number }) {
   const [rows, setRows] = useState<LogRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       setLoading(true)
-      const { data } = await supabase.from('sync_log').select('*').order('started_at', { ascending: false }).limit(20)
-      if (!cancelled) { setRows((data ?? []) as LogRow[]); setLoading(false) }
+      const { data, error: queryErr } = await supabase.from('sync_log').select('*').order('started_at', { ascending: false }).limit(20)
+      if (!cancelled) {
+        if (queryErr) console.error('[SyncHistory] query failed:', queryErr.message)
+        setError(queryErr?.message ?? null)
+        setRows((data ?? []) as LogRow[])
+        setLoading(false)
+      }
     }
     load()
     return () => { cancelled = true }
   }, [refreshKey])
 
   if (loading) return <p style={{ color: '#6B7280' }}>Memuat riwayat…</p>
+  // Distinct from "no sync yet" — a query failure should not look like a genuinely empty table.
+  if (error) return <p style={{ color: '#DC2626' }}>Gagal memuat riwayat sync: {error}</p>
   if (!rows.length) return <p style={{ color: '#6B7280' }}>Belum ada sync.</p>
   return (
     <div className="overflow-x-auto">

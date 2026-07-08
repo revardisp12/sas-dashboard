@@ -4,7 +4,7 @@
     {
       "name": "sas-dashboard",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "/Users/revardisyahputra/Documents/Claude/sas-dashboard", "run", "dev"],
+      "runtimeArgs": ["--prefix", "/Users/revardisyahputra/Library/Mobile Documents/com~apple~CloudDocs/Claude/sas-dashboard", "run", "dev"],
       "port": 3000
     }
   ]

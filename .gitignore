@@ -46,3 +46,9 @@ next-env.d.ts
 
 # Supabase CLI temp files
 supabase/.temp
+
+# iCloud Drive sync-conflict copies (this repo lives under iCloud Drive) — a file edited
+# from two "clients" at once gets a " 2", " 3", etc suffix copy. These are pure iCloud
+# noise, never real project files; ignore so they can't be accidentally `git add`ed again.
+* 2.*
+* 3.*

@@ -27,6 +27,7 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
   const { profile, loading: authLoading } = useAuth()
   const [row, setRow] = useState<DigestRow | null>(null)
   const [fetching, setFetching] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [origin, setOrigin] = useState('http://localhost:3000')
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -41,7 +42,7 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
     let cancelled = false
     async function load() {
       setFetching(true)
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('digest_log')
         .select('*')
         .eq('brand', brand)
@@ -49,7 +50,14 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
         .limit(1)
         .maybeSingle()
       if (!cancelled) {
-        setRow(data as DigestRow | null)
+        if (error) {
+          console.error('[digest/page] query failed:', error.message)
+          setFetchError(error.message)
+          setRow(null)
+        } else {
+          setFetchError(null)
+          setRow(data as DigestRow | null)
+        }
         setFetching(false)
       }
     }
@@ -93,6 +101,19 @@ export default function DigestPage({ params }: { params: Promise<{ brand: string
 
   if (fetching) {
     return <div className="p-8 text-sm" style={{ color: '#6B7280' }}>Memuat digest...</div>
+  }
+
+  // Distinct from "no digest yet" — a query failure should not look like a genuinely
+  // empty result (the row may well exist; the fetch just failed).
+  if (fetchError) {
+    return (
+      <div className="p-8 max-w-md">
+        <h1 className="text-lg font-bold" style={{ color: '#991B1B' }}>Gagal memuat digest</h1>
+        <p className="text-sm mt-2" style={{ color: '#4B5563' }}>{fetchError}</p>
+        <button onClick={() => setRefreshKey(k => k + 1)}
+          className="mt-3 text-sm font-medium underline" style={{ color: '#4A9FD4' }}>Coba lagi</button>
+      </div>
+    )
   }
 
   if (!row) {

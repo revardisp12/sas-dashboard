@@ -6,6 +6,26 @@ import { getKolMetricsProvider } from '@/lib/kol/metrics/provider'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Content URLs are expected to be public social-platform links (see KontenTab's placeholder
+// text). Both metrics providers today are no-ops (ManualProvider) or unimplemented
+// (RapidApiProvider throws), so there is no live outbound fetch yet — but validating here,
+// at the API boundary, means whichever provider implementation lands later inherits this
+// guard automatically instead of depending on that implementation remembering it.
+const ALLOWED_HOSTS = [
+  'tiktok.com', 'www.tiktok.com', 'vt.tiktok.com',
+  'instagram.com', 'www.instagram.com',
+  'youtube.com', 'www.youtube.com', 'youtu.be',
+]
+function isAllowedContentUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw)
+    if (u.protocol !== 'https:') return false
+    return ALLOWED_HOSTS.includes(u.hostname.toLowerCase())
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -30,7 +50,10 @@ export async function POST(req: NextRequest) {
     .eq('id', userData.user.id)
     .single()
 
-  if (profErr) return NextResponse.json({ error: 'Profile lookup failed', detail: profErr.message }, { status: 500 })
+  if (profErr) {
+    console.error('[kol/pull-metrics] profile lookup failed:', profErr.message)
+    return NextResponse.json({ error: 'Profile lookup failed' }, { status: 500 })
+  }
   if (!profile || !(['super_admin', 'admin', 'kol_specialist'] as string[]).includes(profile.role as string)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
@@ -38,12 +61,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as { url?: string; platform?: string }
     if (!body.url) return NextResponse.json({ metrics: null }, { status: 200 })
+    if (!isAllowedContentUrl(body.url)) {
+      return NextResponse.json({ error: 'URL harus link TikTok/Instagram/YouTube yang valid' }, { status: 400 })
+    }
     const metrics = await getKolMetricsProvider().fetch(body.url, body.platform ?? '')
     return NextResponse.json({ metrics }, { status: 200 })
   } catch (e) {
-    return NextResponse.json(
-      { error: 'Pull failed', detail: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
-    )
+    console.error('[kol/pull-metrics]', e)
+    return NextResponse.json({ error: 'Pull failed' }, { status: 500 })
   }
 }

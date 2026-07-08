@@ -8,7 +8,11 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name   TEXT,
   role        TEXT NOT NULL DEFAULT 'cs'
-              CHECK (role IN ('super_admin','admin','manager','cs','crm')),
+              -- kol_specialist included here (not just added later by kol_management.sql)
+              -- so a fresh environment that runs only this file can still create one —
+              -- previously a fresh DB without kol_management.sql applied would reject any
+              -- kol_specialist user at the CHECK constraint.
+              CHECK (role IN ('super_admin','admin','manager','cs','crm','kol_specialist')),
   brand       TEXT CHECK (brand IN ('reglow','amura','purela')), -- NULL = super_admin
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );

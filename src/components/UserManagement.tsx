@@ -57,6 +57,7 @@ export default function UserManagement({ brandColor }: Props) {
   const [addError, setAddError] = useState<string | null>(null)
   const [createdCreds, setCreatedCreds] = useState<{ email: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copyFailed, setCopyFailed] = useState(false)
 
   const isSuper = myProfile?.role === 'super_admin'
   const canAdd = isSuper || myProfile?.role === 'admin'
@@ -210,10 +211,20 @@ export default function UserManagement({ brandColor }: Props) {
               <p className="text-[11px]" style={{ color: '#6B7280' }}>{createdCreds.email}</p>
               <p className="text-sm font-mono font-semibold truncate" style={{ color: '#111827' }}>{createdCreds.password}</p>
             </div>
-            <button onClick={() => { navigator.clipboard?.writeText(`Email: ${createdCreds.email}\nPassword: ${createdCreds.password}`); setCopied(true) }}
+            <button onClick={async () => {
+                setCopyFailed(false)
+                try {
+                  if (!navigator.clipboard) throw new Error('Clipboard API tidak tersedia')
+                  await navigator.clipboard.writeText(`Email: ${createdCreds.email}\nPassword: ${createdCreds.password}`)
+                  setCopied(true)
+                } catch (e) {
+                  console.warn('Clipboard write failed:', e)
+                  setCopyFailed(true)
+                }
+              }}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium flex-shrink-0"
-              style={{ background: '#10B981', color: '#fff' }}>
-              <Copy size={12} /> {copied ? 'Tersalin' : 'Salin'}
+              style={{ background: copyFailed ? '#EF4444' : '#10B981', color: '#fff' }}>
+              <Copy size={12} /> {copyFailed ? 'Gagal — salin manual' : copied ? 'Tersalin' : 'Salin'}
             </button>
           </div>
           <p className="text-[11px]" style={{ color: '#047857' }}>Anggota bisa ganti password sendiri di menu profil (sidebar) setelah login.</p>

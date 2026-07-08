@@ -47,6 +47,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ updated }, { status: 200 })
   } catch (e) {
     console.error('[cron/kol-metrics-refresh]', e)
-    return NextResponse.json({ error: 'Refresh failed', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Refresh failed' }, { status: 500 })
   }
 }

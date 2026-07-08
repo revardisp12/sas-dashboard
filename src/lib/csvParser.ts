@@ -39,6 +39,32 @@ export function toNum(v: unknown): number {
   return parseFloat(s) || 0
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const DMY_RE = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/
+
+/**
+ * Normalize a CSV date cell to YYYY-MM-DD. filterByRange/filterByDays compare dates as
+ * plain strings, so a non-ISO date silently sorts outside every period filter and the row
+ * just vanishes from the dashboard with no error, no matter how the value was entered.
+ * Passes ISO through unchanged; converts the common DD/MM/YYYY or DD-MM-YYYY (Indonesian
+ * convention, matching this app's locale — e.g. what Excel/Sheets commonly export as) to
+ * ISO; anything else is returned unchanged but logged so it's at least visible in devtools
+ * instead of fully silent.
+ */
+export function normalizeDate(raw: string): string {
+  const s = raw.trim()
+  if (ISO_DATE_RE.test(s)) return s
+  const m = s.match(DMY_RE)
+  if (m) {
+    const day = Number(m[1]), month = Number(m[2]), year = Number(m[3])
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    }
+  }
+  if (s) console.warn(`[csvParser] unrecognized date format, importing as-is: "${s}"`)
+  return s
+}
+
 function parseCSV(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
@@ -52,7 +78,7 @@ function parseCSV(file: File): Promise<Record<string, string>[]> {
 export async function parseGoogleAds(file: File): Promise<GoogleAdsRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     campaign: r['Campaign'] || r['campaign'] || '',
     impressions: toNum(r['Impressions'] || r['impressions']),
     clicks: toNum(r['Clicks'] || r['clicks']),
@@ -68,7 +94,7 @@ export async function parseGoogleAds(file: File): Promise<GoogleAdsRow[]> {
 export async function parseMetaAds(file: File): Promise<MetaAdsRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['Reporting starts'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['Reporting starts'] || r['date'] || ''),
     campaign: r['Campaign name'] || r['Campaign'] || r['campaign'] || '',
     reach: toNum(r['Reach'] || r['reach']),
     impressions: toNum(r['Impressions'] || r['impressions']),
@@ -85,7 +111,7 @@ export async function parseMetaAds(file: File): Promise<MetaAdsRow[]> {
 export async function parseTikTokShop(file: File): Promise<TikTokShopRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     gmv: toNum(r['GMV'] || r['gmv']),
     orders: toNum(r['Orders'] || r['orders'] || r['Total orders']),
     unitsSold: toNum(r['Units sold'] || r['units_sold'] || r['Qty sold']),
@@ -98,7 +124,7 @@ export async function parseTikTokShop(file: File): Promise<TikTokShopRow[]> {
 export async function parseInstagram(file: File): Promise<InstagramRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     followers: toNum(r['Followers'] || r['followers'] || r['Total followers']),
     reach: toNum(r['Reach'] || r['reach']),
     impressions: toNum(r['Impressions'] || r['impressions']),
@@ -110,7 +136,7 @@ export async function parseInstagram(file: File): Promise<InstagramRow[]> {
 export async function parseTikTokOrganic(file: File): Promise<TikTokOrganicRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     followers: toNum(r['Followers'] || r['followers'] || r['Total followers']),
     views: toNum(r['Video views'] || r['Views'] || r['views']),
     likes: toNum(r['Likes'] || r['likes']),
@@ -176,7 +202,7 @@ export function salesRowsFromRecord(r: Record<string, string>): SalesRow[] {
   const totalQtyCol = toNum(qtyRaw)
 
   const baseRow = {
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     channel: r['Channel'] || r['channel'] || r['Kanal'] || '',
     cogs: toNum(r['COGS'] || r['cogs'] || r['HPP']),
     grossProfit: toNum(r['Gross Profit'] || r['gross_profit'] || r['Laba Kotor']),
@@ -215,7 +241,7 @@ export async function parseSales(file: File): Promise<SalesRow[]> {
 export async function parseShopee(file: File): Promise<ShopeeRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     gmv: toNum(r['GMV'] || r['gmv']),
     orders: toNum(r['Orders'] || r['orders'] || r['Total orders']),
     unitsSold: toNum(r['Units sold'] || r['units_sold'] || r['Qty sold']),
@@ -237,7 +263,7 @@ export async function parseCRM(file: File): Promise<CRMRow[]> {
     const items = parseProductItems(productRaw)
     const productLabel = items.map(i => i.product).join(', ')
     return {
-      date: r['Date'] || r['date'] || r['Tanggal'] || '',
+      date: normalizeDate(r['Date'] || r['date'] || r['Tanggal'] || ''),
       customerName: r['Customer Name'] || r['Nama'] || r['nama'] || r['customer_name'] || '',
       phone: r['Phone'] || r['No HP'] || r['phone'] || r['no_hp'] || '',
       product: productLabel,
@@ -250,7 +276,7 @@ export async function parseCRM(file: File): Promise<CRMRow[]> {
 export async function parseFacebookOrganic(file: File): Promise<FacebookOrganicRow[]> {
   const rows = await parseCSV(file)
   return rows.map(r => ({
-    date: r['Date'] || r['date'] || '',
+    date: normalizeDate(r['Date'] || r['date'] || ''),
     reach: toNum(r['Reach'] || r['reach']),
     impressions: toNum(r['Impressions'] || r['impressions']),
     engagements: toNum(r['Engagements'] || r['engagements'] || r['Post engagements']),

@@ -94,17 +94,21 @@ export async function POST(req: NextRequest) {
     })
 
     // Best-effort: record the pulled range for the dashboard's duplicate-pull guard.
+    // A failure here must not fail the sync itself (the sync already succeeded) — but it
+    // should be visible in server logs, since a silently-broken insert here means the
+    // duplicate-pull guard silently stops working with no signal anywhere.
     if (brands.length === 1 && body?.start && body?.end && result.status !== 'failed') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (service as any).from('wms_pull_log').insert({
+      const { error: pullLogErr } = await (service as any).from('wms_pull_log').insert({
         brand: brands[0], range_start: range.start, range_end: range.end, rows: result.tables?.sales ?? 0,
-      }).then(() => {}, () => {})
+      })
+      if (pullLogErr) console.error('[wms/sync] wms_pull_log insert failed:', pullLogErr.message)
     }
 
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })
   } catch (e) {
     console.error('[wms/sync]', e)
-    return NextResponse.json({ error: 'Sync failed', detail: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: 'Sync failed' }, { status: 500 })
   }
 }

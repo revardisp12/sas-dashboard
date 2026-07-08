@@ -26,9 +26,13 @@ export default function BrandSyncButton({ brand, onResult }: { brand: Brand; onR
 
   async function loadPulled() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase as any).from('wms_pull_log')
+    const { data, error } = await (supabase as any).from('wms_pull_log')
       .select('range_start, range_end, created_at').eq('brand', brand)
       .order('created_at', { ascending: false }).limit(50)
+    // Best-effort: a failure here just means the duplicate-pull guard silently has no
+    // coverage data (still safe — worst case a redundant re-pull) — but it should be
+    // visible in devtools rather than fully silent.
+    if (error) console.warn('[BrandSyncButton] wms_pull_log read failed:', error.message)
     setPulled((data ?? []) as PulledRange[])
   }
 

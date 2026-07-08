@@ -18,6 +18,7 @@ import {
   replaceInstagram, appendInstagram,
   replaceTikTokOrganic, appendTikTokOrganic,
   replaceFacebookOrganic, appendFacebookOrganic,
+  getLatestSyncStatus, type SyncStatus,
 } from '@/lib/db'
 import { useRealtimeSync } from '@/lib/wms/useRealtimeSync'
 import Sidebar from '@/components/Sidebar'
@@ -88,7 +89,14 @@ export default function Dashboard() {
   const [bundles, setBundles] = useState<BundleMaster[]>([])
   const [dataLoading, setDataLoading] = useState(false)
   const [toast, setToast] = useState<{ kind: 'error' | 'success'; msg: string } | null>(null)
+  // Persistent (non-auto-dismissing) indicator of sources that failed to load — the toast
+  // above auto-dismisses after 5s, which previously left a "Rp 0" dashboard looking like
+  // real data with no lasting signal that something didn't load. Cleared once a source
+  // reloads successfully.
+  const [degradedSources, setDegradedSources] = useState<string[]>([])
+  const [syncHealth, setSyncHealth] = useState<SyncStatus | null>(null)
   const initialViewSet = useRef(false)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     if (!toast) return
@@ -122,6 +130,12 @@ export default function Dashboard() {
   // Load data when brand or auth changes
   const loadData = useCallback(async (b: Brand) => {
     if (!user) return
+    // Guard against a stale response: if the user switches brands (or a realtime event fires)
+    // again before this call resolves, an older in-flight call finishing late must not
+    // clobber the shared (non-per-brand) products/bundles state or the loading indicator with
+    // outdated data. `data` itself is safe already (keyed per-brand below).
+    const requestId = ++requestIdRef.current
+    const isLatest = () => requestId === requestIdRef.current
     setDataLoading(true)
     try {
       const [brandResult, prods, bunds] = await Promise.all([
@@ -144,22 +158,33 @@ export default function Dashboard() {
         }
         return { ...prev, [b]: merged as unknown as BrandData }
       })
-      setProducts(prods)
-      setBundles(bunds)
-      if (brandResult.errors.length > 0) {
+      if (isLatest()) {
+        setProducts(prods)
+        setBundles(bunds)
+        setDegradedSources(brandResult.errors.map(e => e.source))
+      }
+      if (isLatest() && brandResult.errors.length > 0) {
         const sources = brandResult.errors.map(e => e.source).join(', ')
         showError(`Gagal load ${brandResult.errors.length} sumber data (${sources}). Data sebelumnya dipertahankan. Refresh untuk coba lagi.`)
       }
     } catch (e) {
       console.error('Load error:', e)
-      showError(`Gagal load data: ${errMsg(e)}`)
+      if (isLatest()) showError(`Gagal load data: ${errMsg(e)}`)
     } finally {
-      setDataLoading(false)
+      if (isLatest()) setDataLoading(false)
     }
   }, [user])
 
-  const onRealtime = useCallback(() => { if (user) loadData(brand) }, [user, brand, loadData])
+  const onRealtime = useCallback(() => {
+    if (user) loadData(brand)
+    getLatestSyncStatus().then(setSyncHealth).catch(() => setSyncHealth(null))
+  }, [user, brand, loadData])
   useRealtimeSync(brand, onRealtime)
+
+  useEffect(() => {
+    // Sync-health badge — fetch once on mount (external system, not derivable during render).
+    getLatestSyncStatus().then(setSyncHealth).catch(() => setSyncHealth(null))
+  }, [])
 
   useEffect(() => {
     // Fetch brand data from Supabase on auth/brand change (external system).
@@ -348,6 +373,15 @@ export default function Dashboard() {
   const bd = data[brand]
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
+  // Top-bar badge reflects the actual most recent sync run instead of a hardcoded "Live" dot.
+  const SYNC_HEALTH_STYLE: Record<string, { color: string; label: string }> = {
+    success: { color: '#10B981', label: 'Live' },
+    partial: { color: '#F59E0B', label: 'Sebagian Gagal' },
+    failed: { color: '#EF4444', label: 'Sync Gagal' },
+    running: { color: '#3B82F6', label: 'Syncing…' },
+  }
+  const { color: syncHealthColor, label: syncHealthLabel } = SYNC_HEALTH_STYLE[syncHealth?.status ?? ''] ?? { color: '#9CA3AF', label: '—' }
+
   function applyFilter<T extends { date: string }>(rows: T[]): T[] {
     return filterByRange(rows, dateRange.from, dateRange.to)
   }
@@ -409,7 +443,10 @@ export default function Dashboard() {
             {(['super_admin', 'admin'] as string[]).includes(profile?.role ?? '') && (
               <BrandSyncButton
                 brand={brand}
-                onResult={r => { if (r.ok) { showSuccess(r.text); loadData(brand) } else showError(r.text) }}
+                onResult={r => {
+                  if (r.ok) { showSuccess(r.text); loadData(brand) } else showError(r.text)
+                  getLatestSyncStatus().then(setSyncHealth).catch(() => setSyncHealth(null))
+                }}
               />
             )}
             <TimeframeSelector
@@ -421,8 +458,8 @@ export default function Dashboard() {
             <div className="text-right hidden lg:block">
               <p className="text-[10px]" style={{ color: '#374151' }}>{today}</p>
               <div className="flex items-center gap-1.5 mt-0.5 justify-end">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #10B981' }} />
-                <span className="text-[10px] font-medium" style={{ color: '#10B981' }}>Live</span>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: syncHealthColor, boxShadow: `0 0 6px ${syncHealthColor}` }} />
+                <span className="text-[10px] font-medium" style={{ color: syncHealthColor }}>{syncHealthLabel}</span>
               </div>
             </div>
           </div>
@@ -432,6 +469,14 @@ export default function Dashboard() {
         {dataLoading && (
           <div className="h-0.5 w-full overflow-hidden" style={{ background: '#F3F4F6' }}>
             <div className="h-full animate-pulse" style={{ background: '#C9A96E', width: '60%' }} />
+          </div>
+        )}
+
+        {/* Persistent (non-auto-dismissing) degraded-source banner — see loadData's comment */}
+        {degradedSources.length > 0 && (
+          <div className="px-4 lg:px-8 py-1.5 text-[11px] flex items-center gap-2" style={{ background: '#FEF3C7', color: '#92400E', borderBottom: '1px solid #FDE68A' }}>
+            <span>⚠️ Gagal load: {degradedSources.join(', ')} — menampilkan data sebelumnya.</span>
+            <button onClick={() => loadData(brand)} className="underline font-medium flex-shrink-0">Coba lagi</button>
           </div>
         )}
 

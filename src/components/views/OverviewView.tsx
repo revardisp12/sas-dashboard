@@ -1,6 +1,6 @@
 'use client'
 import { BrandData, Brand, DateRange, ProductMaster, CRMRow } from '@/lib/types'
-import { filterByRange, fmtCurrencyExact as fmtCurrency, fmtNumExact as fmtNum, fitSize, chartTooltipStyle } from '@/lib/utils'
+import { filterByRange, fmtCurrencyExact as fmtCurrencyBig, fmtNumExact as fmtNumBig, fitSize, chartTooltipStyle } from '@/lib/utils'
 import { CHANNELS } from '@/lib/channels'
 import { BarChart2, Target, ShoppingBag, Camera, Music, DollarSign, TrendingUp, ShoppingCart, Users, Package, Trophy, AlertTriangle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -89,9 +89,9 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Total Ad Spend" value={fmtCurrency(totalSpend)} icon={<DollarSign size={16} />} color="#F07830" />
-        <KpiCard label="Total Revenue" value={fmtCurrency(totalRevenue)} icon={<TrendingUp size={16} />} color="#10B981" />
-        <KpiCard label="Total Orders" value={fmtNum(totalOrders)} icon={<ShoppingCart size={16} />} color="#8B5CF6" />
+        <KpiCard label="Total Ad Spend" value={fmtCurrencyBig(totalSpend)} icon={<DollarSign size={16} />} color="#F07830" />
+        <KpiCard label="Total Revenue" value={fmtCurrencyBig(totalRevenue)} icon={<TrendingUp size={16} />} color="#10B981" />
+        <KpiCard label="Total Orders" value={fmtNumBig(totalOrders)} icon={<ShoppingCart size={16} />} color="#8B5CF6" />
         <KpiCard label="Blended ROAS" value={blendedRoas > 0 ? blendedRoas.toFixed(2) + 'x' : '-'} icon={<BarChart2 size={16} />} color="#00D4FF" />
       </div>
 
@@ -106,8 +106,8 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
                   <ShoppingBag size={13} style={{ color: '#C9A96E' }} />
                   <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>{c.label}</span>
                 </div>
-                <p className="font-bold" style={{ color: '#111827', fontSize: fitSize(fmtCurrency(c.revenue), 18), whiteSpace: 'nowrap' }}>{fmtCurrency(c.revenue)}</p>
-                <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>{fmtNum(c.orders)} order</p>
+                <p className="font-bold" style={{ color: '#111827', fontSize: fitSize(fmtCurrencyBig(c.revenue), 18), whiteSpace: 'nowrap' }}>{fmtCurrencyBig(c.revenue)}</p>
+                <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>{fmtNumBig(c.orders)} order</p>
               </div>
             ))}
           </div>
@@ -119,16 +119,16 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <PlatformCard icon={<BarChart2 size={14} />} color="#4285F4" title="Google Ads"
             items={[
-              { label: 'Spend', value: fmtCurrency(ga.reduce((s, r) => s + r.spend, 0)) },
-              { label: 'Impressions', value: fmtNum(ga.reduce((s, r) => s + r.impressions, 0)) },
-              { label: 'Clicks', value: fmtNum(ga.reduce((s, r) => s + r.clicks, 0)) },
+              { label: 'Spend', value: fmtCurrencyBig(ga.reduce((s, r) => s + r.spend, 0)) },
+              { label: 'Impressions', value: fmtNumBig(ga.reduce((s, r) => s + r.impressions, 0)) },
+              { label: 'Clicks', value: fmtNumBig(ga.reduce((s, r) => s + r.clicks, 0)) },
               { label: 'Avg ROAS', value: ga.length > 0 ? (ga.reduce((s, r) => s + r.roas, 0) / ga.length).toFixed(2) + 'x' : '-' },
             ]} empty={ga.length === 0} />
           <PlatformCard icon={<Target size={14} />} color="#1877F2" title="Meta Ads"
             items={[
-              { label: 'Spend', value: fmtCurrency(meta.reduce((s, r) => s + r.spend, 0)) },
-              { label: 'Reach', value: fmtNum(meta.reduce((s, r) => s + r.reach, 0)) },
-              { label: 'Clicks', value: fmtNum(meta.reduce((s, r) => s + r.clicks, 0)) },
+              { label: 'Spend', value: fmtCurrencyBig(meta.reduce((s, r) => s + r.spend, 0)) },
+              { label: 'Reach', value: fmtNumBig(meta.reduce((s, r) => s + r.reach, 0)) },
+              { label: 'Clicks', value: fmtNumBig(meta.reduce((s, r) => s + r.clicks, 0)) },
               { label: 'Avg ROAS', value: meta.length > 0 ? (meta.reduce((s, r) => s + r.roas, 0) / meta.length).toFixed(2) + 'x' : '-' },
             ]} empty={meta.length === 0} />
         </div>
@@ -139,17 +139,17 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <PlatformCard icon={<Camera size={14} />} color="#E1306C" title="Instagram"
             items={[
-              { label: 'Followers', value: fmtNum(igFollowers) },
-              { label: 'Total Reach', value: fmtNum(ig.reduce((s, r) => s + r.reach, 0)) },
-              { label: 'Impressions', value: fmtNum(ig.reduce((s, r) => s + r.impressions, 0)) },
-              { label: 'Engagements', value: fmtNum(ig.reduce((s, r) => s + r.engagements, 0)) },
+              { label: 'Followers', value: fmtNumBig(igFollowers) },
+              { label: 'Total Reach', value: fmtNumBig(ig.reduce((s, r) => s + r.reach, 0)) },
+              { label: 'Impressions', value: fmtNumBig(ig.reduce((s, r) => s + r.impressions, 0)) },
+              { label: 'Engagements', value: fmtNumBig(ig.reduce((s, r) => s + r.engagements, 0)) },
             ]} empty={ig.length === 0} />
           <PlatformCard icon={<Music size={14} />} color="#69C9D0" title="TikTok"
             items={[
-              { label: 'Followers', value: fmtNum(ttFollowers) },
-              { label: 'Total Views', value: fmtNum(ttViews) },
-              { label: 'Total Likes', value: fmtNum(tt.reduce((s, r) => s + r.likes, 0)) },
-              { label: 'Shares', value: fmtNum(tt.reduce((s, r) => s + r.shares, 0)) },
+              { label: 'Followers', value: fmtNumBig(ttFollowers) },
+              { label: 'Total Views', value: fmtNumBig(ttViews) },
+              { label: 'Total Likes', value: fmtNumBig(tt.reduce((s, r) => s + r.likes, 0)) },
+              { label: 'Shares', value: fmtNumBig(tt.reduce((s, r) => s + r.shares, 0)) },
             ]} empty={tt.length === 0} />
         </div>
       </Section>
@@ -157,10 +157,10 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
       {/* Sales */}
       <Section title="Sales Performance">
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <MiniStat label="Revenue" value={fmtCurrency(sales.reduce((s, r) => s + r.revenue, 0))} color="#10B981" />
-          <MiniStat label="Gross Profit" value={fmtCurrency(sales.reduce((s, r) => s + r.grossProfit, 0))} color="#10B981" />
-          <MiniStat label="Units Sold" value={fmtNum(sales.reduce((s, r) => s + r.qty, 0))} color="#8B5CF6" />
-          <MiniStat label="Total Impressions" value={fmtNum(totalImpressions)} color="#00D4FF" />
+          <MiniStat label="Revenue" value={fmtCurrencyBig(sales.reduce((s, r) => s + r.revenue, 0))} color="#10B981" />
+          <MiniStat label="Gross Profit" value={fmtCurrencyBig(sales.reduce((s, r) => s + r.grossProfit, 0))} color="#10B981" />
+          <MiniStat label="Units Sold" value={fmtNumBig(sales.reduce((s, r) => s + r.qty, 0))} color="#8B5CF6" />
+          <MiniStat label="Total Impressions" value={fmtNumBig(totalImpressions)} color="#00D4FF" />
         </div>
       </Section>
 
@@ -175,7 +175,7 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
           {data.crm.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
-                <p className="text-2xl font-bold" style={{ color: '#111827' }}>{fmtNum(crmSnap.total)}</p>
+                <p className="text-2xl font-bold" style={{ color: '#111827' }}>{fmtNumBig(crmSnap.total)}</p>
                 <p className="text-[10px] mt-1 font-medium uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Total Customers</p>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
@@ -216,7 +216,7 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
                     <span className="text-[10px] font-bold w-4 text-center" style={{ color: i === 0 ? '#F59E0B' : '#4B5563' }}>{i + 1}</span>
                     <span className="text-xs truncate max-w-[160px]" style={{ color: '#9CA3AF' }}>{p.name}</span>
                   </div>
-                  <span className="text-xs font-semibold" style={{ color: '#111827' }}>{fmtCurrency(p.revenue)}</span>
+                  <span className="text-xs font-semibold" style={{ color: '#111827' }}>{fmtCurrencyBig(p.revenue)}</span>
                 </div>
               ))}
               {brandProducts.length > 0 && (
