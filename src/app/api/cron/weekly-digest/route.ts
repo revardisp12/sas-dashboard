@@ -208,6 +208,10 @@ function shopeeMap(r: Record<string, unknown>): ShopeeRow {
   }
 }
 
+// PostgREST caps a single request at 1000 rows — paginate so a high-volume brand/week
+// (Purela) doesn't silently truncate the digest's revenue/order counts.
+const PAGE = 1000
+
 async function fetchInRange<T>(
   supabase: ReturnType<typeof createClient<Database>>,
   table: 'sales' | 'crm' | 'google_ads' | 'meta_ads' | 'tiktok_shop' | 'shopee',
@@ -216,9 +220,16 @@ async function fetchInRange<T>(
   endYmd: string,
   mapper: Mapper<T>,
 ): Promise<T[]> {
-  const { data, error } = await supabase.from(table).select('*').eq('brand', brand).gte('date', startYmd).lte('date', endYmd)
-  if (error) throw error
-  return (data ?? []).map(r => mapper(r as Record<string, unknown>))
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from(table).select('*').eq('brand', brand)
+      .gte('date', startYmd).lte('date', endYmd).order('date').order('id').range(from, from + PAGE - 1)
+    if (error) throw error
+    const batch = data ?? []
+    for (const r of batch) rows.push(mapper(r as Record<string, unknown>))
+    if (batch.length < PAGE) break
+  }
+  return rows
 }
 
 async function fetchAll<T>(
@@ -227,9 +238,15 @@ async function fetchAll<T>(
   brand: Brand,
   mapper: Mapper<T>,
 ): Promise<T[]> {
-  const { data, error } = await supabase.from(table).select('*').eq('brand', brand)
-  if (error) throw error
-  return (data ?? []).map(r => mapper(r as Record<string, unknown>))
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from(table).select('*').eq('brand', brand).order('date').order('id').range(from, from + PAGE - 1)
+    if (error) throw error
+    const batch = data ?? []
+    for (const r of batch) rows.push(mapper(r as Record<string, unknown>))
+    if (batch.length < PAGE) break
+  }
+  return rows
 }
 
 function customerKey(name: string | undefined, phone: string | undefined): string | null {

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { CRMRow, Brand, ProductMaster } from '@/lib/types'
 import { Plus, Trash2, X } from 'lucide-react'
 import { BRAND_RGB } from '@/lib/brand'
+import { todayWIB } from '@/lib/utils'
 
 interface LineItem { product: string; sku: string; qty: string; revenue: string }
 const EMPTY_LINE: LineItem = { product: '', sku: '', qty: '1', revenue: '' }
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export default function CRMManualInputModal({ brand, accent, brandProducts, onSave, onClose }: Props) {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(todayWIB())
   const [customer, setCustomer] = useState('')
   const [phone, setPhone] = useState('')
   const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE }])

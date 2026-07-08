@@ -27,22 +27,36 @@ export const PERIOD_LABELS: Record<Period, string> = {
   custom: 'Pilih Tanggal Sendiri',
 }
 
-const ymdLocal = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+// The business (and all synced WMS data) operates in WIB (Asia/Jakarta, UTC+7, no DST).
+// Pin "today"/date-window math to that fixed offset instead of the runtime's own timezone
+// (server UTC, or whatever timezone an admin's browser happens to be in) — otherwise date
+// boundaries drift by a day for part of the WIB day (00:00-06:59 WIB = still "yesterday" UTC).
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000
 
-/** Resolve a preset period to a concrete [from,to] window anchored on today (local time). */
+/** Now, shifted so reading UTC getters yields the correct Asia/Jakarta calendar date/time,
+ *  regardless of the runtime's own timezone. Read components via getUTC*, not local getters. */
+export function nowWIB(): Date {
+  return new Date(Date.now() + WIB_OFFSET_MS)
+}
+
+/** Today's calendar date (YYYY-MM-DD) in Asia/Jakarta, regardless of runtime timezone. */
+export function todayWIB(): string {
+  return nowWIB().toISOString().slice(0, 10)
+}
+
+/** The date n days before today (n=0 -> today), as YYYY-MM-DD in Asia/Jakarta. */
+export function daysAgoWIB(n: number): string {
+  return new Date(nowWIB().getTime() - n * 86_400_000).toISOString().slice(0, 10)
+}
+
+/** Resolve a preset period to a concrete [from,to] window anchored on today (WIB). */
 export function resolvePeriod(p: Exclude<Period, 'custom'>): { from: string; to: string } {
-  const today = new Date()
   if (p === 'kemarin') {
-    const y = new Date(today)
-    y.setDate(y.getDate() - 1)
-    const s = ymdLocal(y)
-    return { from: s, to: s }
+    const y = daysAgoWIB(1)
+    return { from: y, to: y }
   }
   const days = p === '7d' ? 7 : 14
-  const from = new Date(today)
-  from.setDate(from.getDate() - days + 1)
-  return { from: ymdLocal(from), to: ymdLocal(today) }
+  return { from: daysAgoWIB(days - 1), to: daysAgoWIB(0) }
 }
 
 export function filterByDays<T extends { date: string }>(data: T[], days: number): T[] {
