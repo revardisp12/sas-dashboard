@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Brand, SalesRow, WeekRange } from '@/lib/types'
 import { getTarget, upsertTarget } from '@/lib/db'
 import MetricCard from '@/components/MetricCard'
 import { TrendingUp, Target, ChevronLeft, ChevronRight, Save, Plus, Trash2 } from 'lucide-react'
-import { fmtCurrency } from '@/lib/utils'
+import { fmtCurrency, nowWIB } from '@/lib/utils'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -32,12 +32,14 @@ interface Props { salesData: SalesRow[]; brand: Brand }
 
 export default function PerformanceView({ salesData, brand }: Props) {
   const accent = ACCENT[brand]
-  const today = new Date()
+  // WIB-anchored "today" (business runs Asia/Jakarta) — read via getUTC*, since nowWIB()
+  // is an artificially-shifted instant; the browser's own local getters would double-offset.
+  const today = nowWIB()
 
-  const [selectedYear, setSelectedYear] = useState(today.getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(today.getUTCFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(today.getUTCMonth() + 1)
   const [monthlyTarget, setMonthlyTarget] = useState('')
-  const [weeks, setWeeks] = useState<WeekRange[]>(() => defaultWeeks(today.getFullYear(), today.getMonth() + 1))
+  const [weeks, setWeeks] = useState<WeekRange[]>(() => defaultWeeks(today.getUTCFullYear(), today.getUTCMonth() + 1))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -66,10 +68,12 @@ export default function PerformanceView({ salesData, brand }: Props) {
     load()
   }, [brand, selectedYear, selectedMonth])
 
-  function getSalesForMonth(year: number, month: number) {
+  // useCallback so its identity only changes with salesData — otherwise a new closure on
+  // every render would defeat the useMemo calls below that depend on it.
+  const getSalesForMonth = useCallback((year: number, month: number) => {
     const prefix = `${year}-${String(month).padStart(2, '0')}`
     return salesData.filter(r => r.date.startsWith(prefix))
-  }
+  }, [salesData])
   function getSalesForRange(sales: SalesRow[], startDay: number, endDay: number) {
     return sales.filter(r => {
       const d = parseInt(r.date.split('-')[2])
@@ -77,14 +81,17 @@ export default function PerformanceView({ salesData, brand }: Props) {
     })
   }
 
-  const thisMonthSales = getSalesForMonth(selectedYear, selectedMonth)
+  // Memoized: these full-array scans over salesData must NOT re-run on every render (e.g.
+  // every keystroke in the monthly-target input) — only when the underlying data or the
+  // selected month actually changes.
+  const thisMonthSales = useMemo(() => getSalesForMonth(selectedYear, selectedMonth), [getSalesForMonth, selectedYear, selectedMonth])
   const lastMonthRef = selectedMonth === 1
     ? { year: selectedYear - 1, month: 12 }
     : { year: selectedYear, month: selectedMonth - 1 }
-  const lastMonthSales = getSalesForMonth(lastMonthRef.year, lastMonthRef.month)
+  const lastMonthSales = useMemo(() => getSalesForMonth(lastMonthRef.year, lastMonthRef.month), [getSalesForMonth, lastMonthRef.year, lastMonthRef.month])
 
   const daysInMonth = getDaysInMonth(selectedYear, selectedMonth)
-  const chartData = Array.from({ length: daysInMonth }, (_, i) => {
+  const chartData = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1
     const ds = String(day).padStart(2, '0')
     const thisDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${ds}`
@@ -92,12 +99,12 @@ export default function PerformanceView({ salesData, brand }: Props) {
     const thisRev = thisMonthSales.filter(r => r.date === thisDate).reduce((s, r) => s + r.revenue, 0)
     const lastRev = lastMonthSales.filter(r => r.date === lastDate).reduce((s, r) => s + r.revenue, 0)
     return { day, 'Bulan Ini': thisRev || null, 'Bulan Lalu': lastRev || null }
-  })
+  }), [daysInMonth, selectedYear, selectedMonth, lastMonthRef.year, lastMonthRef.month, thisMonthSales, lastMonthSales])
 
-  const isCurrentMonth = today.getFullYear() === selectedYear && today.getMonth() + 1 === selectedMonth
-  const isPastMonth = selectedYear < today.getFullYear() ||
-    (selectedYear === today.getFullYear() && selectedMonth < today.getMonth() + 1)
-  const todayDay = today.getDate()
+  const isCurrentMonth = today.getUTCFullYear() === selectedYear && today.getUTCMonth() + 1 === selectedMonth
+  const isPastMonth = selectedYear < today.getUTCFullYear() ||
+    (selectedYear === today.getUTCFullYear() && selectedMonth < today.getUTCMonth() + 1)
+  const todayDay = today.getUTCDate()
 
   function calcWeek(w: WeekRange) {
     const lmAchievement = getSalesForRange(lastMonthSales, w.startDay, w.endDay).reduce((s, r) => s + r.revenue, 0)
@@ -126,7 +133,11 @@ export default function PerformanceView({ salesData, brand }: Props) {
     return { lmAchievement, runningRate, isProjected, isFuture }
   }
 
-  const weekCalcs = weeks.map(calcWeek)
+  const weekCalcs = useMemo(
+    () => weeks.map(calcWeek),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- calcWeek closes over lastMonthSales/thisMonthSales/isPastMonth/isCurrentMonth/todayDay, listed explicitly below
+    [weeks, lastMonthSales, thisMonthSales, isPastMonth, isCurrentMonth, todayDay],
+  )
   const totalLM = weekCalcs.reduce((s, w) => s + w.lmAchievement, 0)
   const totalRunning = weekCalcs.reduce((s, w) => w.runningRate !== null ? s + w.runningRate : s, 0)
   const totalWeeklyTarget = weeks.reduce((s, w) => s + (w.target || 0), 0)

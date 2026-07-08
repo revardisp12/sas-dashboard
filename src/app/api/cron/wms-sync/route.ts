@@ -6,6 +6,7 @@ import { getWmsAdapter } from '@/lib/wms/adapter'
 import { runWmsSync } from '@/lib/wms/sync'
 import { dbPort, logPort } from '@/lib/wms/serverPorts'
 import type { WmsTable } from '@/lib/wms/types'
+import { daysAgoWIB } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,10 +16,10 @@ const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
 // Revenue scope: marketplace + CS Soscom (sales), repeat customers (crm), product catalog.
 const TABLES: WmsTable[] = ['sales', 'products', 'crm']
 
+// The business runs in WIB (Asia/Jakarta); anchor "today" there, not the server's UTC clock,
+// so the hourly cron still pulls the correct WIB calendar day between 00:00-06:59 WIB.
 function lastNDays(n: number) {
-  const end = new Date()
-  const start = new Date(); start.setUTCDate(start.getUTCDate() - n)
-  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
+  return { start: daysAgoWIB(n), end: daysAgoWIB(0) }
 }
 
 export async function POST(req: NextRequest) {

@@ -12,19 +12,28 @@ interface Stage {
 export default function FunnelView({ data, range }: Props) {
   const ga = filterByRange(data.googleAds, range.from, range.to)
   const meta = filterByRange(data.metaAds, range.from, range.to)
-  const tts = filterByRange(data.tiktokShop, range.from, range.to)
   const sales = filterByRange(data.sales, range.from, range.to)
 
   const awareness = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
   const consideration = ga.reduce((s, r) => s + r.clicks, 0) + meta.reduce((s, r) => s + r.clicks, 0)
   const conversion = ga.reduce((s, r) => s + r.conversions, 0) + meta.reduce((s, r) => s + r.purchases, 0)
-  const purchase = tts.reduce((s, r) => s + r.orders, 0) + sales.reduce((s, r) => s + r.qty, 0)
+  // Order count (not units) from the unified `sales` table. The legacy `tiktokShop` table's
+  // own order count used to be added here too, but WMS now syncs TikTok orders into `sales`
+  // (channel='tiktok'), so summing both double-counted every order placed since WMS went
+  // live (plus it mixed unit qty with order count from two different tables). Note: unlike
+  // Overview's totalOrders (sales.length + crm.length), this intentionally excludes `crm` —
+  // repeat/retention orders never traversed the paid Awareness->Consideration funnel above.
+  // Also note: a custom date range predating this brand's WMS go-live would under-count here
+  // (old TikTok orders that only ever lived in `tiktokShop`, never migrated into `sales`,
+  // aren't counted) — a deliberate tradeoff vs. the double-count for all recent/default
+  // ranges, not fixed here since it needs a per-brand WMS cutover date to resolve properly.
+  const purchase = sales.length
 
   const stages: Stage[] = [
     { label: 'Awareness', sublabel: 'Total Impressions (Paid)', value: awareness, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)', icon: '👁' },
     { label: 'Consideration', sublabel: 'Total Clicks (Paid)', value: consideration, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', icon: '🤔' },
     { label: 'Conversion', sublabel: 'Conversions & Purchases', value: conversion, color: '#F07830', bg: 'rgba(240,120,48,0.12)', icon: '🛒' },
-    { label: 'Purchase', sublabel: 'Orders (TikTok Shop + Sales)', value: purchase, color: '#10B981', bg: 'rgba(16,185,129,0.12)', icon: '💰' },
+    { label: 'Purchase', sublabel: 'Orders (Sales)', value: purchase, color: '#10B981', bg: 'rgba(16,185,129,0.12)', icon: '💰' },
   ]
 
   const maxVal = Math.max(...stages.map(s => s.value), 1)
@@ -42,7 +51,7 @@ export default function FunnelView({ data, range }: Props) {
           style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
           <p className="text-4xl mb-4">📊</p>
           <p className="font-semibold mb-1" style={{ color: '#6B7280' }}>Belum ada data untuk funnel</p>
-          <p className="text-sm" style={{ color: '#374151' }}>Upload data Google Ads / Meta Ads / TikTok Shop / Sales terlebih dahulu</p>
+          <p className="text-sm" style={{ color: '#374151' }}>Upload data Google Ads / Meta Ads / Sales terlebih dahulu</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

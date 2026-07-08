@@ -1,17 +1,16 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { daysAgoWIB } from '@/lib/utils'
 import type { Brand } from '@/lib/types'
 
 const LABELS: Record<Brand, string> = { reglow: 'Reglow', amura: 'Amura', purela: 'Purela' }
-const iso = (d: Date) => d.toISOString().slice(0, 10)
 const daysBetween = (s: string, e: string) => Math.round((Date.parse(e) - Date.parse(s)) / 86_400_000)
 function preset(kind: 'today' | 'yesterday' | 'last7'): { start: string; end: string } {
-  const end = new Date()
-  const start = new Date()
-  if (kind === 'yesterday') { start.setDate(start.getDate() - 1); end.setDate(end.getDate() - 1) }
-  if (kind === 'last7') start.setDate(start.getDate() - 6)
-  return { start: iso(start), end: iso(end) }
+  if (kind === 'yesterday') { const d = daysAgoWIB(1); return { start: d, end: d } }
+  if (kind === 'last7') return { start: daysAgoWIB(6), end: daysAgoWIB(0) }
+  const d = daysAgoWIB(0)
+  return { start: d, end: d }
 }
 
 type PulledRange = { range_start: string; range_end: string; created_at: string }

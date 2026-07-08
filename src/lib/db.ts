@@ -117,29 +117,87 @@ export async function deleteTask(id: string): Promise<void> {
   if (error) throw error
 }
 
+// ── Pagination helper (shared by getSales/getCRM) ───────────────────────────
+
+const PAGE = 1000
+const MAX_CONCURRENT_PAGES = 6
+// Safety ceiling: prevents unbounded row growth from ever crashing a browser tab outright.
+// This is a stopgap, NOT the real fix for "the client always loads a brand's entire history"
+// — the real fix is fetching only the data each view actually needs (server-side date-range
+// scoping), which is a larger architecture change deferred pending a dedicated design pass:
+// several views need historical windows independent of the dashboard's selected period (CRM
+// retention analysis needs full customer lifetime, Product Analysis "All" and Performance's
+// month-over-month both browse independently of the top-bar date range).
+const MAX_PAGES = 500
+
+interface PaginatedRows<T> { rows: T[]; truncated: boolean }
+
+// Counts rows first (cheap HEAD request), then fires up to MAX_CONCURRENT_PAGES .range()
+// requests in parallel per batch instead of one page at a time — the previous sequential
+// loop's latency was pages × round-trip-time even though pages are independent of each other.
+//
+// `fetchPage` MUST query in NEWEST-first order (descending date, descending id) — if the
+// MAX_PAGES cap is hit, we keep the most RECENT rows and drop the oldest ones, not the
+// reverse. A revenue dashboard needs this month's numbers to be right far more than it needs
+// ancient history; silently dropping brand-new data while stale history survives would be
+// the worst-case failure mode. Rows are pushed in newest-to-oldest fetch order, then reversed
+// once at the end to restore the ascending-by-date order callers expect.
+async function paginateWithCount<T>(
+  countQuery: () => PromiseLike<{ count: number | null; error: { message: string } | null }>,
+  fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<PaginatedRows<T>> {
+  const { count, error: countErr } = await countQuery()
+  if (countErr) throw countErr
+  const total = count ?? 0
+  if (total === 0) return { rows: [], truncated: false }
+  const totalPages = Math.ceil(total / PAGE)
+  const pagesToFetch = Math.min(totalPages, MAX_PAGES)
+  const truncated = totalPages > MAX_PAGES
+  if (truncated) {
+    console.warn(`[db] pagination truncated: ${total} rows across ${totalPages} pages, keeping only the newest ${MAX_PAGES * PAGE} rows (MAX_PAGES safety cap)`)
+  }
+
+  const rowsNewestFirst: T[] = []
+  for (let batchStart = 0; batchStart < pagesToFetch; batchStart += MAX_CONCURRENT_PAGES) {
+    const pageIdx = Array.from(
+      { length: Math.min(MAX_CONCURRENT_PAGES, pagesToFetch - batchStart) },
+      (_, i) => batchStart + i,
+    )
+    const results = await Promise.all(pageIdx.map(async p => {
+      const from = p * PAGE
+      const { data, error } = await fetchPage(from, from + PAGE - 1)
+      if (error) throw error
+      return data ?? []
+    }))
+    for (const batch of results) rowsNewestFirst.push(...batch)
+  }
+  return { rows: rowsNewestFirst.reverse(), truncated }
+}
+
 // ── Sales ────────────────────────────────────────────────────────────────────
 
-export async function getSales(brand: Brand): Promise<SalesRow[]> {
+export async function getSales(brand: Brand): Promise<PaginatedRows<SalesRow>> {
   // PostgREST caps each request at 1000 rows — paginate so high-volume brands
   // (Purela ~5.8k orders/day) load fully instead of being silently truncated.
-  const PAGE = 1000
-  const rows: SalesRow[] = []
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase.from('sales').select('*').eq('brand', brand).order('date').range(from, from + PAGE - 1)
-    if (error) throw error
-    const batch = data ?? []
-    for (const r of batch) {
-      rows.push({
-        date: r.date, product: r.product, qty: r.qty, revenue: r.revenue,
-        channel: r.channel ?? '', cogs: r.cogs ?? 0, grossProfit: r.gross_profit ?? 0,
-        customerName: r.customer_name ?? '', phone: r.phone ?? '',
-        address: r.address ?? '', source: (r.source ?? 'organic') as SalesSource,
-        origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
-      })
-    }
-    if (batch.length < PAGE) break
+  // Secondary sort by `id` makes pagination deterministic even when many rows share the
+  // same `date` — otherwise separately-issued page queries could order ties differently
+  // between calls, silently duplicating or dropping rows at a page boundary. Descending so
+  // a MAX_PAGES truncation (see paginateWithCount) drops the oldest rows, not the newest.
+  const { rows, truncated } = await paginateWithCount(
+    () => supabase.from('sales').select('*', { count: 'exact', head: true }).eq('brand', brand),
+    (from, to) => supabase.from('sales').select('*').eq('brand', brand)
+      .order('date', { ascending: false }).order('id', { ascending: false }).range(from, to),
+  )
+  return {
+    rows: rows.map(r => ({
+      date: r.date, product: r.product, qty: r.qty, revenue: r.revenue,
+      channel: r.channel ?? '', cogs: r.cogs ?? 0, grossProfit: r.gross_profit ?? 0,
+      customerName: r.customer_name ?? '', phone: r.phone ?? '',
+      address: r.address ?? '', source: (r.source ?? 'organic') as SalesSource,
+      origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
+    })),
+    truncated,
   }
-  return rows
 }
 
 export async function appendSales(rows: SalesRow[], brand: Brand): Promise<void> {
@@ -166,25 +224,23 @@ export async function replaceSales(rows: SalesRow[], brand: Brand): Promise<void
 
 // ── CRM ──────────────────────────────────────────────────────────────────────
 
-export async function getCRM(brand: Brand): Promise<CRMRow[]> {
+export async function getCRM(brand: Brand): Promise<PaginatedRows<CRMRow>> {
   // PostgREST caps each request at 1000 rows — paginate so retention RFM sees the full
   // history (repeat-customer rows accumulate across months) instead of being truncated.
-  const PAGE = 1000
-  const rows: CRMRow[] = []
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase.from('crm').select('*').eq('brand', brand).order('date').range(from, from + PAGE - 1)
-    if (error) throw error
-    const batch = data ?? []
-    for (const r of batch) {
-      rows.push({
-        date: r.date, customerName: r.customer_name ?? '',
-        phone: r.phone ?? '', product: r.product, qty: r.qty, revenue: r.revenue,
-        origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
-      })
-    }
-    if (batch.length < PAGE) break
+  // Descending so a MAX_PAGES truncation (see paginateWithCount) drops the oldest rows.
+  const { rows, truncated } = await paginateWithCount(
+    () => supabase.from('crm').select('*', { count: 'exact', head: true }).eq('brand', brand),
+    (from, to) => supabase.from('crm').select('*').eq('brand', brand)
+      .order('date', { ascending: false }).order('id', { ascending: false }).range(from, to),
+  )
+  return {
+    rows: rows.map(r => ({
+      date: r.date, customerName: r.customer_name ?? '',
+      phone: r.phone ?? '', product: r.product, qty: r.qty, revenue: r.revenue,
+      origin: (r.origin ?? 'manual') as 'wms' | 'manual' | 'csv',
+    })),
+    truncated,
   }
-  return rows
 }
 
 export async function appendCRM(rows: CRMRow[], brand: Brand): Promise<void> {
@@ -475,10 +531,31 @@ export async function loadBrandData(brand: Brand): Promise<LoadBrandDataResult> 
       errors.push({ source, message })
       return fallback
     })
+  // getSales/getCRM paginate with a safety cap (see paginateWithCount) — surface a truncation
+  // as a real, user-visible warning (the existing errors[] pipeline already renders a toast in
+  // page.tsx) rather than a browser-console-only message nobody watching the dashboard sees.
+  const safeRows = <T>(p: Promise<PaginatedRows<T>>, source: string): Promise<T[]> =>
+    p.then(
+      ({ rows, truncated }) => {
+        if (truncated) {
+          errors.push({
+            source,
+            message: `Data ${source} melebihi batas ${MAX_PAGES * PAGE} baris — histori terlama brand ini tidak ikut termuat (data terbaru tetap lengkap).`,
+          })
+        }
+        return rows
+      },
+      e => {
+        const message = e instanceof Error ? e.message : String(e)
+        console.warn(`loadBrandData[${source}]:`, message)
+        errors.push({ source, message })
+        return [] as T[]
+      },
+    )
   const [sales, crm, googleAds, metaAds, tiktokShop, shopee, instagram, tiktokOrganic, facebookOrganic] =
     await Promise.all([
-      safe(getSales(brand), [], 'sales'),
-      safe(getCRM(brand), [], 'crm'),
+      safeRows(getSales(brand), 'sales'),
+      safeRows(getCRM(brand), 'crm'),
       safe(getGoogleAds(brand), [], 'google_ads'),
       safe(getMetaAds(brand), [], 'meta_ads'),
       safe(getTikTokShop(brand), [], 'tiktok_shop'),

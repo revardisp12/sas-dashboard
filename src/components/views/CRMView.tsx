@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { CRMRow, Brand, CRMTimeframe, CustomerRFM, RFMSegment, FollowUpTask, ProductMaster, BundleMaster } from '@/lib/types'
-import { fmtCurrency, fmtNum } from '@/lib/utils'
+import { fmtCurrency, fmtNum, todayWIB } from '@/lib/utils'
 import { loadTasks, saveTasks } from '@/lib/storage'
 import CSVUploader from '@/components/CSVUploader'
 import CSVValidationModal, { validateProductField, InvalidRow } from '@/components/CSVValidationModal'
@@ -76,7 +76,7 @@ export default function CRMView({ data, brand, onUpload, onBulkUpload, products 
     return s
   }, [customers])
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = todayWIB()
   const todayTasks = tasks.filter(t => t.dueDate === todayStr && t.status !== 'done')
 
   async function handleCSVFile(file: File) {
