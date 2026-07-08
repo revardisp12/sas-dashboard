@@ -17,7 +17,7 @@ export function dbPort(supabase: Client): DbPort {
       }
       return { error: null }
     },
-    async deleteWmsInRange(table, brand, start, end) {
+    async deleteStaleWmsInRange(table, brand, start, end, syncStartedAt) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime table string; .from() needs a literal union
       const { error } = await (supabase.from(table as any) as any)
         .delete()
@@ -25,6 +25,7 @@ export function dbPort(supabase: Client): DbPort {
         .eq('brand', brand)
         .gte('date', start)
         .lte('date', end)
+        .or(`synced_at.is.null,synced_at.lt.${syncStartedAt}`)
       return error ? { error: { message: error.message } } : { error: null }
     },
   }

@@ -9,9 +9,12 @@ function makePorts(fake: FakeSupabase): { db: DbPort; log: LogPort } {
     async upsert(table, rows, onConflict) {
       return fake.from(table).upsert(rows as Record<string, unknown>[], { onConflict })
     },
-    async deleteWmsInRange(table, brand, start, end) {
+    async deleteStaleWmsInRange(table, brand, start, end, syncStartedAt) {
       const ex = fake.store[table] ?? []
-      fake.store[table] = ex.filter(r => !(r.origin === 'wms' && r.brand === brand && String(r.date) >= start && String(r.date) <= end))
+      fake.store[table] = ex.filter(r => !(
+        r.origin === 'wms' && r.brand === brand && String(r.date) >= start && String(r.date) <= end
+        && (r.synced_at == null || String(r.synced_at) < syncStartedAt)
+      ))
       return { error: null }
     },
   }
@@ -89,7 +92,7 @@ describe('runWmsSync', () => {
         captured[table] = (captured[table] ?? []).concat(rows)
         return { error: null }
       },
-      async deleteWmsInRange() { return { error: null } },
+      async deleteStaleWmsInRange() { return { error: null } },
     }
     const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ } }
     // Adapter returns the SAME wms_id twice for sales (simulating the pagination race).
@@ -122,6 +125,47 @@ describe('runWmsSync', () => {
     expect(sales.some(r => r.origin === 'manual' && r.revenue === 111)).toBe(true) // manual untouched
     expect(sales.some(r => r.wms_id === 'ord-FAR')).toBe(true)                     // out-of-range untouched
     expect(sales.some(r => r.origin === 'wms' && String(r.date) >= '2026-06-01')).toBe(true) // fresh pull inserted
+  })
+
+  it('an empty fresh pull still clears existing rows in range (previously the rows.length===0 guard skipped cleanup too)', async () => {
+    const fake = new FakeSupabase()
+    fake.store['sales'] = [
+      { brand: 'reglow', wms_id: 'ord-GONE', origin: 'wms', date: '2026-06-10', channel: 'cs', revenue: 500 }, // no longer in the fresh pull -> must be cleared
+    ]
+    const { db, log } = makePorts(fake)
+    const adapter = new MockWmsAdapter()
+    adapter.fetchSales = async () => [] // upstream: this range now has zero orders (all cancelled)
+    const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow'] as Brand[], tables: ['sales'], range: { start: '2026-06-01', end: '2026-06-30' } }) })
+    expect(res.status).toBe('success')
+    expect(fake.store['sales'].some(r => r.wms_id === 'ord-GONE')).toBe(false)
+  })
+
+  it('a failed upsert leaves prior data fully intact (delete only runs after upsert succeeds)', async () => {
+    const fake = new FakeSupabase()
+    fake.store['sales'] = [
+      { brand: 'reglow', wms_id: 'ord-OLD', origin: 'wms', date: '2026-06-10', channel: 'cs', revenue: 777, synced_at: '2020-01-01T00:00:00.000Z' },
+    ]
+    let deleteWasCalled = false
+    const db: DbPort = {
+      async upsert() { return { error: { message: 'simulated network failure' } } },
+      async deleteStaleWmsInRange(table, brand, start, end, syncStartedAt) {
+        deleteWasCalled = true
+        const ex = fake.store[table] ?? []
+        fake.store[table] = ex.filter(r => !(
+          r.origin === 'wms' && r.brand === brand && String(r.date) >= start && String(r.date) <= end
+          && (r.synced_at == null || String(r.synced_at) < syncStartedAt)
+        ))
+        return { error: null }
+      },
+    }
+    const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ } }
+    const adapter = new MockWmsAdapter() // returns non-empty fresh rows for reglow/sales over a 30-day range
+
+    const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow'] as Brand[], tables: ['sales'], range: { start: '2026-06-01', end: '2026-06-30' } }) })
+
+    expect(res.status).toBe('failed')
+    expect(deleteWasCalled).toBe(false)                                  // the throw from upsert happens BEFORE delete is ever attempted
+    expect(fake.store['sales'].some(r => r.wms_id === 'ord-OLD')).toBe(true) // old data survives a failed sync intact
   })
 
   it('does NOT scope-delete non-ranged tables (products keyed by sku/wms_id, upsert handles them)', async () => {

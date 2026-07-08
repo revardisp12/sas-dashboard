@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // live sync paginates thousands of orders across 3 brands
 
 const BRANDS: Brand[] = ['reglow', 'amura', 'purela']
+const MAX_RANGE_DAYS_BY_BRAND: Record<Brand, number> = { reglow: 31, amura: 31, purela: 10 }
 // Revenue scope: marketplace + CS Soscom (sales), repeat customers (crm), product catalog.
 const TABLES: WmsTable[] = ['sales', 'products', 'crm']
 
@@ -54,22 +55,30 @@ export async function POST(req: NextRequest) {
     if (body?.brand && body.brand !== profile.brand) {
       return NextResponse.json({ error: 'Anda hanya bisa sync brand Anda sendiri' }, { status: 403 })
     }
-    if (!profile.brand) return NextResponse.json({ error: 'Akun admin tidak memiliki brand' }, { status: 403 })
+    if (!profile.brand || !(BRANDS as string[]).includes(profile.brand)) {
+      return NextResponse.json({ error: 'Akun admin tidak memiliki brand yang valid' }, { status: 403 })
+    }
     brands = [profile.brand as Brand]
   } else {
     brands = body?.brand && (BRANDS as string[]).includes(body.brand) ? [body.brand as Brand] : BRANDS
   }
 
-  const MAX_RANGE_DAYS = 31
+  // Purela's volume (~5.8k orders/day, ~14x Reglow/Amura) makes a 31-day pull realistically
+  // take several minutes against Vercel's 300s function timeout — cap it tighter so a manual
+  // pull can't run out the clock mid-sync. When multiple brands are targeted, the tightest
+  // cap among them applies.
   const dateRe = /^\d{4}-\d{2}-\d{2}$/
+  const maxRangeDays = Math.min(...brands.map(b => MAX_RANGE_DAYS_BY_BRAND[b]))
   let range = lastNDays(1)
   if (body?.start && body?.end && dateRe.test(body.start) && dateRe.test(body.end)) {
     if (body.end < body.start) {
       return NextResponse.json({ error: 'end_date sebelum start_date' }, { status: 400 })
     }
     const days = Math.round((Date.parse(body.end) - Date.parse(body.start)) / 86_400_000)
-    if (days > MAX_RANGE_DAYS) {
-      return NextResponse.json({ error: `Maksimal ${MAX_RANGE_DAYS} hari per tarikan` }, { status: 400 })
+    if (days > maxRangeDays) {
+      // Note: when brands.length > 1 (super_admin syncing all three), this is the tightest
+      // cap among them (currently Purela's), not necessarily every targeted brand's own limit.
+      return NextResponse.json({ error: `Maksimal ${maxRangeDays} hari per tarikan` }, { status: 400 })
     }
     range = { start: body.start, end: body.end }
   }
