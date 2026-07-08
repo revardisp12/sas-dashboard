@@ -34,7 +34,7 @@ export function logPort(supabase: Client): LogPort {
   return {
     async start(meta) {
       const { data, error } = await supabase.from('sync_log')
-        .insert({ trigger: meta.trigger, triggered_by: meta.triggeredBy ?? null, status: 'running' })
+        .insert({ trigger: meta.trigger, triggered_by: meta.triggeredBy ?? null, brand: meta.brand ?? null, status: 'running' })
         .select('id').single()
       if (error) throw new Error(error.message)
       return data.id

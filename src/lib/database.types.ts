@@ -391,6 +391,7 @@ export type Database = {
       }
       sync_log: {
         Row: {
+          brand: string | null
           error: string | null
           finished_at: string | null
           id: string
@@ -401,6 +402,7 @@ export type Database = {
           triggered_by: string | null
         }
         Insert: {
+          brand?: string | null
           error?: string | null
           finished_at?: string | null
           id?: string
@@ -411,6 +413,7 @@ export type Database = {
           triggered_by?: string | null
         }
         Update: {
+          brand?: string | null
           error?: string | null
           finished_at?: string | null
           id?: string

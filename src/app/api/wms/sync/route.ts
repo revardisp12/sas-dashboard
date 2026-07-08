@@ -38,14 +38,27 @@ export async function POST(req: NextRequest) {
   const { data: userData, error: userErr } = await userClient.auth.getUser()
   if (userErr || !userData?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await userClient.from('user_profiles').select('role').eq('id', userData.user.id).single()
+  const { data: profile } = await userClient.from('user_profiles').select('role, brand').eq('id', userData.user.id).single()
   if (!profile || !['super_admin', 'admin'].includes(profile.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Optional brand scope + date range from the dashboard popover.
   const body = (await req.json().catch(() => null)) as { brand?: string; start?: string; end?: string } | null
-  const brands: Brand[] = body?.brand && (BRANDS as string[]).includes(body.brand) ? [body.brand as Brand] : BRANDS
+
+  // Non-super admins are scoped to their own brand — reject a request for a different brand
+  // rather than silently redirecting it (this previously let ANY admin sync/overwrite another
+  // brand's data via service_role). super_admin may target any brand, or omit it to sync all three.
+  let brands: Brand[]
+  if (profile.role === 'admin') {
+    if (body?.brand && body.brand !== profile.brand) {
+      return NextResponse.json({ error: 'Anda hanya bisa sync brand Anda sendiri' }, { status: 403 })
+    }
+    if (!profile.brand) return NextResponse.json({ error: 'Akun admin tidak memiliki brand' }, { status: 403 })
+    brands = [profile.brand as Brand]
+  } else {
+    brands = body?.brand && (BRANDS as string[]).includes(body.brand) ? [body.brand as Brand] : BRANDS
+  }
 
   const MAX_RANGE_DAYS = 31
   const dateRe = /^\d{4}-\d{2}-\d{2}$/

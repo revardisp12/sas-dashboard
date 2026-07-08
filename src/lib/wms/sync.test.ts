@@ -180,3 +180,29 @@ describe('dedupeByKeys', () => {
     expect(dedupeByKeys(rows, ['brand', 'wms_id'])).toHaveLength(1)
   })
 })
+
+describe('runWmsSync log.start brand scoping (sync_log RLS relies on this)', () => {
+  it('passes the single brand to log.start for a single-brand run', async () => {
+    const fake = new FakeSupabase()
+    const { db } = makePorts(fake)
+    let startedWith: Parameters<LogPort['start']>[0] | undefined
+    const log: LogPort = {
+      async start(meta) { startedWith = meta; return 'log-1' },
+      async finish() { /* no-op */ },
+    }
+    await runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow'] as Brand[] }) })
+    expect(startedWith?.brand).toBe('reglow')
+  })
+
+  it('omits brand (undefined) for a multi-brand run — sync_log row stays a blended cross-brand entry', async () => {
+    const fake = new FakeSupabase()
+    const { db } = makePorts(fake)
+    let startedWith: Parameters<LogPort['start']>[0] | undefined
+    const log: LogPort = {
+      async start(meta) { startedWith = meta; return 'log-1' },
+      async finish() { /* no-op */ },
+    }
+    await runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow', 'amura'] as Brand[] }) })
+    expect(startedWith?.brand).toBeUndefined()
+  })
+})
