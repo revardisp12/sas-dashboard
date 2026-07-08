@@ -569,3 +569,21 @@ export async function loadBrandData(brand: Brand): Promise<LoadBrandDataResult> 
     errors,
   }
 }
+
+// ── Sync health (drives the top-bar Live badge) ─────────────────────────────
+
+export interface SyncStatus { status: string; finishedAt: string | null }
+
+/** Most recent WMS sync run (any brand/trigger) — used to show real sync health
+ * instead of a hardcoded "Live" badge. Returns null on any query failure (caller
+ * falls back to a neutral/unknown state, never throws). */
+export async function getLatestSyncStatus(): Promise<SyncStatus | null> {
+  const { data, error } = await supabase.from('sync_log')
+    .select('status, finished_at').order('started_at', { ascending: false }).limit(1).maybeSingle()
+  if (error) {
+    console.warn('getLatestSyncStatus:', error.message)
+    return null
+  }
+  if (!data) return null
+  return { status: data.status, finishedAt: data.finished_at }
+}

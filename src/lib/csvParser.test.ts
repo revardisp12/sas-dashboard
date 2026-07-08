@@ -1,5 +1,34 @@
-import { describe, it, expect } from 'vitest'
-import { toNum, parseProductItems, salesRowsFromRecord } from './csvParser'
+import { describe, it, expect, vi } from 'vitest'
+import { toNum, parseProductItems, salesRowsFromRecord, normalizeDate } from './csvParser'
+
+describe('normalizeDate', () => {
+  it('passes an already-ISO date through unchanged', () => {
+    expect(normalizeDate('2026-06-01')).toBe('2026-06-01')
+  })
+
+  it('converts DD/MM/YYYY (Indonesian convention) to ISO', () => {
+    expect(normalizeDate('01/06/2026')).toBe('2026-06-01')
+    expect(normalizeDate('1/6/2026')).toBe('2026-06-01')
+  })
+
+  it('converts DD-MM-YYYY to ISO', () => {
+    expect(normalizeDate('25-12-2026')).toBe('2026-12-25')
+  })
+
+  it('leaves an unrecognized format unchanged but logs a warning (visible instead of silent)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(normalizeDate('not-a-date')).toBe('not-a-date')
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('does not warn on an empty string', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(normalizeDate('')).toBe('')
+    expect(warnSpy).not.toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+})
 
 describe('toNum', () => {
   it('parses plain integers and empty values', () => {

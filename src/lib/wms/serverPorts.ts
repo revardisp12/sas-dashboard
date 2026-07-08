@@ -41,9 +41,13 @@ export function logPort(supabase: Client): LogPort {
       return data.id
     },
     async finish(id, patch) {
-      await supabase.from('sync_log')
+      const { error } = await supabase.from('sync_log')
         .update({ status: patch.status, tables: patch.tables, error: patch.error ?? null, finished_at: new Date().toISOString() })
         .eq('id', id)
+      // If this update fails, the sync_log row is stuck showing 'running' forever with no
+      // error message recorded — log it so the failure is at least visible server-side,
+      // even though there's nothing further to retry (the sync itself already finished).
+      if (error) console.error(`[logPort.finish] failed to update sync_log ${id}:`, error.message)
     },
   }
 }

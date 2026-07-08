@@ -70,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id).finally(() => setLoading(false))
       else setLoading(false)
+    }).catch(e => {
+      // Without this, a rejected getSession() (network error, etc.) left loading=true
+      // forever — the whole app stuck on its "Memuat..." spinner with no error or retry.
+      console.error('AuthContext: getSession() rejected:', e)
+      setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
