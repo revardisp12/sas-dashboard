@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { SalesRow, CRMRow, Brand, DateRange, ProductMaster, BundleMaster } from '@/lib/types'
+import { SalesRow, CRMRow, Brand, ProductMaster, BundleMaster } from '@/lib/types'
 import { filterByDays, fmtCurrency, fmtNum, chartTooltipStyle } from '@/lib/utils'
 import { Package, TrendingUp, Users, Repeat } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts'
@@ -178,15 +178,13 @@ interface Props {
   salesData: SalesRow[]
   crmData: CRMRow[]
   brand: Brand
-  range: DateRange
   products: ProductMaster[]
   bundles: BundleMaster[]
 }
 
-export default function ProductAnalysisView({ salesData, crmData, brand, range, products, bundles }: Props) {
+export default function ProductAnalysisView({ salesData, crmData, brand, products, bundles }: Props) {
   const accent = BRAND_COLORS[brand]
-  const seedDays = Math.round((Date.parse(range.to) - Date.parse(range.from)) / 86_400_000) + 1
-  const [localTf, setLocalTf] = useState<number>(Number.isFinite(seedDays) && seedDays > 0 ? seedDays : 90)
+  const [localTf, setLocalTf] = useState<number>(90)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
   const [speedFilter, setSpeedFilter] = useState<'fast' | 'medium' | 'slow'>('fast')
@@ -316,7 +314,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, range, 
             <p className="text-xs text-center py-6" style={{ color: '#9CA3AF' }}>
               Tidak ada produk di segment ini
             </p>
-          ) : filteredStats.map(s => {
+          ) : filteredStats.slice(0, 20).map(s => {
             const cfg = SPEED_CONFIG[s.speed]
             const pct = (s.totalUnits / maxFilteredUnits) * 100
             const resolved = getResolved(s.product)
@@ -363,6 +361,11 @@ export default function ProductAnalysisView({ salesData, crmData, brand, range, 
             )
           })}
         </div>
+        {filteredStats.length > 20 && (
+          <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>
+            +{filteredStats.length - 20} produk lainnya tidak ditampilkan
+          </p>
+        )}
         <p className="text-[10px] mt-4" style={{ color: '#374151' }}>Threshold: 🚀 Fast &gt;80 unit/bulan · 📦 Medium 30–80 · 🐢 Slow &lt;30</p>
       </div>
 
@@ -455,7 +458,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, range, 
           <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>Customer per Produk</p>
           {statsWithDisplay.some(s => s.uniqueCustomers > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={statsWithDisplay} layout="vertical">
+              <BarChart data={statsWithDisplay.slice(0, 15)} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} />
                 <YAxis type="category" dataKey="displayName" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />
@@ -478,7 +481,7 @@ export default function ProductAnalysisView({ salesData, crmData, brand, range, 
           <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#6B7280' }}>Avg. Frekuensi Beli (hari)</p>
           {statsWithDisplay.some(s => s.avgDaysBetweenPurchases > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={statsWithDisplay.filter(s => s.avgDaysBetweenPurchases > 0)} layout="vertical">
+              <BarChart data={statsWithDisplay.filter(s => s.avgDaysBetweenPurchases > 0).slice(0, 15)} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#4B5563' }} unit=" hr" />
                 <YAxis type="category" dataKey="displayName" tick={{ fontSize: 9, fill: '#9CA3AF' }} width={100} />

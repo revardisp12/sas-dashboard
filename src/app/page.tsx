@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Brand, ActiveView, DateRange, BrandData, emptyBrandData, ProductMaster, BundleMaster } from '@/lib/types'
 import { parseFile } from '@/lib/csvParser'
 import { filterByRange, resolvePeriod, type Period } from '@/lib/utils'
@@ -176,8 +176,9 @@ export default function Dashboard() {
   }, [user])
 
   const onRealtime = useCallback(() => {
-    if (user) loadData(brand)
-    getLatestSyncStatus().then(setSyncHealth).catch(() => setSyncHealth(null))
+    const loadPromise = user ? loadData(brand) : Promise.resolve()
+    const syncPromise = getLatestSyncStatus().then(setSyncHealth).catch(() => setSyncHealth(null))
+    return Promise.all([loadPromise, syncPromise]).then(() => undefined)
   }, [user, brand, loadData])
   useRealtimeSync(brand, onRealtime)
 
@@ -207,6 +208,22 @@ export default function Dashboard() {
       }
     }
   }, [profile])
+
+  // Hoisted above the auth-loading/login/profile-error early returns below (Rules of Hooks —
+  // a hook cannot be called conditionally, and those returns happen on some renders but not
+  // others). Derives its own `bd` from data[brand] rather than depending on the `bd` variable
+  // declared later, since that variable's declaration sits after the early-return guards.
+  const filtered = useMemo(() => {
+    const bd = data[brand]
+    return {
+      googleAds: filterByRange(bd.googleAds, dateRange.from, dateRange.to),
+      metaAds: filterByRange(bd.metaAds, dateRange.from, dateRange.to),
+      instagram: filterByRange(bd.instagram, dateRange.from, dateRange.to),
+      tiktokOrganic: filterByRange(bd.tiktokOrganic, dateRange.from, dateRange.to),
+      facebookOrganic: filterByRange(bd.facebookOrganic ?? [], dateRange.from, dateRange.to),
+      sales: filterByRange(bd.sales, dateRange.from, dateRange.to),
+    }
+  }, [data, brand, dateRange.from, dateRange.to])
 
   async function handleUpload(file: File) {
     if (accessibleBrands.length > 0 && !accessibleBrands.includes(brand)) return
@@ -382,21 +399,6 @@ export default function Dashboard() {
   }
   const { color: syncHealthColor, label: syncHealthLabel } = SYNC_HEALTH_STYLE[syncHealth?.status ?? ''] ?? { color: '#9CA3AF', label: '—' }
 
-  function applyFilter<T extends { date: string }>(rows: T[]): T[] {
-    return filterByRange(rows, dateRange.from, dateRange.to)
-  }
-
-  const filtered = {
-    googleAds: applyFilter(bd.googleAds),
-    metaAds: applyFilter(bd.metaAds),
-    tiktokShop: applyFilter(bd.tiktokShop),
-    shopee: applyFilter(bd.shopee ?? []),
-    instagram: applyFilter(bd.instagram),
-    tiktokOrganic: applyFilter(bd.tiktokOrganic),
-    facebookOrganic: applyFilter(bd.facebookOrganic ?? []),
-    sales: applyFilter(bd.sales),
-  }
-
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F8F9FC' }}>
       <Sidebar
@@ -496,7 +498,7 @@ export default function Dashboard() {
           {view === 'facebook-organic' && <FacebookOrganicView data={filtered.facebookOrganic} brand={brand} onUpload={handleUpload} onManualAdd={makeManualHandler('facebookOrganic')} />}
           {view === 'crm' && <CRMView data={bd.crm} brand={brand} onUpload={handleUpload} onBulkUpload={handleBulkCRM} products={products} bundles={bundles} onManualAdd={handleManualCRM} />}
           {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
-          {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} range={dateRange} products={products} bundles={bundles} />}
+          {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} products={products} bundles={bundles} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
           {view === 'kol' && <KolView brand={brand} />}
           {view === 'cads-calculator' && <CAdsCalculatorView brand={brand} />}

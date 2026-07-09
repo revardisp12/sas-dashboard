@@ -43,6 +43,10 @@ export class HttpWmsAdapter implements WmsAdapter {
 
   constructor(private baseUrl: string, private apiKey: string) {}
 
+  // fetchSales and fetchCRM both pull this same social-commerce endpoint for the same
+  // brand+range in one sync run — cache it per-instance so the second call is free.
+  private socialOrdersCache = new Map<string, Promise<SocialOrder[]>>()
+
   private async getJson<T>(path: string): Promise<WmsEnvelope<T>> {
     let lastErr: unknown
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -81,21 +85,32 @@ export class HttpWmsAdapter implements WmsAdapter {
       const data = body.data ?? []
       out.push(...data)
       if (typeof body.metadata?.count === 'number') total = body.metadata.count
-      if (data.length === 0 || out.length >= total) break
-      if (!Number.isFinite(total) && data.length < pageSize) break
+      if (data.length === 0 || out.length >= total) return out
+      if (!Number.isFinite(total) && data.length < pageSize) return out
     }
-    return out
+    throw new WmsApiError(
+      'WMS pagination exceeded MAX_PAGES (' + MAX_PAGES + ') pages without reaching the end of the result set ' +
+      '(collected ' + out.length + ' rows so far). Aborting instead of returning a silently truncated pull, ' +
+      'since the caller\'s scope-replace delete step would otherwise remove un-refetched rows from a prior ' +
+      'successful sync.',
+    )
   }
 
   /** Social-commerce orders for the range. Its end_date is EXCLUSIVE (verified) -> +1 day. */
   private fetchSocialOrders(cid: number, range: WmsDateRange): Promise<SocialOrder[]> {
+    const key = cid + ':' + range.start + ':' + range.end
+    const cached = this.socialOrdersCache.get(key)
+    if (cached) return cached
+
     const scEnd = addDaysISO(range.end, 1)
-    return this.getAllPages<SocialOrder>(
+    const promise = this.getAllPages<SocialOrder>(
       SC_PAGE_SIZE,
       (page) =>
         `/v1/open/social-commerce/orders?client_id=${cid}&start_date=${range.start}&end_date=${scEnd}` +
         `&page=${page}&length=${SC_PAGE_SIZE}`,
     )
+    this.socialOrdersCache.set(key, promise)
+    return promise
   }
 
   fetchSales = async (brand: Brand, range: WmsDateRange): Promise<WithWmsId<SalesRow>[]> => {
@@ -253,7 +268,19 @@ interface StockProduct {
   purchase_price: number
 }
 
-const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+// Deliberately does NOT attempt to parse numeric strings (e.g. "150000"): the WMS response
+// types (WmsOrder/SocialOrder below) declare these fields as `number`, and a string coming
+// through here would already be a contract violation. Naively calling Number() on it would
+// risk silently mis-parsing a locale-formatted value (e.g. Indonesian "150.000" meaning
+// 150000, not 150.0) into a plausible-looking but WRONG nonzero amount with no warning at
+// all — worse than the zero it replaces. Warn-and-zero is the safer default for revenue.
+const num = (v: unknown): number => {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (v !== null && v !== undefined && v !== '') {
+    console.warn('[httpAdapter] num(): unparseable numeric value, defaulting to 0:', v)
+  }
+  return 0
+}
 const dateOnly = (ts: unknown): string => String(ts ?? '').slice(0, 10)
 const addDaysISO = (d: string, days: number): string => {
   const dt = new Date(`${d}T00:00:00Z`)
