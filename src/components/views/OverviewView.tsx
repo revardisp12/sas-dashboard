@@ -53,6 +53,11 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
     return { key: c.key, label: c.label, revenue: rs.reduce((s, r) => s + r.revenue, 0), orders: rs.length }
   }).filter(c => c.orders > 0).sort((a, b) => b.revenue - a.revenue)
 
+  // CRM (Retention/repeat customers) isn't a `sales` channel — it's a separate table/bucket —
+  // so it was previously invisible here even though it's already folded into Total Revenue
+  // above. Shown as its own card so its contribution is visible, not just silently combined.
+  const crmRevenue = crm.reduce((s, r) => s + r.revenue, 0)
+
   const gaSpend = ga.reduce((s, r) => s + r.spend, 0)
   const metaSpend = meta.reduce((s, r) => s + r.spend, 0)
   // Weighted by each row's own spend (Σ roas×spend / Σ spend) — averaging the per-row ROAS
@@ -118,8 +123,10 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
       </div>
 
       {/* Revenue by Channel — sourced from the sales table so it ties out to the
-          per-channel sidebar views (Shopee/TikTok/etc) and the Total Revenue headline. */}
-      {channelStats.length > 0 && (
+          per-channel sidebar views (Shopee/TikTok/etc) and the Total Revenue headline.
+          CRM is appended separately below (it's a retention bucket, not a sales channel),
+          so together the cards here fully account for the Total Revenue KPI above. */}
+      {(channelStats.length > 0 || crm.length > 0) && (
         <Section title="Revenue by Channel">
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
             {channelStats.map(c => (
@@ -132,6 +139,16 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
                 <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>{fmtNumBig(c.orders)} order</p>
               </div>
             ))}
+            {crm.length > 0 && (
+              <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Users size={13} style={{ color: '#8B5CF6' }} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>CRM (Retensi)</span>
+                </div>
+                <p className="font-bold" style={{ color: '#111827', fontSize: fitSize(fmtCurrencyBig(crmRevenue), 18), whiteSpace: 'nowrap' }}>{fmtCurrencyBig(crmRevenue)}</p>
+                <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>{fmtNumBig(crm.length)} order</p>
+              </div>
+            )}
           </div>
         </Section>
       )}
