@@ -500,7 +500,7 @@ export default function Dashboard() {
           {view === 'performance' && <PerformanceView salesData={bd.sales} brand={brand} />}
           {view === 'product-analysis' && <ProductAnalysisView salesData={bd.sales} crmData={bd.crm} brand={brand} products={products} bundles={bundles} />}
           {view === 'settings' && <SettingsView brand={brand} products={products} onProductsChange={handleProductsChange} onBulkImportProducts={handleBulkImportProducts} bundles={bundles} onBundlesChange={handleBundlesChange} />}
-          {view === 'kol' && <KolView brand={brand} />}
+          {view === 'kol' && <KolView brand={brand} products={products} />}
           {view === 'cads-calculator' && <CAdsCalculatorView brand={brand} />}
         </main>
       </div>

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, type CSSProperties, type ChangeEvent } from 'react'
 import Papa from 'papaparse'
-import type { Brand } from '@/lib/types'
+import type { Brand, ProductMaster } from '@/lib/types'
 import type { KolContent, KolInfluencer, KolCampaign, Tier } from '@/lib/kol/types'
 import {
   getContents,
@@ -13,6 +13,7 @@ import {
 } from '@/lib/kol/db'
 import { TIER } from '@/lib/kol/funnel'
 import { BulkUploadBox, btnPrimary, btnOutline } from '@/components/kol/BulkUploadBox'
+import SearchableCombobox from '@/components/kol/SearchableCombobox'
 import { supabase } from '@/lib/supabase'
 
 // ── colour tokens ──
@@ -126,7 +127,7 @@ function StatusBadge({ status }: { status: KolContent['status'] }) {
 }
 
 // ── main component ──
-export default function KontenTab({ brand }: { brand: Brand }) {
+export default function KontenTab({ brand, products = [] }: { brand: Brand; products?: ProductMaster[] }) {
   const [contents, setContents] = useState<KolContent[]>([])
   const [influencers, setInfluencers] = useState<KolInfluencer[]>([])
   const [campaigns, setCampaigns] = useState<KolCampaign[]>([])
@@ -136,6 +137,9 @@ export default function KontenTab({ brand }: { brand: Brand }) {
   const [form, setForm] = useState<ContentForm>(BLANK_FORM)
   const [saving, setSaving] = useState(false)
   const [bulk, setBulk] = useState(false)
+  const [pullNotice, setPullNotice] = useState<{ kind: 'info' | 'success'; text: string } | null>(null)
+
+  const brandProducts = products.filter(p => p.brand === brand)
 
   // bulk link state
   const [bulkLinks, setBulkLinks] = useState('')
@@ -177,6 +181,7 @@ export default function KontenTab({ brand }: { brand: Brand }) {
     setForm(BLANK_FORM)
     setShowForm(true)
     setError(null)
+    setPullNotice(null)
   }
 
   function openEdit(c: KolContent) {
@@ -200,6 +205,7 @@ export default function KontenTab({ brand }: { brand: Brand }) {
     })
     setShowForm(true)
     setError(null)
+    setPullNotice(null)
   }
 
   function closeForm() {
@@ -230,8 +236,19 @@ export default function KontenTab({ brand }: { brand: Brand }) {
           shares = pulled.shares
           metricsSource = 'api'
           metricsFetchedAt = new Date().toISOString()
+          setPullNotice({ kind: 'success', text: '✓ Metrics berhasil ditarik otomatis dari API.' })
+        } else {
+          // null → stay manual, keep values as entered. Previously silent — the team
+          // reported "URL benar, live mode aktif, tapi metrik gak terbaca" with zero
+          // signal as to why; auto-pull isn't implemented yet (see docs/kol-go-live-runbook.md),
+          // so make that visible instead of leaving the 0s unexplained.
+          setPullNotice({
+            kind: 'info',
+            text: 'Auto-pull metrics belum aktif untuk konten ini — nilai di atas dari input manual. (Fitur tarik otomatis dari API masih menunggu setup RapidAPI.)',
+          })
         }
-        // else: null → stay manual, keep values as entered
+      } else {
+        setPullNotice(null)
       }
 
       await upsertContent(
@@ -264,6 +281,7 @@ export default function KontenTab({ brand }: { brand: Brand }) {
   async function handleDelete(id: string) {
     if (!confirm('Hapus konten ini?')) return
     setError(null)
+    setPullNotice(null)
     try {
       await deleteContent(id)
       await loadAll()
@@ -383,6 +401,18 @@ export default function KontenTab({ brand }: { brand: Brand }) {
         Badge <b style={{ color: C.cyan }}>API</b> = otomatis, <b>Manual</b> = input tangan.
       </p>
 
+      {/* pull-status banner — visible instead of silently leaving metrics at whatever was typed */}
+      {pullNotice && (
+        <div style={{
+          fontSize: 12, padding: '8px 12px', borderRadius: 8, marginBottom: 12,
+          background: pullNotice.kind === 'success' ? '#DCFCE7' : '#EFF6FF',
+          color: pullNotice.kind === 'success' ? '#166534' : '#1E40AF',
+          border: `1px solid ${pullNotice.kind === 'success' ? '#BBF7D0' : '#BFDBFE'}`,
+        }}>
+          {pullNotice.text}
+        </div>
+      )}
+
       {/* error banner */}
       {error && (
         <div style={{ fontSize: 12, padding: '8px 12px', borderRadius: 8, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', marginBottom: 12 }}>
@@ -485,17 +515,22 @@ export default function KontenTab({ brand }: { brand: Brand }) {
                 {campaigns.map(cam => <option key={cam.id} value={cam.id}>{cam.name}</option>)}
               </select>
             </div>
-            {/* influencer */}
+            {/* influencer — searchable; label includes username+platform so influencers
+                sharing a name (e.g. two "Nurfatma Sari" on different platforms) are
+                distinguishable, which a name-only <option> list couldn't show. */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: C.sub, display: 'block', marginBottom: 4 }}>Influencer (opsional)</label>
-              <select
+              <SearchableCombobox
                 value={form.influencerId}
-                onChange={e => setForm(f => ({ ...f, influencerId: e.target.value }))}
-                style={{ width: '100%', fontSize: 13, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, color: C.text, outline: 'none' }}
-              >
-                <option value="">— Tidak ada —</option>
-                {influencers.map(inf => <option key={inf.id} value={inf.id}>{inf.name}</option>)}
-              </select>
+                onChange={v => setForm(f => ({ ...f, influencerId: v }))}
+                placeholder="Cari nama atau username..."
+                emptyLabel="— Tidak ada —"
+                options={influencers.map(inf => ({
+                  value: inf.id,
+                  label: `${inf.name} — ${inf.username || '@?'} (${inf.platform})`,
+                  sub: inf.username,
+                }))}
+              />
             </div>
             {/* platform */}
             <div>
@@ -523,7 +558,19 @@ export default function KontenTab({ brand }: { brand: Brand }) {
                 <option value="action">Action</option>
               </select>
             </div>
-            <Field label="Produk" value={form.product} onChange={v => setForm(f => ({ ...f, product: v }))} placeholder="Brightening Serum" />
+            {/* product — searchable from the brand's product master, but still accepts a
+                free-text name (bundle, or a product not yet registered) since KolContent
+                stores this as plain text, not a foreign key. */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.sub, display: 'block', marginBottom: 4 }}>Produk</label>
+              <SearchableCombobox
+                value={form.product}
+                onChange={v => setForm(f => ({ ...f, product: v }))}
+                placeholder="Brightening Serum"
+                allowFreeText
+                options={brandProducts.map(p => ({ value: p.name, label: p.name, sub: p.sku }))}
+              />
+            </div>
             <Field label="Task" value={form.task} onChange={v => setForm(f => ({ ...f, task: v }))} placeholder="Review 30s" />
             {/* content url — full width */}
             <div style={{ gridColumn: '1 / -1' }}>

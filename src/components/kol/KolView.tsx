@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import type { Brand } from '@/lib/types'
+import type { Brand, ProductMaster } from '@/lib/types'
 import DatabaseKolTab from './DatabaseKolTab'
 import BudgetTab from './BudgetTab'
 import CampaignTab from './CampaignTab'
@@ -8,7 +8,7 @@ import KontenTab from './KontenTab'
 
 type Tab = 'campaign' | 'konten' | 'budget' | 'db'
 
-export default function KolView({ brand }: { brand: Brand }) {
+export default function KolView({ brand, products = [] }: { brand: Brand; products?: ProductMaster[] }) {
   const [tab, setTab] = useState<Tab>('campaign')
   return (
     <div style={{ padding: 4 }}>
@@ -34,7 +34,7 @@ export default function KolView({ brand }: { brand: Brand }) {
         ))}
       </div>
       {tab === 'campaign' && <CampaignTab brand={brand} />}
-      {tab === 'konten' && <KontenTab brand={brand} />}
+      {tab === 'konten' && <KontenTab brand={brand} products={products} />}
       {tab === 'budget' && <BudgetTab brand={brand} />}
       {tab === 'db' && <DatabaseKolTab brand={brand} />}
     </div>
