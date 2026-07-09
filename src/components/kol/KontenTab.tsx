@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useRef, type CSSProperties, type ChangeEvent } from 'react'
-import Papa from 'papaparse'
 import type { Brand, ProductMaster } from '@/lib/types'
 import type { KolContent, KolInfluencer, KolCampaign, Tier } from '@/lib/kol/types'
 import {
@@ -14,6 +13,7 @@ import {
 import { TIER } from '@/lib/kol/funnel'
 import { BulkUploadBox, btnPrimary, btnOutline } from '@/components/kol/BulkUploadBox'
 import SearchableCombobox from '@/components/kol/SearchableCombobox'
+import { downloadXlsxTemplate, parseSpreadsheetFile } from '@/lib/xlsx'
 import { supabase } from '@/lib/supabase'
 
 // ── colour tokens ──
@@ -336,51 +336,50 @@ export default function KontenTab({ brand, products = [] }: { brand: Brand; prod
 
   // ── bulk CSV ──
   function downloadTemplate() {
-    const csv = 'campaign_id,influencer_id,platform,objective,product,task,content_url,fee\n'
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'kol_konten_template.csv'; a.click()
-    URL.revokeObjectURL(url)
+    downloadXlsxTemplate(
+      ['campaign_id', 'influencer_id', 'platform', 'objective', 'product', 'task', 'content_url', 'fee'],
+      'kol_konten_template.xlsx',
+    )
   }
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
 
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (result) => {
-        const rows = result.data.map(r => ({
-          campaignId: r['campaign_id'] ?? null,
-          influencerId: r['influencer_id'] ?? null,
-          platform: r['platform'] ?? 'Instagram',
-          objective: (r['objective'] ?? 'awareness') as Tier,
-          product: r['product'] ?? '',
-          task: r['task'] ?? '',
-          contentUrl: r['content_url'] ?? '',
-          fee: Number(r['fee']) || 0,
-          status: 'pending' as KolContent['status'],
-          views: 0, likes: 0, comments: 0, saved: 0, shares: 0,
-          metricsSource: 'manual' as const,
-          metricsFetchedAt: null, postedAt: null,
-        } satisfies Partial<KolContent>))
+    let parsed: Record<string, string>[]
+    try {
+      parsed = await parseSpreadsheetFile(file)
+    } catch (err) {
+      setError(`Gagal baca file: ${err instanceof Error ? err.message : String(err)}`)
+      return
+    }
 
-        const clean = rows.filter(r => (r.contentUrl ?? '').trim() !== '')
-        if (!clean.length) { setError('CSV kosong atau tidak ada kolom content_url.'); return }
-        setError(null)
-        try {
-          await bulkInsertContents(clean, brand)
-          setBulk(false)
-          await loadAll()
-        } catch (e) {
-          setError(`Gagal bulk import CSV: ${e instanceof Error ? e.message : String(e)}`)
-        }
-      },
-      error: (e: Error) => setError(`Gagal parse CSV: ${e.message}`),
-    })
+    const rows = parsed.map(r => ({
+      campaignId: r['campaign_id'] ?? null,
+      influencerId: r['influencer_id'] ?? null,
+      platform: r['platform'] ?? 'Instagram',
+      objective: (r['objective'] ?? 'awareness') as Tier,
+      product: r['product'] ?? '',
+      task: r['task'] ?? '',
+      contentUrl: r['content_url'] ?? '',
+      fee: Number(r['fee']) || 0,
+      status: 'pending' as KolContent['status'],
+      views: 0, likes: 0, comments: 0, saved: 0, shares: 0,
+      metricsSource: 'manual' as const,
+      metricsFetchedAt: null, postedAt: null,
+    } satisfies Partial<KolContent>))
+
+    const clean = rows.filter(r => (r.contentUrl ?? '').trim() !== '')
+    if (!clean.length) { setError('File kosong atau tidak ada kolom content_url.'); return }
+    setError(null)
+    try {
+      await bulkInsertContents(clean, brand)
+      setBulk(false)
+      await loadAll()
+    } catch (err) {
+      setError(`Gagal bulk import: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   // ── render ──
@@ -488,7 +487,7 @@ export default function KontenTab({ brand, products = [] }: { brand: Brand; prod
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv"
+            accept=".xlsx,.csv"
             style={{ display: 'none' }}
             onChange={handleFileChange}
             onClick={ev => ev.stopPropagation()}
