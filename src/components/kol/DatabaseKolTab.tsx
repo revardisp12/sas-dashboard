@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useRef, type CSSProperties, type ChangeEvent } from 'react'
-import Papa from 'papaparse'
 import type { Brand } from '@/lib/types'
 import type { KolInfluencer } from '@/lib/kol/types'
 import {
@@ -10,6 +9,7 @@ import {
   bulkInsertInfluencers,
 } from '@/lib/kol/db'
 import { BulkUploadBox, btnPrimary, btnOutline } from '@/components/kol/BulkUploadBox'
+import { downloadXlsxTemplate, parseSpreadsheetFile } from '@/lib/xlsx'
 
 // ── colour tokens (match kol-preview) ──
 const C = {
@@ -139,47 +139,43 @@ export default function DatabaseKolTab({ brand }: { brand: Brand }) {
   }
 
   function downloadTemplate() {
-    const csv = 'name,username,platform,followers,niche,contact\n'
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'kol_influencer_template.csv'; a.click()
-    URL.revokeObjectURL(url)
+    downloadXlsxTemplate(['name', 'username', 'platform', 'followers', 'niche', 'contact'], 'kol_influencer_template.xlsx')
   }
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     // reset so same file can be re-selected
     e.target.value = ''
 
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (result) => {
-        const rows = result.data.map((r) => ({
-          name: r['name'] ?? '',
-          username: r['username'] ?? '',
-          platform: r['platform'] ?? 'Instagram',
-          followers: Number(r['followers']) || 0,
-          niche: r['niche'] ?? '',
-          contact: r['contact'] ?? '',
-        } satisfies Partial<KolInfluencer>))
+    let parsed: Record<string, string>[]
+    try {
+      parsed = await parseSpreadsheetFile(file)
+    } catch (err) {
+      setError(`Gagal baca file: ${err instanceof Error ? err.message : String(err)}`)
+      return
+    }
 
-        if (!rows.length) { setError('File CSV kosong atau tidak ada baris data.'); return }
-        const clean = rows.filter(r => (r.name ?? '').trim() !== '')
-        if (!clean.length) { setError('CSV kosong atau tidak ada kolom name.'); return }
-        setError(null)
-        try {
-          await bulkInsertInfluencers(clean, brand)
-          setBulk(false)
-          await loadInfluencers()
-        } catch (e) {
-          setError(`Gagal bulk import: ${e instanceof Error ? e.message : String(e)}`)
-        }
-      },
-      error: (e: Error) => setError(`Gagal parse CSV: ${e.message}`),
-    })
+    const rows = parsed.map((r) => ({
+      name: r['name'] ?? '',
+      username: r['username'] ?? '',
+      platform: r['platform'] ?? 'Instagram',
+      followers: Number(r['followers']) || 0,
+      niche: r['niche'] ?? '',
+      contact: r['contact'] ?? '',
+    } satisfies Partial<KolInfluencer>))
+
+    if (!rows.length) { setError('File kosong atau tidak ada baris data.'); return }
+    const clean = rows.filter(r => (r.name ?? '').trim() !== '')
+    if (!clean.length) { setError('File kosong atau tidak ada kolom name.'); return }
+    setError(null)
+    try {
+      await bulkInsertInfluencers(clean, brand)
+      setBulk(false)
+      await loadInfluencers()
+    } catch (err) {
+      setError(`Gagal bulk import: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   return (
@@ -208,13 +204,13 @@ export default function DatabaseKolTab({ brand }: { brand: Brand }) {
             onDownloadTemplate={() => downloadTemplate()}
           >
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: 12, color: C.sub }}>Klik area ini untuk pilih file CSV</span>
+              <span style={{ fontSize: 12, color: C.sub }}>Klik area ini untuk pilih file Excel (.xlsx) atau CSV</span>
             </div>
           </BulkUploadBox>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv"
+            accept=".xlsx,.csv"
             style={{ display: 'none' }}
             onChange={handleFileChange}
             onClick={(ev) => ev.stopPropagation()}
@@ -274,7 +270,7 @@ export default function DatabaseKolTab({ brand }: { brand: Brand }) {
                 {influencers.length === 0 ? (
                   <tr>
                     <td colSpan={7} style={{ padding: '32px 14px', textAlign: 'center', color: C.sub, fontSize: 13 }}>
-                      Belum ada influencer. Tambah manual atau import CSV.
+                      Belum ada influencer. Tambah manual atau import Excel/CSV.
                     </td>
                   </tr>
                 ) : influencers.map((inf, i) => (

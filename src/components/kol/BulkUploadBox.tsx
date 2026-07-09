@@ -27,7 +27,7 @@ export function BulkUploadBox({ columns, onDownloadTemplate, children }: { colum
     <div style={{ border: '2px dashed #E5E7EB', borderRadius: 12, padding: 18, background: '#F8FAFC', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600 }}>⬆ Tarik &amp; lepas file CSV di sini, atau klik untuk pilih</p>
+          <p style={{ fontSize: 13, fontWeight: 600 }}>⬆ Tarik &amp; lepas file Excel (.xlsx) atau CSV di sini, atau klik untuk pilih</p>
           <p style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>Kolom: {columns}</p>
         </div>
         {onDownloadTemplate && (
