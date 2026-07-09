@@ -2,29 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
 import { getKolMetricsProvider } from '@/lib/kol/metrics/provider'
+import { isAllowedContentUrl } from '@/lib/kol/contentUrl'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Content URLs are expected to be public social-platform links (see KontenTab's placeholder
-// text). Both metrics providers today are no-ops (ManualProvider) or unimplemented
-// (RapidApiProvider throws), so there is no live outbound fetch yet — but validating here,
-// at the API boundary, means whichever provider implementation lands later inherits this
-// guard automatically instead of depending on that implementation remembering it.
-const ALLOWED_HOSTS = [
-  'tiktok.com', 'www.tiktok.com', 'vt.tiktok.com',
-  'instagram.com', 'www.instagram.com',
-  'youtube.com', 'www.youtube.com', 'youtu.be',
-]
-function isAllowedContentUrl(raw: string): boolean {
-  try {
-    const u = new URL(raw)
-    if (u.protocol !== 'https:') return false
-    return ALLOWED_HOSTS.includes(u.hostname.toLowerCase())
-  } catch {
-    return false
-  }
-}
+// text). This check is ALSO re-run inside RapidApiProvider itself (src/lib/kol/contentUrl.ts)
+// — content_url reaches the provider from other paths too (the cron refresh reads it straight
+// from the DB with no re-validation of its own, and bulk CSV import persists it with none at
+// all), so this route-level check alone isn't sufficient; it's kept here for a fast, clear
+// 400 on the interactive save path specifically.
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization')
