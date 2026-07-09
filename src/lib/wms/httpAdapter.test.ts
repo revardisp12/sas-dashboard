@@ -204,4 +204,101 @@ describe('HttpWmsAdapter.fetchCRM', () => {
     expect(urls.some((u) => u.includes('/social-commerce'))).toBe(true)
     expect(urls.some((u) => u.includes('/orders/list'))).toBe(false)
   })
+
+  it('shares ONE social-commerce fetch between fetchSales and fetchCRM on the same instance (same cid+range)', async () => {
+    const fn = stubFetch((url) => {
+      if (url.includes('/social-commerce/orders')) {
+        // Single short page -> terminates in exactly 1 page.
+        return { code: 200, data: [], metadata: { count: 0 } }
+      }
+      return { code: 200, data: [], metadata: { count: 0 } }
+    })
+
+    const adapter = new HttpWmsAdapter(BASE, KEY)
+    const range = { start: '2026-06-01', end: '2026-06-21' }
+    await adapter.fetchSales('reglow', range)
+    await adapter.fetchCRM('reglow', range)
+
+    const socialCommerceCalls = fn.mock.calls.filter((c) => String(c[0]).includes('/social-commerce')).length
+    expect(socialCommerceCalls).toBe(1)
+  })
+
+  it('getAllPages throws instead of silently truncating when MAX_PAGES is exceeded', async () => {
+    stubFetch((url) => {
+      if (url.includes('/social-commerce/orders')) {
+        const page = pageOf(url)
+        // Always a full 250-item page, no metadata.count -> can only stop by hitting MAX_PAGES.
+        return {
+          code: 200,
+          data: Array.from({ length: 250 }, (_, i) => ({
+            id: page * 1000 + i,
+            order_at: '2026-06-21T10:00:00+07:00',
+            qty: 1,
+            amount: 1000,
+            discount_amount: 0,
+            status: 'completed',
+            customer_type: 'repeat',
+            customer_name: 'Sari',
+            customer_phone: '08999',
+            product_summary: 'R',
+          })),
+        }
+      }
+      return { code: 200, data: [], metadata: { count: 0 } }
+    })
+
+    await expect(
+      new HttpWmsAdapter(BASE, KEY).fetchCRM('reglow', { start: '2026-06-01', end: '2026-06-21' }),
+    ).rejects.toThrow()
+  })
+})
+
+describe('HttpWmsAdapter num() coercion (via fetchSales)', () => {
+  it('defaults a numeric-LOOKING string amount to 0 and warns, rather than guessing at parsing it', async () => {
+    // num() deliberately does not parse numeric strings at all — a value shaped like
+    // "150000" could just as easily be a locale-formatted "150.000" upstream quirk (meaning
+    // 150000, not 150.0), and guessing wrong would silently produce a plausible-but-wrong
+    // revenue number instead of an obviously-wrong zero. Warn-and-zero every non-number.
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    stubFetch((url) => {
+      if (url.includes('/orders/list')) {
+        return {
+          code: 200,
+          data: [
+            { id: 1, channel_id: 4, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: '150000', discount_order: 0, cogs: 0, product_summary: 'A' },
+          ],
+          metadata: { count: 1 },
+        }
+      }
+      return { code: 200, data: [], metadata: { count: 0 } }
+    })
+
+    const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-21' })
+    expect(rows[0]).toMatchObject({ revenue: 0 })
+    expect(warnSpy).toHaveBeenCalled()
+
+    warnSpy.mockRestore()
+  })
+
+  it('defaults to 0 and warns when a value cannot be interpreted as a number', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    stubFetch((url) => {
+      if (url.includes('/orders/list')) {
+        return {
+          code: 200,
+          data: [
+            { id: 1, channel_id: 4, status: 'completed', order_at: '2026-06-21T10:00:00+07:00', qty: 1, amount: 'N/A', discount_order: 0, cogs: 0, product_summary: 'A' },
+          ],
+          metadata: { count: 1 },
+        }
+      }
+      return { code: 200, data: [], metadata: { count: 0 } }
+    })
+
+    const rows = await new HttpWmsAdapter(BASE, KEY).fetchSales('reglow', { start: '2026-06-01', end: '2026-06-21' })
+    expect(rows[0]).toMatchObject({ revenue: 0 })
+    expect(warnSpy).toHaveBeenCalled()
+
+    warnSpy.mockRestore()
+  })
 })

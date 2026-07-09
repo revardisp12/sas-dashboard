@@ -1,4 +1,5 @@
 'use client'
+import { useMemo } from 'react'
 import { BrandData, Brand, DateRange, ProductMaster, CRMRow } from '@/lib/types'
 import { filterByRange, fmtCurrencyExact as fmtCurrencyBig, fmtNumExact as fmtNumBig, fitSize, chartTooltipStyle } from '@/lib/utils'
 import { CHANNELS } from '@/lib/channels'
@@ -31,13 +32,19 @@ function calcCrmSnapshot(crm: CRMRow[]) {
 interface Props { data: BrandData; brand: Brand; range: DateRange; products?: ProductMaster[] }
 
 export default function OverviewView({ data, brand, range, products = [] }: Props) {
-  const ga = filterByRange(data.googleAds, range.from, range.to)
-  const meta = filterByRange(data.metaAds, range.from, range.to)
-  const tts = filterByRange(data.tiktokShop, range.from, range.to)
-  const ig = filterByRange(data.instagram, range.from, range.to)
-  const tt = filterByRange(data.tiktokOrganic, range.from, range.to)
-  const sales = filterByRange(data.sales, range.from, range.to)
-  const crm = filterByRange(data.crm, range.from, range.to)
+  const filtered = useMemo(() => ({
+    ga: filterByRange(data.googleAds, range.from, range.to),
+    meta: filterByRange(data.metaAds, range.from, range.to),
+    tts: filterByRange(data.tiktokShop, range.from, range.to),
+    shopee: filterByRange(data.shopee ?? [], range.from, range.to),
+    ig: filterByRange(data.instagram, range.from, range.to),
+    tt: filterByRange(data.tiktokOrganic, range.from, range.to),
+    sales: filterByRange(data.sales, range.from, range.to),
+    crm: filterByRange(data.crm, range.from, range.to),
+  }), [data, range.from, range.to])
+  const { ga, meta, tts, shopee, ig, tt, sales, crm } = filtered
+
+  const crmSnap = useMemo(() => calcCrmSnapshot(data.crm), [data.crm])
 
   // Revenue per sales channel — ties the Overview to the per-channel sidebar views
   // (Shopee/TikTok/etc) and to the Total Revenue headline (same `sales` source).
@@ -46,7 +53,7 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
     return { key: c.key, label: c.label, revenue: rs.reduce((s, r) => s + r.revenue, 0), orders: rs.length }
   }).filter(c => c.orders > 0).sort((a, b) => b.revenue - a.revenue)
 
-  const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0) + tts.reduce((s, r) => s + (r.adSpent || 0), 0)
+  const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0) + tts.reduce((s, r) => s + (r.adSpent || 0), 0) + shopee.reduce((s, r) => s + (r.adSpend || 0), 0)
   // Headline total = whole business: Sales (marketplace + CS Acquisition) + CRM (Retention).
   // The CS feed is split — new/renew land in `sales` (channel cs), repeat in `crm` — so both
   // are summed here to match the finance report's combined revenue. (The "Sales Performance"
@@ -55,9 +62,6 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
   const totalOrders = sales.length + crm.length
   const blendedRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0
   const totalImpressions = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
-
-  // CRM Snapshot
-  const crmSnap = calcCrmSnapshot(data.crm)
 
   // Product Snapshot — top 3 by revenue from sales data
   const prodMap: Record<string, { revenue: number; qty: number }> = {}
