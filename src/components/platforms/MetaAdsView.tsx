@@ -61,7 +61,10 @@ export default function MetaAdsView({ data, brand, onUpload, onManualAdd, salesD
   const totalClicks = data.reduce((s, r) => s + r.clicks, 0)
   const totalResults = data.reduce((s, r) => s + (r.results ?? 0), 0)
   const avgCtr = data.length > 0 ? data.reduce((s, r) => s + r.ctr, 0) / data.length : 0
-  const avgRoas = data.length > 0 ? data.reduce((s, r) => s + (r.roas ?? 0), 0) / data.length : 0
+  // Weighted by each row's own spend (Σ roas×spend / Σ spend), not an average of the per-row
+  // ratios — averaging ratios directly misrepresents the true blended ROAS whenever daily
+  // spend varies (average-of-ratios != ratio-of-sums).
+  const avgRoas = totalSpend > 0 ? data.reduce((s, r) => s + (r.roas ?? 0) * r.spend, 0) / totalSpend : 0
   const costPerResult = totalResults > 0 && totalSpend > 0 ? totalSpend / totalResults : null
 
   const csSales = salesData.filter(s => s.source === 'meta-ads')

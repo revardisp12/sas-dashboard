@@ -53,7 +53,15 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
     return { key: c.key, label: c.label, revenue: rs.reduce((s, r) => s + r.revenue, 0), orders: rs.length }
   }).filter(c => c.orders > 0).sort((a, b) => b.revenue - a.revenue)
 
-  const totalSpend = ga.reduce((s, r) => s + r.spend, 0) + meta.reduce((s, r) => s + r.spend, 0) + tts.reduce((s, r) => s + (r.adSpent || 0), 0) + shopee.reduce((s, r) => s + (r.adSpend || 0), 0)
+  const gaSpend = ga.reduce((s, r) => s + r.spend, 0)
+  const metaSpend = meta.reduce((s, r) => s + r.spend, 0)
+  // Weighted by each row's own spend (Σ roas×spend / Σ spend) — averaging the per-row ROAS
+  // ratios directly would misrepresent the true blended ROAS whenever daily spend varies,
+  // since average-of-ratios != ratio-of-sums.
+  const gaRoas = gaSpend > 0 ? ga.reduce((s, r) => s + r.roas * r.spend, 0) / gaSpend : 0
+  const metaRoas = metaSpend > 0 ? meta.reduce((s, r) => s + r.roas * r.spend, 0) / metaSpend : 0
+
+  const totalSpend = gaSpend + metaSpend + tts.reduce((s, r) => s + (r.adSpent || 0), 0) + shopee.reduce((s, r) => s + (r.adSpend || 0), 0)
   // Headline total = whole business: Sales (marketplace + CS Acquisition) + CRM (Retention).
   // The CS feed is split — new/renew land in `sales` (channel cs), repeat in `crm` — so both
   // are summed here to match the finance report's combined revenue. (The "Sales Performance"
@@ -62,6 +70,13 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
   const totalOrders = sales.length + crm.length
   const blendedRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0
   const totalImpressions = ga.reduce((s, r) => s + r.impressions, 0) + meta.reduce((s, r) => s + r.impressions, 0)
+
+  // CS/Soscom acquisition orders (channel 'cs') never carry a WMS cogs figure, so their
+  // grossProfit is hardcoded to 0 (see httpAdapter.ts fetchSales) — including them here would
+  // silently understate margin while looking like a complete, trustworthy total. Excluded, and
+  // the label says so whenever CS orders are actually present in the selected range.
+  const csOrderCount = sales.filter(r => r.channel === 'cs').length
+  const grossProfitTotal = sales.filter(r => r.channel !== 'cs').reduce((s, r) => s + r.grossProfit, 0)
 
   // Product Snapshot — top 3 by revenue from sales data
   const prodMap: Record<string, { revenue: number; qty: number }> = {}
@@ -74,8 +89,11 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
   const topProds = prodList.slice(0, 3)
   const brandProducts = products.filter(p => p.brand === brand)
 
-  const igFollowers = ig.length > 0 ? ig[ig.length - 1].followers : 0
-  const ttFollowers = tt.length > 0 ? tt[tt.length - 1].followers : 0
+  // Most-recent-by-date rather than last-array-element — filterByRange only filters, it
+  // doesn't guarantee the underlying data stayed sorted (e.g. a backdated-correction CSV
+  // upload could append an older date after newer rows already in state).
+  const igFollowers = ig.length > 0 ? ig.reduce((latest, r) => (r.date > latest.date ? r : latest)).followers : 0
+  const ttFollowers = tt.length > 0 ? tt.reduce((latest, r) => (r.date > latest.date ? r : latest)).followers : 0
   const ttViews = tt.reduce((s, r) => s + r.views, 0)
 
   // Spend trend - combine all dates
@@ -123,17 +141,17 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <PlatformCard icon={<BarChart2 size={14} />} color="#4285F4" title="Google Ads"
             items={[
-              { label: 'Spend', value: fmtCurrencyBig(ga.reduce((s, r) => s + r.spend, 0)) },
+              { label: 'Spend', value: fmtCurrencyBig(gaSpend) },
               { label: 'Impressions', value: fmtNumBig(ga.reduce((s, r) => s + r.impressions, 0)) },
               { label: 'Clicks', value: fmtNumBig(ga.reduce((s, r) => s + r.clicks, 0)) },
-              { label: 'Avg ROAS', value: ga.length > 0 ? (ga.reduce((s, r) => s + r.roas, 0) / ga.length).toFixed(2) + 'x' : '-' },
+              { label: 'Avg ROAS', value: gaRoas > 0 ? gaRoas.toFixed(2) + 'x' : '-' },
             ]} empty={ga.length === 0} />
           <PlatformCard icon={<Target size={14} />} color="#1877F2" title="Meta Ads"
             items={[
-              { label: 'Spend', value: fmtCurrencyBig(meta.reduce((s, r) => s + r.spend, 0)) },
+              { label: 'Spend', value: fmtCurrencyBig(metaSpend) },
               { label: 'Reach', value: fmtNumBig(meta.reduce((s, r) => s + r.reach, 0)) },
               { label: 'Clicks', value: fmtNumBig(meta.reduce((s, r) => s + r.clicks, 0)) },
-              { label: 'Avg ROAS', value: meta.length > 0 ? (meta.reduce((s, r) => s + r.roas, 0) / meta.length).toFixed(2) + 'x' : '-' },
+              { label: 'Avg ROAS', value: metaRoas > 0 ? metaRoas.toFixed(2) + 'x' : '-' },
             ]} empty={meta.length === 0} />
         </div>
       </Section>
@@ -162,7 +180,7 @@ export default function OverviewView({ data, brand, range, products = [] }: Prop
       <Section title="Sales Performance">
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <MiniStat label="Revenue" value={fmtCurrencyBig(sales.reduce((s, r) => s + r.revenue, 0))} color="#10B981" />
-          <MiniStat label="Gross Profit" value={fmtCurrencyBig(sales.reduce((s, r) => s + r.grossProfit, 0))} color="#10B981" />
+          <MiniStat label={csOrderCount > 0 ? 'Gross Profit (excl. CS)' : 'Gross Profit'} value={fmtCurrencyBig(grossProfitTotal)} color="#10B981" />
           <MiniStat label="Units Sold" value={fmtNumBig(sales.reduce((s, r) => s + r.qty, 0))} color="#8B5CF6" />
           <MiniStat label="Total Impressions" value={fmtNumBig(totalImpressions)} color="#00D4FF" />
         </div>
