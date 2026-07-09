@@ -36,9 +36,14 @@ export async function POST(req: NextRequest) {
         if (!c.content_url) continue
         const m = await provider.fetch(c.content_url, c.platform ?? '')
         if (!m) continue
+        // saved/shares only included when the provider actually supplied them (see
+        // FetchedMetrics doc comment) — omitting the key here leaves the existing
+        // manually-entered value alone instead of clobbering it to 0.
         const { error: uErr } = await supabase.from('kol_contents').update({
-          likes: m.likes, comments: m.comments, saved: m.saved, shares: m.shares, video_views: m.views,
+          likes: m.likes, comments: m.comments, video_views: m.views,
           metrics_source: 'api', metrics_fetched_at: new Date().toISOString(),
+          ...(m.saved !== undefined ? { saved: m.saved } : {}),
+          ...(m.shares !== undefined ? { shares: m.shares } : {}),
         }).eq('id', c.id)
         if (uErr) throw new Error(uErr.message)
         updated++

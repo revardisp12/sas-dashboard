@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, type CSSProperties, type ChangeEvent } from 'react'
 import type { Brand, ProductMaster } from '@/lib/types'
 import type { KolContent, KolInfluencer, KolCampaign, Tier } from '@/lib/kol/types'
+import type { FetchedMetrics } from '@/lib/kol/metrics/types'
 import {
   getContents,
   getInfluencers,
@@ -100,22 +101,29 @@ function Field({
 }
 
 // ── auto-pull helper ──
-interface FetchedMetrics { likes: number; comments: number; saved: number; shares: number; views: number }
-async function pullMetrics(contentUrl: string, platform: string): Promise<FetchedMetrics | null> {
+interface PullResult { metrics: FetchedMetrics | null; failed: boolean }
+/**
+ * `failed: true` means the provider genuinely errored (network/API failure) — distinct from
+ * `metrics: null, failed: false`, which means the provider legitimately had nothing to pull
+ * (manual mode, or a platform it doesn't support). Callers must not treat these the same way:
+ * showing "auto-pull isn't set up yet" for a real API outage sends whoever's debugging it down
+ * the wrong path entirely.
+ */
+async function pullMetrics(contentUrl: string, platform: string): Promise<PullResult> {
   const { data: sessionData } = await supabase.auth.getSession()
   const jwt = sessionData?.session?.access_token
-  if (!jwt) return null
+  if (!jwt) return { metrics: null, failed: false }
   try {
     const res = await fetch('/api/kol/pull-metrics', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
       body: JSON.stringify({ url: contentUrl, platform }),
     })
-    if (!res.ok) return null
+    if (!res.ok) return { metrics: null, failed: true }
     const json = (await res.json()) as { metrics: FetchedMetrics | null }
-    return json.metrics ?? null
+    return { metrics: json.metrics ?? null, failed: false }
   } catch {
-    return null
+    return { metrics: null, failed: true }
   }
 }
 
@@ -137,7 +145,7 @@ export default function KontenTab({ brand, products = [] }: { brand: Brand; prod
   const [form, setForm] = useState<ContentForm>(BLANK_FORM)
   const [saving, setSaving] = useState(false)
   const [bulk, setBulk] = useState(false)
-  const [pullNotice, setPullNotice] = useState<{ kind: 'info' | 'success'; text: string } | null>(null)
+  const [pullNotice, setPullNotice] = useState<{ kind: 'info' | 'success' | 'error'; text: string } | null>(null)
 
   const brandProducts = products.filter(p => p.brand === brand)
 
@@ -227,24 +235,34 @@ export default function KontenTab({ brand, products = [] }: { brand: Brand; prod
       let shares = Number(form.shares) || 0
 
       if (form.contentUrl.trim()) {
-        const pulled = await pullMetrics(form.contentUrl.trim(), form.platform)
+        const { metrics: pulled, failed } = await pullMetrics(form.contentUrl.trim(), form.platform)
         if (pulled) {
           views = pulled.views
           likes = pulled.likes
           comments = pulled.comments
-          saved = pulled.saved
-          shares = pulled.shares
+          // Only overwrite saved/shares when the provider actually supplied them (e.g.
+          // Instagram's API doesn't return either) — otherwise keep whatever was typed in
+          // manually instead of silently clobbering it to 0.
+          if (pulled.saved !== undefined) saved = pulled.saved
+          if (pulled.shares !== undefined) shares = pulled.shares
           metricsSource = 'api'
           metricsFetchedAt = new Date().toISOString()
           setPullNotice({ kind: 'success', text: '✓ Metrics berhasil ditarik otomatis dari API.' })
+        } else if (failed) {
+          // A genuine provider/API error (outage, rate limit, quota, wrong platform for the
+          // URL) — must NOT look like "not configured yet", or debugging goes down the wrong
+          // path entirely. Values stay as manually entered; nothing is silently discarded.
+          setPullNotice({
+            kind: 'error',
+            text: 'Auto-pull metrics gagal (server/API error) — nilai di atas dari input manual. Coba simpan ulang beberapa saat lagi.',
+          })
         } else {
-          // null → stay manual, keep values as entered. Previously silent — the team
-          // reported "URL benar, live mode aktif, tapi metrik gak terbaca" with zero
-          // signal as to why; auto-pull isn't implemented yet (see docs/kol-go-live-runbook.md),
-          // so make that visible instead of leaving the 0s unexplained.
+          // null, no error → provider legitimately had nothing to pull (manual mode, or a
+          // platform it doesn't support yet). Previously silent — the team reported "URL
+          // benar, live mode aktif, tapi metrik gak terbaca" with zero signal as to why.
           setPullNotice({
             kind: 'info',
-            text: 'Auto-pull metrics belum aktif untuk konten ini — nilai di atas dari input manual. (Fitur tarik otomatis dari API masih menunggu setup RapidAPI.)',
+            text: 'Auto-pull metrics belum aktif untuk konten ini — nilai di atas dari input manual. (Fitur tarik otomatis dari API masih menunggu setup RapidAPI, atau platform ini belum didukung.)',
           })
         }
       } else {
@@ -301,7 +319,7 @@ export default function KontenTab({ brand, products = [] }: { brand: Brand; prod
 
       const rows: Partial<KolContent>[] = await Promise.all(
         lines.map(async (line) => {
-          const pulled = await pullMetrics(line, '')
+          const { metrics: pulled } = await pullMetrics(line, '')
           return {
             campaignId: bulkCampaignId || null,
             influencerId: null,
@@ -404,9 +422,9 @@ export default function KontenTab({ brand, products = [] }: { brand: Brand; prod
       {pullNotice && (
         <div style={{
           fontSize: 12, padding: '8px 12px', borderRadius: 8, marginBottom: 12,
-          background: pullNotice.kind === 'success' ? '#DCFCE7' : '#EFF6FF',
-          color: pullNotice.kind === 'success' ? '#166534' : '#1E40AF',
-          border: `1px solid ${pullNotice.kind === 'success' ? '#BBF7D0' : '#BFDBFE'}`,
+          background: pullNotice.kind === 'success' ? '#DCFCE7' : pullNotice.kind === 'error' ? '#FEF2F2' : '#EFF6FF',
+          color: pullNotice.kind === 'success' ? '#166534' : pullNotice.kind === 'error' ? '#991B1B' : '#1E40AF',
+          border: `1px solid ${pullNotice.kind === 'success' ? '#BBF7D0' : pullNotice.kind === 'error' ? '#FECACA' : '#BFDBFE'}`,
         }}>
           {pullNotice.text}
         </div>
