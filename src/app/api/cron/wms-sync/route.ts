@@ -46,6 +46,12 @@ export async function POST(req: NextRequest) {
       db: dbPort(supabase), log: logPort(supabase),
       opts: { brands: BRANDS, tables: TABLES, range: lastNDays(1), trigger: 'cron' },
     })
+    // A skip (another sync already in flight, e.g. a manual "Sync Now" click landing mid-
+    // cron-run) is expected/benign, not a cron failure — the next hourly run will just try
+    // again. Report it the same way the mock-mode no-op above does, not as an error.
+    if (result.status === 'skipped') {
+      return NextResponse.json({ skipped: true, reason: result.error }, { status: 200 })
+    }
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })
   } catch (e) {

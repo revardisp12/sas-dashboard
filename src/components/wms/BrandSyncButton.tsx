@@ -74,7 +74,11 @@ export default function BrandSyncButton({ brand, onResult }: { brand: Brand; onR
       const json = await res.json().catch(() => ({}))
       onResult?.(res.ok
         ? { ok: true, text: `Sync ${LABELS[brand]} selesai — ${json?.tables?.sales ?? 0} sales` }
-        : { ok: false, text: `Sync gagal: ${json?.error ?? res.status}` })
+        // 409 = another sync already running (benign — see runWmsSync's concurrency guard),
+        // not a failure; worded distinctly from a real "gagal" so admins aren't misled.
+        : res.status === 409
+          ? { ok: false, text: `Sync ${LABELS[brand]} lain lagi jalan, coba lagi sebentar.` }
+          : { ok: false, text: `Sync gagal: ${json?.error ?? res.status}` })
       if (res.ok) loadPulled()
     } catch (e) {
       onResult?.({ ok: false, text: `Error: ${e instanceof Error ? e.message : String(e)}` })
