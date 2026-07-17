@@ -14,7 +14,11 @@ export default function SyncNowButton({ onDone }: { onDone: () => void }) {
       if (!token) { setMsg('Sesi habis, login ulang.'); return }
       const res = await fetch('/api/wms/sync', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
       const json = await res.json()
-      setMsg(res.ok ? `Sync ${json.status}: ${JSON.stringify(json.tables)}` : `Gagal: ${json.error ?? res.status}`)
+      setMsg(res.ok
+        ? `Sync ${json.status}: ${JSON.stringify(json.tables)}`
+        // 409 = another sync is already running (benign — see runWmsSync's concurrency guard),
+        // not a failure; worded distinctly so it doesn't read as "Gagal" like a real error.
+        : res.status === 409 ? 'Sync lain lagi jalan, coba lagi sebentar.' : `Gagal: ${json.error ?? res.status}`)
       onDone()
     } catch (e) {
       setMsg(`Error: ${e instanceof Error ? e.message : String(e)}`)

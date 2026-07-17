@@ -30,6 +30,11 @@ export async function POST(req: NextRequest) {
       db: dbPort(supabase), log: logPort(supabase),
       opts: { brands: BRANDS, tables: TABLES, range: { start: today, end: today }, trigger: 'webhook' },
     })
+    // A skip (another sync already in flight — cron/manual) is expected/benign for an
+    // on-demand webhook, not a failure the caller needs to retry loudly for.
+    if (result.status === 'skipped') {
+      return NextResponse.json({ skipped: true, reason: result.error }, { status: 200 })
+    }
     const code = result.status === 'success' ? 200 : result.status === 'failed' ? 500 : 207
     return NextResponse.json(result, { status: code })
   } catch (e) {

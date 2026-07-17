@@ -34,7 +34,10 @@ export interface SyncOptions {
 }
 
 export interface SyncResult {
-  status: 'success' | 'partial' | 'failed'
+  /** 'skipped' = didn't run at all because a sync already in flight could overlap with one
+   * of the requested brands (see runWmsSync's concurrency guard) — distinct from 'failed',
+   * which means it DID run and errored. */
+  status: 'success' | 'partial' | 'failed' | 'skipped'
   tables: Record<string, number>           // table -> rows upserted
   perBrand: { brand: Brand; ok: boolean; error?: string }[]
   error?: string

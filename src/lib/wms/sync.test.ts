@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { runWmsSync, dedupeByKeys, type DbPort, type LogPort } from './sync'
+import { runWmsSync, dedupeByKeys, SyncAlreadyRunningError, type DbPort, type LogPort } from './sync'
 import { MockWmsAdapter } from './mockAdapter'
 import { FakeSupabase } from './fakeSupabase'
 import type { Brand } from '@/lib/types'
@@ -21,6 +21,7 @@ function makePorts(fake: FakeSupabase): { db: DbPort; log: LogPort } {
   const log: LogPort = {
     async start() { return 'log-1' },
     async finish() { /* no-op */ },
+    async hasRunningSync() { return false },
   }
   return { db, log }
 }
@@ -94,7 +95,7 @@ describe('runWmsSync', () => {
       },
       async deleteStaleWmsInRange() { return { error: null } },
     }
-    const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ } }
+    const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ }, async hasRunningSync() { return false } }
     // Adapter returns the SAME wms_id twice for sales (simulating the pagination race).
     const adapter = new MockWmsAdapter()
     const dupRow = { wmsId: 'ord-1', date: '2026-06-01', product: 'A', qty: 1, revenue: 100, channel: 'shopee', cogs: 0, grossProfit: 100, source: 'organic', origin: 'wms' }
@@ -158,7 +159,7 @@ describe('runWmsSync', () => {
         return { error: null }
       },
     }
-    const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ } }
+    const log: LogPort = { async start() { return 'l' }, async finish() { /* no-op */ }, async hasRunningSync() { return false } }
     const adapter = new MockWmsAdapter() // returns non-empty fresh rows for reglow/sales over a 30-day range
 
     const res = await runWmsSync({ adapter, db, log, opts: opts({ brands: ['reglow'] as Brand[], tables: ['sales'], range: { start: '2026-06-01', end: '2026-06-30' } }) })
@@ -233,6 +234,7 @@ describe('runWmsSync log.start brand scoping (sync_log RLS relies on this)', () 
     const log: LogPort = {
       async start(meta) { startedWith = meta; return 'log-1' },
       async finish() { /* no-op */ },
+      async hasRunningSync() { return false },
     }
     await runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow'] as Brand[] }) })
     expect(startedWith?.brand).toBe('reglow')
@@ -245,8 +247,74 @@ describe('runWmsSync log.start brand scoping (sync_log RLS relies on this)', () 
     const log: LogPort = {
       async start(meta) { startedWith = meta; return 'log-1' },
       async finish() { /* no-op */ },
+      async hasRunningSync() { return false },
     }
     await runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow', 'amura'] as Brand[] }) })
     expect(startedWith?.brand).toBeUndefined()
+  })
+})
+
+describe('runWmsSync concurrency guard', () => {
+  it('returns status "skipped" and does no work when a sync is already running for a requested brand', async () => {
+    const fake = new FakeSupabase()
+    const { db } = makePorts(fake)
+    let startCalled = false
+    let upsertCalled = false
+    let deleteCalled = false
+    const trackedDb: DbPort = {
+      async upsert(table, rows, onConflict) { upsertCalled = true; return db.upsert(table, rows, onConflict) },
+      async deleteStaleWmsInRange(table, brand, start, end, syncStartedAt) {
+        deleteCalled = true
+        return db.deleteStaleWmsInRange(table, brand, start, end, syncStartedAt)
+      },
+    }
+    const log: LogPort = {
+      async start() { startCalled = true; return 'log-1' },
+      async finish() { /* no-op */ },
+      async hasRunningSync() { return true },
+    }
+    const res = await runWmsSync({ adapter: new MockWmsAdapter(), db: trackedDb, log, opts: opts({ brands: ['reglow'] as Brand[] }) })
+
+    expect(res.status).toBe('skipped')
+    expect(res.perBrand.every(b => b.ok === false)).toBe(true)
+    expect(startCalled).toBe(false)
+    expect(upsertCalled).toBe(false)
+    expect(deleteCalled).toBe(false)
+    expect(fake.store['sales'] ?? []).toHaveLength(0)
+  })
+
+  it('proceeds normally when no sync is running', async () => {
+    const fake = new FakeSupabase()
+    const { db, log } = makePorts(fake)
+    const res = await runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow'] as Brand[] }) })
+    expect(res.status).toBe('success')
+  })
+
+  it('returns status "skipped" (not an uncaught throw) when log.start loses the DB-level race the SELECT check missed', async () => {
+    // hasRunningSync says "clear to go" (the SELECT-based check is a fast-path, not atomic
+    // with the insert below) but the sync_log_one_running DB constraint rejects the insert —
+    // this is the actual race-closing path (see wms_sync_log_concurrency_guard.sql).
+    const fake = new FakeSupabase()
+    const { db } = makePorts(fake)
+    const log: LogPort = {
+      async start() { throw new SyncAlreadyRunningError('duplicate key value violates unique constraint "sync_log_one_running"') },
+      async finish() { /* no-op */ },
+      async hasRunningSync() { return false },
+    }
+    const res = await runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow'] as Brand[] }) })
+    expect(res.status).toBe('skipped')
+    expect(fake.store['sales'] ?? []).toHaveLength(0)
+  })
+
+  it('propagates a non-race log.start failure as a genuine throw, not a silent skip', async () => {
+    const fake = new FakeSupabase()
+    const { db } = makePorts(fake)
+    const log: LogPort = {
+      async start() { throw new Error('connection reset') },
+      async finish() { /* no-op */ },
+      async hasRunningSync() { return false },
+    }
+    await expect(runWmsSync({ adapter: new MockWmsAdapter(), db, log, opts: opts({ brands: ['reglow'] as Brand[] }) }))
+      .rejects.toThrow('connection reset')
   })
 })
